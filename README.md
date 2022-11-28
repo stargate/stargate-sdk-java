@@ -31,6 +31,9 @@ StargateRestApiClient restApiClient = new StargateRestApiClient();
 
 // Create a keyspace
 KeyspaceClient demoKS = restApiClient.keyspace("demo_ks");
+if (!demoKS.exist()){
+  demoKS.createSimple(1);
+}
 
 // Create a table in the keyspace
 TableClient demoTable = demoKS.table("demo_table");
@@ -62,7 +65,7 @@ demoTable.upsert(data);
 KeyClient record = demoTable.key("Sci-Fi", 1990);
 record.delete();
 
-// Do a search
+// Search table (by PK)
 RowResultPage res1 = demoTable.search(
         SearchTableQuery.builder()
         .where("genre").isEqualsTo("genre1")
