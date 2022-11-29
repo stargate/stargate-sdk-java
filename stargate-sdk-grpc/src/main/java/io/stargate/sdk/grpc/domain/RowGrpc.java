@@ -27,7 +27,7 @@ public class RowGrpc {
         this.rs  = rs;
         this.row = r;
     }
-    
+
     /**
      * Access String values.
      *
@@ -63,5 +63,7 @@ public class RowGrpc {
     public Value getValue(String columnName) {
         return row.getValues(rs.getColumnIndex(columnName));
     }
+
+
 
 }

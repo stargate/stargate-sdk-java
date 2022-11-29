@@ -36,16 +36,25 @@ public class Page<R> {
     private final String pageState;
     
     /** list of results matchin the request. */
-    private final List< R > results;
+    private List< R > results;
     
     /**
      * Default Constructor.
      */
     public Page() {
-        this.pageSize  = 0;
-        this.pageState = null;
-        this.results   = null;
+        this(0, null, null);
     }
+
+    /**
+     * Default constructor.
+     *
+     * @param pageSize int
+     * @param pageState String
+     */
+    public Page(int pageSize, String pageState) {
+        this(pageSize, pageState, null);
+    }
+
     /**
      * Default constructor.
      * 
@@ -100,5 +109,15 @@ public class Page<R> {
             throw new IllegalStateException("Current page does not contain a single record");
         }
         return getResults().get(0);
+    }
+
+    /**
+     * Update result list.
+     *
+     * @param results
+     *      result list
+     */
+    public void setResult(List<R> results) {
+        this.results = results;
     }
 }

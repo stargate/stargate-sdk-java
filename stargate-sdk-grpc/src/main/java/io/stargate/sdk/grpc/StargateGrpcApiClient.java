@@ -1,30 +1,27 @@
 package io.stargate.sdk.grpc;
 
 import com.evanlennick.retry4j.config.RetryConfig;
-import io.stargate.proto.QueryOuterClass;
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.api.TokenProvider;
 import io.stargate.sdk.audit.ServiceCallObserver;
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.core.domain.Row;
-import io.stargate.sdk.core.domain.RowMapper;
-import io.stargate.sdk.core.domain.RowResultPage;
-import io.stargate.sdk.grpc.domain.*;
+import io.stargate.sdk.grpc.domain.BatchGrpc;
+import io.stargate.sdk.grpc.domain.QueryGrpc;
+import io.stargate.sdk.grpc.domain.RowGrpcMapper;
+import io.stargate.sdk.grpc.domain.ResultSetGrpc;
 import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Assert;
+import org.apache.hc.core5.http.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Wrapper to interact with GRPC Client.
@@ -100,21 +97,6 @@ public class StargateGrpcApiClient {
     }
 
     /**
-     * Execute a query. Work with a pageableQuery
-     *
-     * findAll()
-     * executePage()
-     *
-     * @param query
-     *      current query
-     * @return
-     *      value
-     */
-    public ResultPage execute(QueryGrpc query) {
-        return mapFromResultSet(lbGrpcClient.execute(query));
-    }
-
-    /**
      * Get grpc output objects.
      *
      * @param query
@@ -122,7 +104,7 @@ public class StargateGrpcApiClient {
      * @return
      *      result set
      */
-    public ResultSetGrpc executeRaw(QueryGrpc query) {
+    public ResultSetGrpc execute(QueryGrpc query) {
         return lbGrpcClient.execute(query);
     }
 
@@ -138,7 +120,7 @@ public class StargateGrpcApiClient {
      * @return
      *      page of element
      */
-    public <T> Page<T> execute(QueryGrpc query, ResultRowMapper<T> mapper) {
+    public <T> Page<T> execute(QueryGrpc query, RowGrpcMapper<T> mapper) {
        return mapFromRowResultPage(execute(query), mapper);
     }
 
@@ -150,17 +132,13 @@ public class StargateGrpcApiClient {
      * @return
      *      list of value
      */
-    public ResultPage execute(String cql) {
+    public ResultSetGrpc execute(String cql) {
         return execute(new QueryGrpc(cql));
     }
 
-    public <T> Page<T> execute(String cql, ResultRowMapper<T> mapper) {
+
+    public <T> Page<T> execute(String cql, RowGrpcMapper<T> mapper) {
         return mapFromRowResultPage(execute(new QueryGrpc(cql)), mapper);
-    }
-
-    public <T> Stream<T> findAll(String cql, RowMapper<T> mapper) {
-
-        return null;
     }
 
     /*
@@ -180,27 +158,14 @@ public class StargateGrpcApiClient {
                 pageState = null;
             }
             documents.addAll(pageX.getResults());
-            // Reuissing query for next page
+            // Reusing query for next page
             pageQuery.setPageState(pageState);
         } while(pageState != null);
         return documents.stream();
     }*/
 
-    private ResultPage mapFromResultSet(ResultSetGrpc rs) {
-        List<ResultRow> rows = new ArrayList<>();
-        rs.getRows().forEach(rgrpc -> {
-            ResultRow rowMap = new ResultRow();
-            for(String col : rs.getColumnsNames()) {
-                QueryOuterClass.Value v = rgrpc.getValue(col);
-                if (v != null) rowMap.put(col, v);
-            }
-            rows.add(rowMap);
-        });
-        return new ResultPage(rs.getRowCount(), rs.getPagingState().orElse(null), rows);
-    }
-
-    private <T> Page<T> mapFromRowResultPage(ResultPage rrp, ResultRowMapper<T> mapper) {
-        return new Page<T>(
+    private <T> Page<T> mapFromRowResultPage(ResultSetGrpc rrp, RowGrpcMapper<T> mapper) {
+        return new Page<>(
                 rrp.getPageSize(),
                 rrp.getPageState().orElse(null),
                 rrp.getResults().stream()
@@ -218,7 +183,7 @@ public class StargateGrpcApiClient {
      * @return
      *      params
      */
-    public ResultPage execute(String cql, Object... params) {
+    public ResultSetGrpc execute(String cql, Object... params) {
         return execute(new QueryGrpc(cql, params));
     }
 
@@ -232,7 +197,7 @@ public class StargateGrpcApiClient {
      * @return
      *      params
      */
-    public ResultPage execute(String cql, Map<String, Object > params) {
+    public ResultSetGrpc execute(String cql, Map<String, Object > params) {
         return execute(new QueryGrpc(cql, params));
     }
 
@@ -364,7 +329,7 @@ public class StargateGrpcApiClient {
      *      first page
      */
     public <T> Page<T> execute(QueryGrpc query, Class<T> clazz) {
-        return null;
+        throw new UnsupportedOperationException("Object Mapping is not yet available");
     }
 
     /**
@@ -376,7 +341,7 @@ public class StargateGrpcApiClient {
      *      current listener
      */
     public static void registerListener(String name, ServiceCallObserver listener) {
-        GrpcClient.getInstance().registerListener(name, listener);
+        GrpcClient.registerListener(name, listener);
     }
 
     /**

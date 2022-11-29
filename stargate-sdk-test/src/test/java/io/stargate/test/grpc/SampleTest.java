@@ -1,6 +1,5 @@
 package io.stargate.test.grpc;
 
-import io.stargate.proto.QueryOuterClass;
 import io.stargate.sdk.grpc.StargateGrpcApiClient;
 import org.junit.jupiter.api.Test;
 

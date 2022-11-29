@@ -16,8 +16,6 @@
 
 package io.stargate.sdk.grpc.domain;
 
-import io.stargate.sdk.core.domain.Row;
-
 /**
  * Row Mapper.
  *
@@ -26,7 +24,7 @@ import io.stargate.sdk.core.domain.Row;
  * @param <T>
  *      object to marshall the row
  */
-public interface ResultRowMapper<T> {
+public interface RowGrpcMapper<T> {
     
     /**
      * Convert row to bean.
@@ -36,6 +34,6 @@ public interface ResultRowMapper<T> {
      * @return
      *      marshalled bean
      */
-    T map(ResultRow row);
+    T map(RowGrpc row);
 
 }
