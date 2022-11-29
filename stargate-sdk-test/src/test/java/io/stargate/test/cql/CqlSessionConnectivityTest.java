@@ -1,6 +1,7 @@
 package io.stargate.test.cql;
 
 import io.stargate.sdk.StargateClient;
+import io.stargate.sdk.doc.domain.Namespace;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +23,12 @@ public class CqlSessionConnectivityTest {
     // As 'enabled' session is created
     public void shoudl_enable_cql_only() {
         StargateClient sc = StargateClient.builder()
-                //.withAuthCredentials("cassandra", "cassandra")
-                //.withLocalDatacenter("datacenter1")
-                //.withCqlContactPoints("localhost:9042")
+                .withAuthCredentials("cassandra", "cassandra")
+                .withLocalDatacenter("datacenter1")
+                .withCqlContactPoints("localhost:9042")
                 .enableCql()
                 .build();
+
         Assertions.assertTrue(sc.cqlSession().isPresent());
         Assertions.assertEquals("datacenter1", 
                     sc.cqlSession().get()

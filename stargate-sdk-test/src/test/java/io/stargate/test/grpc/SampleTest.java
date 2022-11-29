@@ -1,5 +1,6 @@
 package io.stargate.test.grpc;
 
+import io.stargate.proto.QueryOuterClass;
 import io.stargate.sdk.grpc.StargateGrpcApiClient;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,8 @@ public class SampleTest {
         StargateGrpcApiClient grpcClient = new StargateGrpcApiClient();
         System.out.println(grpcClient
                 .execute("SELECT data_center from system.local")
-                .getResults()
-                .get(0).get("data_center"));
+                .one()
+                .getString("data_center"));
+
     }
 }

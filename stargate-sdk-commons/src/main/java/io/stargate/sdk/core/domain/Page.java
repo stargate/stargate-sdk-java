@@ -88,4 +88,17 @@ public class Page<R> {
     public List<R> getResults() {
         return results;
     }
+
+    /**
+     * When the result is a singleton.
+     *
+     * @return
+     *      result as a singleton
+     */
+    public R one() {
+        if (getResults() == null || getResults().size() !=1) {
+            throw new IllegalStateException("Current page does not contain a single record");
+        }
+        return getResults().get(0);
+    }
 }

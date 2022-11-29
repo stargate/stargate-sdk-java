@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.sql.SQLOutput;
 import java.util.*;
 
 /**
@@ -96,15 +97,16 @@ public class StargateClient implements Closeable {
 
         // ------------- CqlSession ------------------
 
+        // Initialize local data center
+        this.currentDatacenter = resolveDataCenterName(config);
+
+        // Initialize session
         if (config.isEnabledCql()) {
             cqlSession = initCqlSession();
             LOGGER.info("+ API Cql      :[" + AnsiUtils.green("ENABLED") + "]");
         } else {
             LOGGER.info("+ API Cql      :[" + AnsiUtils.yellow("DISABLED") + "]");
         }
-
-        // Initialize local data center
-        resolveDataCenterName(config);
 
         // ------------- HTTP API ------------------
 
@@ -201,7 +203,7 @@ public class StargateClient implements Closeable {
             cqlSession = null;
         }
         
-        // Only create if CQL Session if enabled, always.
+        // Only create if CQL Session is enabled
         if (conf.isEnabledCql()) {
 
             // A CQL Session has been provided, we will reuse it
@@ -210,18 +212,21 @@ public class StargateClient implements Closeable {
                 
             } else {
                 
-                // SCB
-                String scb = conf.getCqlOptions().get(this.currentDatacenter, TypedDriverOption.CLOUD_SECURE_CONNECT_BUNDLE);
-                if (Utils.hasLength(scb)) {
-                    conf.withCqlCloudSecureConnectBundle(scb);
-                    conf.setLocalDatacenter(currentDatacenter);
-                }
-                
-                // CONTACT POINTS
-                List<String> configContactPointsDC = conf.getCqlOptions().get(this.currentDatacenter, TypedDriverOption.CONTACT_POINTS);
-                if (configContactPointsDC != null && !configContactPointsDC.isEmpty()) {
-                    conf.withCqlContactPoints(configContactPointsDC.toArray(new String[0]));
-                    conf.withLocalDatacenter(currentDatacenter);
+                // Connectivity to Astra with a SCB
+                try {
+                    String scb = conf.getCqlOptions().get(this.currentDatacenter, TypedDriverOption.CLOUD_SECURE_CONNECT_BUNDLE);
+                    if (Utils.hasLength(scb)) {
+                        conf.withCqlCloudSecureConnectBundle(scb);
+                        conf.setLocalDatacenter(currentDatacenter);
+                    }
+                    // Connectivity to local Cassandra with contact points
+                    List<String> configContactPointsDC = conf.getCqlOptions().get(this.currentDatacenter, TypedDriverOption.CONTACT_POINTS);
+                    if (configContactPointsDC != null && !configContactPointsDC.isEmpty()) {
+                        conf.withCqlContactPoints(configContactPointsDC.toArray(new String[0]));
+                        conf.withLocalDatacenter(currentDatacenter);
+                    }
+                } catch(NullPointerException npe) {
+                    System.out.println("No DC profile");
                 }
                 
                 // Configuration through Map values
