@@ -339,5 +339,44 @@
 			<url>https://jitpack.io</url>
 		</repository>
 	</repositories>
-	
+
+	<scm>
+		<connection>scm:git:git@github.com:stargate/stargate-sdk-java.git</connection>
+		<developerConnection>scm:git:git@github.com:stargate/stargate-sdk-java.git</developerConnection>
+		<url>https://github.com/stargate/stargate-sdk-java</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<developers>
+		<developer>
+			<id>clunven</id>
+			<name>Cedrick Lunven</name>
+			<email>cedrick.lunven@gmail.com</email>
+			<url>https://github.com/clun</url>
+		</developer>
+	</developers>
+
+	<profiles>
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>
