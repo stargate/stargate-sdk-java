@@ -1,6 +1,6 @@
 package io.stargate.sdk.test.gql;
 
-import com.datastax.stargate.graphql.types.Keyspace;
+import io.stargate.graphql.types.Keyspace;
 import io.stargate.sdk.gql.StargateGraphQLApiClient;
 import io.stargate.sdk.gql.GraphQLKeyspaceDDLClient;
 import org.junit.jupiter.api.*;
