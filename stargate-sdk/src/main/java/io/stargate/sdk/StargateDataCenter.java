@@ -64,8 +64,8 @@ public class StargateDataCenter {
         return this;
     }
 
-    public StargateDataCenter addGrpcService(ServiceHttp s) {
-        docNodes.add(s);
+    public StargateDataCenter addGrpcService(ServiceGrpc s) {
+        grpcNodes.add(s);
         return this;
     }
 

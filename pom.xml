@@ -20,13 +20,13 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java-driver.version>4.15.0</java-driver.version>
-		<logback.version>1.4.1</logback.version>
+		<logback.version>1.2.11</logback.version>
 		<jackson.version>2.13.4</jackson.version>
 		<json-schema.version>1.5.1</json-schema.version>
 		<httpclient.version>5.2</httpclient.version>
 		<stargate-grpc.version>2.0.1</stargate-grpc.version>
 		<grpc-netty.version>1.49.1</grpc-netty.version>
-		<slf4j.version>2.0.5</slf4j.version>
+		<slf4j.version>1.7.36</slf4j.version>
 		<!-- Junit -->
 		<junit-platform.version>1.9.1</junit-platform.version>
 		<junit-jupiter.version>5.9.1</junit-jupiter.version>

@@ -4,6 +4,8 @@ import io.stargate.sdk.rest.KeyspaceClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.test.rest.AbstractRestClientKeyspacesTest;
 import org.junit.jupiter.api.BeforeAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementations of test for Data keyspace.
@@ -14,7 +16,6 @@ public class RestClientKeyspacesDirectTest extends AbstractRestClientKeyspacesTe
 
     @BeforeAll
     public static void initStargateRestApiClient() {
-
         // Initialization
         stargateRestApiClient = new StargateRestApiClient();
 

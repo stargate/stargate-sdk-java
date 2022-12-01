@@ -29,10 +29,13 @@ public class ServiceHttp extends Service {
      */
     @Override
     public boolean isAlive() {
-        return HttpURLConnection.HTTP_OK == RetryHttpClient
+        System.out.println("IS_ALIVE(" + endpoint + ")");
+        int code = RetryHttpClient
                 .getInstance()
                 .executeHttp(this, new HttpGet(healthCheckEndpoint), false)
                 .getCode();
+        System.out.println("CODE(" + healthCheckEndpoint + ")" + code);
+        return HttpURLConnection.HTTP_OK == code;
     }
 
     @Override

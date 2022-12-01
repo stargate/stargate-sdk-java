@@ -114,22 +114,31 @@ public class StargateClient implements Closeable {
             this.apiDataClient      = new StargateRestApiClient();
             this.apiDocumentClient  = new StargateDocumentApiClient();
             this.apiGraphQLClient   = new StargateGraphQLApiClient();
-            this.apiGrpcClient      = new StargateGrpcApiClient();
+            if (config.isEnabledGrpc()) {
+                this.apiGrpcClient = new StargateGrpcApiClient();
+            }
         } else {
+            // 3 Stateless services
             ServiceDeployment<ServiceHttp> restDeploy = new ServiceDeployment<>();
             ServiceDeployment<ServiceHttp> docDeploy = new ServiceDeployment<>();
             ServiceDeployment<ServiceHttp> gqlDeploy = new ServiceDeployment<>();
-            ServiceDeployment<ServiceGrpc> grpcDeploy = new ServiceDeployment<>();
             config.getStargateNodesDC().values().forEach(dc -> {
                 restDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getRestNodes()));
                 docDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getDocNodes()));
                 gqlDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getGraphqlNodes()));
-                grpcDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getGrpcNodes()));
             });
             this.apiDataClient = new StargateRestApiClient(restDeploy);
             this.apiDocumentClient = new StargateDocumentApiClient(docDeploy);
             this.apiGraphQLClient = new StargateGraphQLApiClient(gqlDeploy);
-            this.apiGrpcClient = new StargateGrpcApiClient(grpcDeploy);
+
+            // grpc service if needed
+            if (config.isEnabledGrpc()) {
+                ServiceDeployment<ServiceGrpc> grpcDeploy = new ServiceDeployment<>();
+                config.getStargateNodesDC().values().forEach(dc -> {
+                    grpcDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getGrpcNodes()));
+                });
+                this.apiGrpcClient = new StargateGrpcApiClient(grpcDeploy);
+            }
         }
 
         // ------------- HTTP ---------------------

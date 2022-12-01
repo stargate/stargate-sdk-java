@@ -9,6 +9,7 @@ import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammatic
 import io.stargate.sdk.api.TokenProvider;
 import io.stargate.sdk.api.SimpleTokenProvider;
 import io.stargate.sdk.audit.ServiceCallObserver;
+import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
 import io.stargate.sdk.utils.Utils;
@@ -145,7 +146,7 @@ public class StargateClientBuilder implements Serializable {
      */
     public StargateClientBuilder withApiTokenProviderDC(String dc, TokenProvider tokenProvider) {
         Assert.hasLength(dc, "dc");
-        if (stargateNodesDC.containsKey(dc)) {
+        if (!stargateNodesDC.containsKey(dc)) {
             stargateNodesDC.put(dc, new StargateDataCenter(dc, tokenProvider));
         }
         stargateNodesDC.get(dc).setTokenProvider(tokenProvider);
@@ -198,6 +199,99 @@ public class StargateClientBuilder implements Serializable {
         }
         this.stargateNodesDC.get(dc).addRestService(rest);
         return this;
+    }
+
+    /**
+     * Populate current datacenter. Will be used as localDc in cqlSession if provided
+     * or local DC at Http level.
+     *
+     * @param dc
+     *     target datacenter
+     * @param rest
+     *      target service
+     * @return
+     *      current reference
+     */
+    public StargateClientBuilder addDocumentService(String dc, ServiceHttp rest) {
+        if (!stargateNodesDC.containsKey(dc)) {
+            stargateNodesDC.put(dc, new StargateDataCenter(dc));
+        }
+        this.stargateNodesDC.get(dc).addDocumenService(rest);
+        return this;
+    }
+
+    /**
+     * Add a new Document Service.
+     *
+     * @param doc
+     *      document service
+     * @return
+     *      current reference
+     */
+    public StargateClientBuilder addDocumentService(ServiceHttp doc) {
+        return addDocumentService(localDatacenter, doc);
+    }
+
+    /**
+     * Populate current datacenter. Will be used as localDc in cqlSession if provided
+     * or local DC at Http level.
+     *
+     * @param dc
+     *     target datacenter
+     * @param rest
+     *      target service
+     * @return
+     *      current reference
+     */
+    public StargateClientBuilder addGraphQLService(String dc, ServiceHttp rest) {
+        if (!stargateNodesDC.containsKey(dc)) {
+            stargateNodesDC.put(dc, new StargateDataCenter(dc));
+        }
+        this.stargateNodesDC.get(dc).addGraphQLService(rest);
+        return this;
+    }
+
+    /**
+     * Add a GraphQL Service in the current DC
+     * @param rest
+     *      current graphQL service
+     * @return
+     *      current reference.
+     */
+    public StargateClientBuilder addGraphQLService(ServiceHttp rest) {
+        return addGraphQLService(localDatacenter, rest);
+    }
+
+    /**
+     * Populate current datacenter. Will be used as localDc in cqlSession if provided
+     * or local DC at Http level.
+     *
+     * @param dc
+     *     target datacenter
+     * @param grpc
+     *      target service
+     * @return
+     *      current reference
+     */
+    public StargateClientBuilder addGrpcService(String dc, ServiceGrpc grpc) {
+        if (!stargateNodesDC.containsKey(dc)) {
+            stargateNodesDC.put(dc, new StargateDataCenter(dc));
+        }
+        this.stargateNodesDC.get(dc).addGrpcService(grpc);
+        return this;
+    }
+
+    /**
+     * Populate current datacenter. Will be used as localDc in cqlSession if provided
+     * or local DC at Http level.
+     *
+     * @param grpc
+     *      target service
+     * @return
+     *      current reference
+     */
+    public StargateClientBuilder addGrpcService(ServiceGrpc grpc) {
+        return addGrpcService(localDatacenter, grpc);
     }
 
     /**
