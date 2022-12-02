@@ -340,6 +340,14 @@
 		</repository>
 	</repositories>
 
+	<distributionManagement>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
+
+	
 	<scm>
 		<connection>scm:git:git@github.com:stargate/stargate-sdk-java.git</connection>
 		<developerConnection>scm:git:git@github.com:stargate/stargate-sdk-java.git</developerConnection>
