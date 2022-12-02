@@ -8,6 +8,7 @@
 	<packaging>pom</packaging>
 	<inceptionYear>2022</inceptionYear>
 	<description>Stargate Software Development Kit. Tools and library to work with stargate.io</description>
+	<url>https://github.com/stargate/stargate-sdk-java</url>
 
 	<licenses>
 		<license>
@@ -174,41 +175,59 @@
 			
 		</dependencies>
 	</dependencyManagement>
-	
-	
 
 	<build>
-	
-	<pluginManagement>
-  <plugins>
-    <plugin>
-     <groupId>org.eclipse.m2e</groupId>
-     <artifactId>lifecycle-mapping</artifactId>
-     <version>1.0.0</version>
-     <configuration>
-       <lifecycleMappingMetadata>
-         <pluginExecutions>
-           <pluginExecution>
-             <pluginExecutionFilter>
-               <groupId>io.github.deweyjose</groupId>
-			   <artifactId>graphqlcodegen-maven-plugin</artifactId>
-               <versionRange>[1.16,)</versionRange>
-               <goals>
-                 <goal>generate</goal>
-               </goals>
-             </pluginExecutionFilter>
-             <action>
-               <ignore />
-             </action>
-           </pluginExecution>
-         </pluginExecutions>
-       </lifecycleMappingMetadata>
-     </configuration>
-    </plugin>
-  </plugins>
-</pluginManagement>
 
 		<plugins>
+			<!-- Deploy to NEXUS -->
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>${version.maven.plugin.nexus}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>false</autoReleaseAfterClose>
+					<skipLocalStaging>true</skipLocalStaging>
+				</configuration>
+			</plugin>
+
+			<!-- Sign the Artifacts -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>${version.maven.plugin.gpg}</version>
+			</plugin>
+
+			<!-- Create a source JAR for Central -->
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${version.maven.plugin.source}</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Setup Release -->
+			<plugin>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>${version.maven.plugin.release}</version>
+				<configuration>
+					<tagNameFormat>@{project.version}</tagNameFormat>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<useReleaseProfile>false</useReleaseProfile>
+					<releaseProfiles>release</releaseProfiles>
+					<goals>deploy</goals>
+				</configuration>
+			</plugin>
+
+			<!-- Compiler to jdk8 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -219,6 +238,7 @@
 					<showWarnings>false</showWarnings>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -236,6 +256,7 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
@@ -252,7 +273,6 @@
 				    <excludePackageNames>com.datastax.stargate.graphql</excludePackageNames>
 					<source>${maven.plugin.javadoc.source}</source>
 				</configuration>
-				
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -281,64 +301,9 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-			 <!-- Coveralls.io -->
-            <plugin>
-                <groupId>org.eluder.coveralls</groupId>
-                <artifactId>coveralls-maven-plugin</artifactId>
-                <version>${version.maven.plugin.coveralls}</version>
-                <configuration>
-      				<repoToken>7s9Lof8PakG3o8NftCupedDbnNegwN1dS</repoToken>
-			   </configuration>
-			   <dependencies>
-				<dependency>
-				    <groupId>javax.xml.bind</groupId>
-				    <artifactId>jaxb-api</artifactId>
-				    <version>2.3.1</version>
-				</dependency>  
-			   </dependencies>
-            </plugin>
-            
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${version.maven.plugin.jacoco}</version>
-                <executions>
-                    <execution>
-                        <id>default-prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>default-prepare-agent-integration</id>
-                        <goals>
-                            <goal>prepare-agent-integration</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>default-report</id>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>default-report-integration</id>
-                        <goals>
-                            <goal>report-integration</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>           
+
 		</plugins>
 	</build>	
-	
-	<!-- Required for the dgs generator -->
-	<repositories>
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-	</repositories>
 
 	<distributionManagement>
 		<repository>
@@ -346,6 +311,11 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
+
+	<organization>
+		<name>DataStax</name>
+		<url>http://datastax.com</url>
+	</organization>
 
 	<scm>
 		<connection>scm:git:git@github.com:stargate/stargate-sdk-java.git</connection>
