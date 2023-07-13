@@ -178,6 +178,13 @@ public class StargateClientBuilder implements Serializable {
     /** Local datacenter. */
     protected String localDatacenter;
 
+    /**
+     * Add a node to the cluster.
+     * @param rest
+     *      rest node
+     * @return
+     *      current builder
+     */
     public StargateClientBuilder addServiceRest(ServiceHttp rest) {
         return addServiceRest(localDatacenter, rest);
     }

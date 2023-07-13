@@ -2,12 +2,12 @@ package io.stargate.sdk.test.rest;
 
 import io.stargate.sdk.core.Ordering;
 import io.stargate.sdk.core.Sort;
-import io.stargate.sdk.rest.StargateRestApiClient;
+import io.stargate.sdk.core.domain.RowResultPage;
 import io.stargate.sdk.rest.KeyClient;
 import io.stargate.sdk.rest.KeyspaceClient;
+import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.rest.TableClient;
 import io.stargate.sdk.rest.domain.QueryWithKey;
-import io.stargate.sdk.core.domain.RowResultPage;
 import io.stargate.sdk.rest.domain.SearchTableQuery;
 import io.stargate.sdk.test.rest.domain.Video;
 import io.stargate.sdk.test.rest.domain.VideoRowMapper;
@@ -35,7 +35,7 @@ public abstract class AbstractRestClientRecordTest implements TestRestClientCons
     
     /** Tested Store. */
     protected static TableClient videoTable;
-    
+
     /**
      * Test.
      */
@@ -53,7 +53,7 @@ public abstract class AbstractRestClientRecordTest implements TestRestClientCons
         data.put("formats", "{ '2020':'good', '2019':'okay' }");
         data.put("tags", "{ 'Emma', 'The Color Purple' }");
         data.put("tuples", "( 'France', '2016-01-01', '2020-02-02' )");
-        data.put("upload", Instant.now());
+        data.put("upload", System.currentTimeMillis());
         videoTable.upsert(data);
         RowResultPage rrp = videoTable
                 .key("Sci-Fi",1990)
@@ -96,12 +96,12 @@ public abstract class AbstractRestClientRecordTest implements TestRestClientCons
         data.put("genre", "Sci-Fi");
         data.put("year", 1990);
         data.put("title", "line_update");
-        data.put("upload", Instant.now());
+        data.put("upload", System.currentTimeMillis());
         videoTable.upsert(data);
         
         // When updating just a value
         Map<String, Object> update = new HashMap<>();
-        update.put("upload", Instant.now());
+        update.put("upload", System.currentTimeMillis());
         videoTable.key("Sci-Fi", 1990, "line_update").update(update);
         
         /* Then
@@ -129,11 +129,11 @@ public abstract class AbstractRestClientRecordTest implements TestRestClientCons
         data.put("genre", "Sci-Fi");
         data.put("year", 1990);
         data.put("title", "line_replace");
-        data.put("upload", Instant.now());
+        data.put("upload", System.currentTimeMillis());
         videoTable.upsert(data);
         // When updating just a value
         Map<String, Object> replace = new HashMap<>();
-        replace.put("upload", Instant.now());
+        replace.put("upload", System.currentTimeMillis());
         videoTable.key("Sci-Fi", 1990, "line_update").replace(replace);
         // Then
         // Disabled as BUG for Tuples

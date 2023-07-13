@@ -7,7 +7,7 @@ import io.stargate.sdk.test.rest.AbstractRestClientRecordTest;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
- * Execute some unit tests agains collections.
+ * Execute some unit tests against collections.
  *
  * @author Cedrick LUNVEN (@clunven)
  */
@@ -15,7 +15,8 @@ public class RestClientRecordDirectTest extends AbstractRestClientRecordTest {
      
     /**
      * Init
-     * @throws InterruptedException 
+     * @throws InterruptedException
+     *      error on creation
      */
     @BeforeAll
     public static void init() 

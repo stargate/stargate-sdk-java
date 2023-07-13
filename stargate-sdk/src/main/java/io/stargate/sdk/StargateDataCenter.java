@@ -41,6 +41,12 @@ public class StargateDataCenter {
         this.id  = id;
     }
 
+    /**
+     * Add default Rest service
+     *
+     * @return
+     *      data center
+     */
     public StargateDataCenter withRest() {
         return addRestService(new ServiceHttp(
                 StargateRestApiClient.DEFAULT_SERVICE_ID,
@@ -49,21 +55,53 @@ public class StargateDataCenter {
         );
     }
 
+    /**
+     * Add a new node to the DC.
+     *
+     * @param s
+     *      current node
+     * @return
+     *      current dc
+     */
     public StargateDataCenter addRestService(ServiceHttp s) {
         restNodes.add(s);
         return this;
     }
 
+    /**
+     * Add a new node to the DC.
+     *
+     * @param s
+     *      current node
+     * @return
+     *      current dc
+     */
     public StargateDataCenter addGraphQLService(ServiceHttp s) {
         graphqlNodes.add(s);
         return this;
     }
 
+    /**
+     * Add a new node to the DC.
+     *
+     * @param s
+     *      current node
+     * @return
+     *      current dc
+     */
     public StargateDataCenter addDocumenService(ServiceHttp s) {
         docNodes.add(s);
         return this;
     }
 
+    /**
+     * Add a new node to the DC.
+     *
+     * @param s
+     *      current node
+     * @return
+     *      current dc
+     */
     public StargateDataCenter addGrpcService(ServiceGrpc s) {
         grpcNodes.add(s);
         return this;

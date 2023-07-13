@@ -67,6 +67,8 @@ public class ServiceDatacenter<SERVICE extends Service> {
     /**
      * Gets service by its id.
      *
+     * @param dcId
+     *      identifier for the datacenter
      * @return value of services
      */
     public SERVICE getService(String dcId) {

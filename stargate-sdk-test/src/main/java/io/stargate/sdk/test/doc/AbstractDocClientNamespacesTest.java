@@ -29,7 +29,10 @@ public abstract class AbstractDocClientNamespacesTest implements TestDocClientCo
     // -----------------------------------------
     
     /**
-     * Create a namespace
+     * Create a namespace.
+     *
+     * @throws InterruptedException
+     *      sleep got interrupted
      */
     @Test
     @Order(1)
@@ -44,7 +47,7 @@ public abstract class AbstractDocClientNamespacesTest implements TestDocClientCo
         int wait = 0;
         while (wait++ < 10 && ! nsTemp.exist()) {
             Thread.sleep(2000);
-            System.out.print(AnsiUtils.green("\u25a0"));
+            System.out.print(AnsiUtils.green("■"));
         }
         Assertions.assertTrue(nsTemp.exist());
     }
@@ -69,7 +72,7 @@ public abstract class AbstractDocClientNamespacesTest implements TestDocClientCo
         int wait = 0;
         while (wait++ < 10 && ! nsTemp.exist()) {
             Thread.sleep(2000);
-            System.out.print(AnsiUtils.green("\u25a0"));
+            System.out.print(AnsiUtils.green("■"));
         }
         Assertions.assertTrue(nsTemp.exist());
     }

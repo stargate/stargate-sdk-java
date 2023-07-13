@@ -82,6 +82,9 @@ public class StargateClient implements Closeable {
     // ---------------- Initializing   ----------------
     // ------------------------------------------------
 
+    /**
+     * Default constructor
+     */
     public StargateClient() {
         this(builder());
     }

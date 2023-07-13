@@ -132,12 +132,15 @@ public abstract class AbstractDocClientCollectionsTest implements TestDocClientC
 
     /**
      * Test.
+     *
+     * @throws InterruptedException
+     *      sleep got interrupted
      */
     @Test
     @Order(5)
     @DisplayName("06-Insert as a BATCH")
     public void f_should_insert_batch()
-            throws InterruptedException {
+    throws InterruptedException {
         // Given
         String randomCollection = UUID.randomUUID().toString().replaceAll("-", "");
         CollectionClient cc = nsClient.collection(randomCollection);

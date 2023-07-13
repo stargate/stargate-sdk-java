@@ -43,6 +43,8 @@ public class GrpcClientLoadBalanced implements ApiConstants {
      *
      * @param query
      *      current grpc query.
+     * @return
+     *    service response
      */
     public ResultSetGrpc execute(QueryGrpc query) {
         LoadBalancedResource<ServiceGrpc> lb = null;

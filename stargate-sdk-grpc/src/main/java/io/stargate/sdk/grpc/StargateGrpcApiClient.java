@@ -137,6 +137,17 @@ public class StargateGrpcApiClient {
     }
 
 
+    /**
+     * Execute Cql Statement
+     * @param cql
+     *    cql query
+     * @param mapper
+     *   mapper to object
+     * @return
+     *   list of value
+     * @param <T>
+     *     current type
+     */
     public <T> Page<T> execute(String cql, RowGrpcMapper<T> mapper) {
         return mapFromRowResultPage(execute(new QueryGrpc(cql)), mapper);
     }

@@ -117,9 +117,12 @@ public class QueryGrpc {
     }
 
     /**
-     * Set value for timestamp
+     * Set value for timestamp.
      *
-     * @param timestamp new value for timestamp
+     * @param timestamp
+     *      new value for timestamp
+     * @return
+     *      current reference
      */
     public QueryGrpc setTimestamp(long timestamp) {
         this.timestamp = timestamp;
@@ -132,6 +135,7 @@ public class QueryGrpc {
      * @param tracing
      *      flag tracing
      * @return
+     *     current reference
      */
     public QueryGrpc setTracing(boolean tracing) {
         this.tracing = tracing;

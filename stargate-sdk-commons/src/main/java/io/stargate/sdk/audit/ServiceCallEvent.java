@@ -22,20 +22,27 @@ public class ServiceCallEvent<SERVICE extends Service> {
 
     // --- Response ---
 
+    /** response time. */
     protected long responseTime;
 
+    /** response triggered time. */
     protected long responseTimestamp;
 
+    /** response elapsed time. */
     protected long responseElapsedTime;
 
+    /** retries. */
     protected int totalTries;
     
     // --- Error ---
 
+    /** Error Classname. */
     protected String errorClass;
 
+    /** Error message. */
     protected String errorMessage;
 
+    /** Exceptions. */
     protected Exception lastException;
     
     /**

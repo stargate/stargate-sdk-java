@@ -45,6 +45,8 @@ public class ServiceHttpCallEvent extends ServiceCallEvent<ServiceHttp> implemen
     /**
      * Constructor with http request.
      *
+     * @param service
+     *      current service
      * @param req
      *      current http request
      */

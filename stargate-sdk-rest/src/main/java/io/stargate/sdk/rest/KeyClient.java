@@ -242,7 +242,7 @@ public class KeyClient {
      * @param newRecord Map
      */
     public void replace(Map<String, Object> newRecord) {
-       stargateClient.PUT(primaryKeyResource, marshall(newRecord));
+        stargateClient.PUT(primaryKeyResource, marshall(newRecord));
     }
     
     // ---------------------------------

@@ -86,7 +86,7 @@ public class RetryHttpClient implements ApiConstants {
             .setCookieSpec(StandardCookieSpec.STRICT)
             .setExpectContinueEnabled(true)
             .setConnectionRequestTimeout(Timeout.ofSeconds(DEFAULT_TIMEOUT_REQUEST))
-            .setConnectTimeout(Timeout.ofSeconds(DEFAULT_TIMEOUT_CONNECT))
+            .setResponseTimeout(Timeout.ofSeconds(DEFAULT_TIMEOUT_CONNECT))
             .setTargetPreferredAuthSchemes(Arrays.asList(StandardAuthScheme.NTLM, StandardAuthScheme.DIGEST))
             .build();
     
@@ -164,7 +164,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -178,7 +180,9 @@ public class RetryHttpClient implements ApiConstants {
 
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -192,7 +196,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -206,7 +212,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -222,7 +230,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -238,7 +248,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -252,7 +264,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -268,7 +282,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Helper to build the HTTP request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param url
      *      target url
      * @param token
@@ -284,7 +300,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /**
      * Main Method executing HTTP Request.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param method
      *      http method
      * @param url
@@ -306,7 +324,9 @@ public class RetryHttpClient implements ApiConstants {
 
     /**
      * Execute a request coming from elsewhere.
-     * 
+     *
+     * @param sHttp
+     *      service http
      * @param req
      *      current request
      * @param mandatory

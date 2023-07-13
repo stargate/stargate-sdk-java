@@ -10,6 +10,15 @@ import java.util.function.Supplier;
  */
 public class CompletableFutures {
 
+    /**
+     * Merge multiple CompletionStage in a single one
+     * @param inputs
+     *      list of completion stages
+     * @return
+     *      the merged stage
+     * @param <T>
+     *      generic used with stages
+     */
     public static <T> CompletionStage<Void> allDone(List<CompletionStage<T>> inputs) {
         CompletableFuture<Void> result = new CompletableFuture<>();
         if (inputs.isEmpty()) {
