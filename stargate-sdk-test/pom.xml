@@ -32,5 +32,6 @@
             <artifactId>junit-platform-runner</artifactId>
         </dependency>
 
+
     </dependencies>
 </project>

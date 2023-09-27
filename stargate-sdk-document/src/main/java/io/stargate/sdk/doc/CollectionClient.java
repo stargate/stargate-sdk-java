@@ -28,9 +28,6 @@ import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
 import io.stargate.sdk.utils.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.everit.json.schema.Schema;
-import org.everit.json.schema.loader.SchemaLoader;
-import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -558,13 +555,15 @@ public class CollectionClient {
             throw new RuntimeException("Cannot marshall document results", e);
         }
     }
+
+    // Deprecated Schema Management
     
     /**
      * Return the JSON Schema if present.
      * 
      * @return
      *      the json schema if assign to the bean
-     */
+
     public Optional<Schema> getSchema() {
         ApiResponseHttp res = stargateHttpClient.GET(collectionJsonSchemaResource);
         if (HttpURLConnection.HTTP_NOT_FOUND == res.getCode()) {
@@ -581,7 +580,7 @@ public class CollectionClient {
      *
      * @param jsonSchema
      *      target Schema as a json String
-     */
+
     public void setSchema(String jsonSchema) {
        Assert.hasLength(jsonSchema, "jsonSchema");
        // Is a valid json schema ?
@@ -590,7 +589,7 @@ public class CollectionClient {
                    .build().load().build();
        // Put the schema to 
        stargateHttpClient.PUT(collectionJsonSchemaResource, jsonSchema);
-    }
+    }*/
     
     /**
      * Build the filters based on values in the query.

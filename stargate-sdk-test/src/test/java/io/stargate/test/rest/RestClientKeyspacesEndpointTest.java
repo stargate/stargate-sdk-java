@@ -9,6 +9,7 @@ import io.stargate.sdk.rest.KeyspaceClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.test.rest.AbstractRestClientKeyspacesTest;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
@@ -43,6 +44,5 @@ public class RestClientKeyspacesEndpointTest extends AbstractRestClientKeyspaces
         KeyspaceClient ksClientTestBis = stargateRestApiClient.keyspace(TEST_KEYSPACE_BIS);
         if (ksClientTestBis.exist()) ksClientTestBis.delete();
     }
-
 
 }

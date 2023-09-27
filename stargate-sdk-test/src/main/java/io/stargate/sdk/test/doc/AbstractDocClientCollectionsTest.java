@@ -1,13 +1,17 @@
 package io.stargate.sdk.test.doc;
 
 
-import io.stargate.sdk.doc.StargateDocumentApiClient;
 import io.stargate.sdk.doc.CollectionClient;
 import io.stargate.sdk.doc.NamespaceClient;
+import io.stargate.sdk.doc.StargateDocumentApiClient;
 import io.stargate.sdk.doc.domain.CollectionDefinition;
 import io.stargate.sdk.test.doc.domain.Person;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,38 +163,5 @@ public abstract class AbstractDocClientCollectionsTest implements TestDocClientC
         Assertions.assertEquals(99, ids2.size());
         Assertions.assertTrue(ids2.contains("16"));
     }
-
-    
-    /**
-     * Test.
-     */
-    @Test
-    @Order(6)
-    @DisplayName("05-Assign a Json Schema")
-    public void e_should_set_schema() {
-        LOGGER.info("should_set_schema");
-        // Given
-        String randomCollection = UUID.randomUUID().toString().replaceAll("-", "");
-        CollectionClient cc = nsClient.collection(randomCollection);
-        cc.create();
-        Assertions.assertTrue(cc.exist());
-        // Then I can add a person with negative age
-        cc.document("doc1").upsert(new Person("first", "last", 20, null));
-        // When Assign Schema
-        Assertions.assertFalse(cc.getSchema().isPresent());
-        cc.setSchema(TEST_JSON_SCHEMA);
-        // Then a schema is present
-        Assertions.assertTrue(cc.getSchema().isPresent());
-        // And validation should be enabled
-        LOGGER.info("negative_should_rise_error");
-        Assertions.assertThrows(IllegalArgumentException.class, () ->
-                cc.document("doc1")
-                  .upsert(new Person("first", "last", -20, null)));
-        // Clean up
-        cc.delete();
-        Assertions.assertFalse(cc.exist());
-    }
-    
-
 
 }

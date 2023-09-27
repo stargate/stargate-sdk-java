@@ -2,8 +2,10 @@ version: '2'
 
 services:
 
+  # Development mode with latest taf
   coordinator:
-    image: stargateio/coordinator-4_0:v2.1
+    image: stargateio/coordinator-dse-next:v2.1
+    #  image: stargateio/coordinator-4_0:v2.1
     networks:
       - stargate
     ports:
@@ -15,7 +17,6 @@ services:
     environment:
       - JAVA_OPTS="-Xmx2G"
       - CLUSTER_NAME=sgv2-cluster
-      - CLUSTER_VERSION=4.0
       - RACK_NAME=rack1
       - DATACENTER_NAME=datacenter1
       - ENABLE_AUTH=true
@@ -87,7 +88,6 @@ services:
       - JAVA_MAX_MEM_RATIO=75
       - JAVA_INITIAL_MEM_RATIO=50
       - GC_CONTAINER_OPTIONS=-XX:+UseG1GC
-
 
 networks:
   stargate:

@@ -80,6 +80,12 @@ public enum FilterCondition {
     
     /**
      * Value for the operator
+     * -- GETTER --
+     *  Getter for param 'operator'.
+     *
+     * @return
+     *      value for operator
+
      */
     private String operator;
     
@@ -90,16 +96,6 @@ public enum FilterCondition {
      */
     private FilterCondition(String op) {
         this.operator = op;
-    }
-    
-    /**
-     * Getter for param 'operator'.
-     *
-     * @return
-     *      value for operator
-     */
-    public String getOperator() {
-        return operator;
     }
 
 }
