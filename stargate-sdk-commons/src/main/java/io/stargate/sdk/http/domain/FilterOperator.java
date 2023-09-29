@@ -21,7 +21,7 @@ package io.stargate.sdk.http.domain;
  *
  * @author Cedrick LUNVEN (@clunven)
  */
-public enum FilterCondition {
+public enum FilterOperator {
 
     /**
      * Greater Than.
@@ -77,15 +77,9 @@ public enum FilterCondition {
      * Contains Entry. 
      */
     CONTAIN_ENTRY("$containsEntry");
-    
-    /**
-     * Value for the operator
-     * -- GETTER --
-     *  Getter for param 'operator'.
-     *
-     * @return
-     *      value for operator
 
+    /**
+     * Operator name.
      */
     private String operator;
     
@@ -94,8 +88,18 @@ public enum FilterCondition {
      * @param op
      *      current operator
      */
-    private FilterCondition(String op) {
+    private FilterOperator(String op) {
         this.operator = op;
+    }
+
+    /**
+     * Getter for the operator.
+     *
+     * @return
+     *      operator value
+     */
+    public String getOperator() {
+        return operator;
     }
 
 }

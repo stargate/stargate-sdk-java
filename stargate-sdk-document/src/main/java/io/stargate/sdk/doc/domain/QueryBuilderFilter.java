@@ -1,7 +1,7 @@
 package io.stargate.sdk.doc.domain;
 
 import io.stargate.sdk.http.domain.Filter;
-import io.stargate.sdk.http.domain.FilterCondition;
+import io.stargate.sdk.http.domain.FilterOperator;
 
 import java.util.Collection;
 
@@ -38,7 +38,7 @@ public class QueryBuilderFilter {
      * @return
      *      self reference
      */
-    private QueryBuilder addFilter(FilterCondition op, Object value) {
+    private QueryBuilder addFilter(FilterOperator op, Object value) {
         builder.filters.add(new Filter(fieldName,op, value));
         return builder;
     }
@@ -52,7 +52,7 @@ public class QueryBuilderFilter {
      *      self reference
      */
     public QueryBuilder isLessThan(Object value) {
-        return addFilter(FilterCondition.LESS_THAN, value);
+        return addFilter(FilterOperator.LESS_THAN, value);
     }
     
     /**
@@ -64,7 +64,7 @@ public class QueryBuilderFilter {
      *      self reference
      */
     public QueryBuilder isLessOrEqualsThan(Object value) {
-        return addFilter(FilterCondition.LESS_THAN_OR_EQUALS_TO, value);
+        return addFilter(FilterOperator.LESS_THAN_OR_EQUALS_TO, value);
     }
     
     /**
@@ -76,7 +76,7 @@ public class QueryBuilderFilter {
      *      self reference
      */        
     public QueryBuilder isGreaterThan(Object value) {
-        return addFilter(FilterCondition.GREATER_THAN, value);
+        return addFilter(FilterOperator.GREATER_THAN, value);
     }
     
     /**
@@ -88,7 +88,7 @@ public class QueryBuilderFilter {
      *      self reference
      */        
     public QueryBuilder isGreaterOrEqualsThan(Object value) {
-        return addFilter(FilterCondition.GREATER_THAN_OR_EQUALS_TO, value);
+        return addFilter(FilterOperator.GREATER_THAN_OR_EQUALS_TO, value);
     }
     
     /**
@@ -100,7 +100,7 @@ public class QueryBuilderFilter {
      *      self reference
      */        
     public QueryBuilder isEqualsTo(Object value) {
-        return addFilter(FilterCondition.EQUALS_TO, value);
+        return addFilter(FilterOperator.EQUALS_TO, value);
     }
     
     /**
@@ -112,7 +112,7 @@ public class QueryBuilderFilter {
      *      self reference
      */        
     public QueryBuilder isNotEqualsTo(Object value) {
-        return addFilter(FilterCondition.NOT_EQUALS_TO, value);
+        return addFilter(FilterOperator.NOT_EQUALS_TO, value);
     }
     
     /**
@@ -122,7 +122,7 @@ public class QueryBuilderFilter {
      *      self reference
      */
     public QueryBuilder exists() {
-        return addFilter(FilterCondition.EXISTS, null);
+        return addFilter(FilterOperator.EXISTS, null);
     }
     
     /**
@@ -134,7 +134,7 @@ public class QueryBuilderFilter {
      *      self reference
      */
     public QueryBuilder isIn(Collection<Object> values) {
-        return addFilter(FilterCondition.IN, values);
+        return addFilter(FilterOperator.IN, values);
     }
 
 }

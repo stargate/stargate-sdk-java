@@ -27,6 +27,7 @@ import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.grpc.StargateGrpcApiClient;
 import io.stargate.sdk.http.RetryHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
+import io.stargate.sdk.json.StargateJsonApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Utils;
@@ -36,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.sql.SQLOutput;
 import java.util.*;
+
+import static io.stargate.sdk.utils.AnsiUtils.green;
 
 /**
  * Global Client to interact with a Stargate instance.
@@ -78,6 +81,11 @@ public class StargateClient implements Closeable {
      */
     protected StargateGrpcApiClient apiGrpcClient;
 
+    /**
+     * Wrapping JSON Api Client
+     */
+    protected StargateJsonApiClient apiJsonClient;
+
     // ------------------------------------------------
     // ---------------- Initializing   ----------------
     // ------------------------------------------------
@@ -106,9 +114,7 @@ public class StargateClient implements Closeable {
         // Initialize session
         if (config.isEnabledCql()) {
             cqlSession = initCqlSession();
-            LOGGER.info("+ API Cql      :[" + AnsiUtils.green("ENABLED") + "]");
-        } else {
-            LOGGER.info("+ API Cql      :[" + AnsiUtils.yellow("DISABLED") + "]");
+            LOGGER.info("+ API Cql      :[" + green("ENABLED") + "]");
         }
 
         // ------------- HTTP API ------------------
@@ -117,23 +123,26 @@ public class StargateClient implements Closeable {
             this.apiDataClient      = new StargateRestApiClient();
             this.apiDocumentClient  = new StargateDocumentApiClient();
             this.apiGraphQLClient   = new StargateGraphQLApiClient();
+            this.apiJsonClient      = new StargateJsonApiClient();
             if (config.isEnabledGrpc()) {
                 this.apiGrpcClient = new StargateGrpcApiClient();
             }
         } else {
-            // 3 Stateless services
+            // 4 Stateless services
             ServiceDeployment<ServiceHttp> restDeploy = new ServiceDeployment<>();
             ServiceDeployment<ServiceHttp> docDeploy = new ServiceDeployment<>();
             ServiceDeployment<ServiceHttp> gqlDeploy = new ServiceDeployment<>();
+            ServiceDeployment<ServiceHttp> jsonDeploy = new ServiceDeployment<>();
             config.getStargateNodesDC().values().forEach(dc -> {
                 restDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getRestNodes()));
                 docDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getDocNodes()));
                 gqlDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getGraphqlNodes()));
+                jsonDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getJsonNodes()));
             });
             this.apiDataClient = new StargateRestApiClient(restDeploy);
             this.apiDocumentClient = new StargateDocumentApiClient(docDeploy);
             this.apiGraphQLClient = new StargateGraphQLApiClient(gqlDeploy);
-
+            this.apiJsonClient = new StargateJsonApiClient(jsonDeploy);
             // grpc service if needed
             if (config.isEnabledGrpc()) {
                 ServiceDeployment<ServiceGrpc> grpcDeploy = new ServiceDeployment<>();
@@ -174,21 +183,20 @@ public class StargateClient implements Closeable {
     private String resolveDataCenterName(StargateClientBuilder config) {
         // If not #1...
         if (!Utils.hasLength(config.getLocalDatacenter())) {
-            LOGGER.info("Looking for local datacenter name");
             // #2. Read from CQL
             String cqlDc = config.getCqlOptions().get(TypedDriverOption.LOAD_BALANCING_LOCAL_DATACENTER);
             if (Utils.hasLength(cqlDc)) {
                 config.withLocalDatacenter(cqlDc);
-                LOGGER.info("+ Using value defined in cql configuration {}", cqlDc);
+                LOGGER.info("Datacenter value defined in cql configuration {}", cqlDc);
             // #3. Read from node topology
             } else if (!config.getStargateNodesDC().isEmpty()) {
                 Set< String > dcs = config.getStargateNodesDC().keySet();
                 String dcPicked = dcs.iterator().next();
                 config.withLocalDatacenter(dcPicked);
-                LOGGER.info("+ Using value from node topology '{}' ( '{}' dc found)", dcPicked, dcs.size());
+                LOGGER.info("Datacenter from node topology '{}' ( '{}' dc found)", dcPicked, dcs.size());
             // #4. Default
             } else {
-                LOGGER.warn("+ Using default '{}'", StargateClientBuilder.DEFAULT_DATACENTER);
+                LOGGER.info("Datacenter name is " + green("'{}'"), StargateClientBuilder.DEFAULT_DATACENTER);
                 config.withLocalDatacenter(StargateClientBuilder.DEFAULT_DATACENTER);
             }
         }
@@ -262,10 +270,10 @@ public class StargateClient implements Closeable {
                     .requireNonNull(cqlSession.execute("SELECT data_center from system.local").one())
                     .getString("data_center");
             if (cqlSession.getKeyspace().isPresent()) {
-                LOGGER.info("+ CqlSession   :[" + AnsiUtils.green("ENABLED") + "] with keyspace [" + AnsiUtils.cyan("{}")  +"] and dc [" + AnsiUtils.cyan("{}")  + "]",
+                LOGGER.info("+ CqlSession   :[" + green("ENABLED") + "] with keyspace [" + AnsiUtils.cyan("{}")  +"] and dc [" + AnsiUtils.cyan("{}")  + "]",
                         cqlSession.getKeyspace().get(), currentDC);
             } else {
-                LOGGER.info("+ CqlSession   :[" + AnsiUtils.green("ENABLED") + "]");
+                LOGGER.info("+ CqlSession   :[" + green("ENABLED") + "]");
             }
                 
             // As we opened a cqlSession we may want to close it properly at application shutdown.
@@ -314,6 +322,19 @@ public class StargateClient implements Closeable {
      */
     public Optional<CqlSession> cqlSession() {
         return Optional.ofNullable(cqlSession);
+    }
+
+    /**
+     * Retrieve API GraphQL, doing load balancing, failover and retries.
+     *
+     * @return
+     *      Api graphQL client
+     */
+    public StargateJsonApiClient apiJson() {
+        if (apiJsonClient == null) {
+            throw new IllegalStateException("GraphQL Api is not available please provide a service deployment for GraphQL");
+        }
+        return this.apiJsonClient;
     }
     
     /**

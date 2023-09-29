@@ -11,5 +11,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
     @BeforeAll
     public static void initStargateRestApiClient() {
         stargateJsonApiClient = new StargateJsonApiClient();
+        stargateJsonApiClient.dropNamespace(TEST_NAMESPACE_1);
+        stargateJsonApiClient.dropNamespace(TEST_NAMESPACE_2);
     }
 }

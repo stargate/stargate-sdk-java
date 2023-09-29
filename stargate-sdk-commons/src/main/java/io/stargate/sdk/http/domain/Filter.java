@@ -32,7 +32,7 @@ public class Filter {
     private final String fieldName;
 
     /** Condition of our filter. */
-    private final FilterCondition condition;
+    private final FilterOperator condition;
 
     /** Value, could be multiple value. */
     private final Object fieldValue;
@@ -46,7 +46,7 @@ public class Filter {
      * @param val
      *      value for the filter
      */
-    public Filter(String fieldName, FilterCondition cond, Object val) {
+    public Filter(String fieldName, FilterOperator cond, Object val) {
         this.fieldName = fieldName;
         this.condition = cond;
         this.fieldValue = val;

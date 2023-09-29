@@ -1,37 +1,148 @@
 package io.stargate.sdk.json.domain;
 
-import io.stargate.sdk.http.domain.Filter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.stargate.sdk.http.domain.FilterKeyword;
 import io.stargate.sdk.utils.Assert;
-import io.stargate.sdk.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Helper to build queries
  */
 public class QueryBuilder {
-    
-    /** Fields to search. */ 
-    protected Set<String> fields = null;
-    
-    /** 
-     * One can provide the full where clause as a JSON String.
-     * If not null it will be used and the filters will be ignored.
-     */
-    protected String whereClause;
-    
+
+    static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
+
+    // -----------------------------------
+    // --     Working with Project     ---
+    // -----------------------------------
+
     /**
-     * Use to build the where Clause as a JsonString if the field 
-     * whereClause is not provided.
-     * - FieldName + condition + value
+     * Returned Map
      */
-    protected List<Filter> filters = new ArrayList<>();
-    
+    public Map<String, Object> projection;
+
+    public QueryBuilder select(String... keys) {
+        if (null == projection) {
+            projection = new HashMap<>();
+        }
+        if (keys != null) {
+            for (String key : keys) {
+                projection.put(key, 1);
+            }
+        }
+        return this;
+    }
+
+    public QueryBuilder selectVector() {
+        return select(FilterKeyword.VECTOR.getKeyword());
+    }
+
+    public QueryBuilder selectSimilarity() {
+        return select(FilterKeyword.SIMILARITY.getKeyword());
+    }
+
+
+    // -----------------------------------
+    // --     Working with Sort        ---
+    // -----------------------------------
+
+    public Map<String, Object> sort;
+
+    public QueryBuilder orderBy(String key, Object value) {
+        if (null == sort) {
+            sort = new HashMap<>();
+        }
+        sort.put(key, value);
+        return this;
+    }
+
+    public QueryBuilder orderByAnn(Double... vector) {
+        return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
+    }
+
+    public QueryBuilder orderByAnn(String textFragment) {
+        return orderBy(FilterKeyword.VECTORIZE.getKeyword(), textFragment);
+    }
+
+    // -----------------------------------
+    // --     Working with Options     ---
+    // -----------------------------------
+
+    /**
+     * Returned Map
+     */
+    public Map<String, Object> options;
+
+    public QueryBuilder limit(int limit) {
+        if (null == options) {
+            options = new HashMap<>();
+        }
+        options.put("limit", limit);
+        return this;
+    }
+
+
+    // -----------------------------------
+    // --     Working with Filter      ---
+    // -----------------------------------
+
+    /**
+     * Returned Map
+     */
+    public Map<String, Object> filter;
+
+    @SuppressWarnings("unchecked")
+    public QueryBuilder withJsonFilter(String jsonFilter) {
+        try {
+            this.filter = JACKSON_MAPPER.readValue(jsonFilter, Map.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Cannot parse json", e);
+        }
+        return this;
+    }
+
+    /**
+     * Work with arguments.
+     *
+     * @param fieldName
+     *      current field name.
+     * @return
+     *      builder for the filter
+     */
+    public QueryFilterBuilder where(String fieldName) {
+        Assert.hasLength(fieldName, "fieldName");
+        if (filter != null) {
+            throw new IllegalArgumentException("Invalid query please use and() " +
+                    "as a where clause has been provided");
+        }
+        filter = new HashMap<>();
+        return new QueryFilterBuilder(this, fieldName);
+    }
+
+    /**
+     * Only return those fields if provided.
+     *
+     * @param fieldName
+     *          field name
+     * @return SearchDocumentWhere
+     *          current builder
+     */
+    public QueryFilterBuilder andWhere(String fieldName) {
+        Assert.hasLength(fieldName, "fieldName");
+        if (filter == null || filter.isEmpty()) {
+            throw new IllegalArgumentException("Invalid query please use where() " +
+                    "as a where clause has been provided");
+        }
+        return new QueryFilterBuilder(this, fieldName);
+    }
+
+    // -------------------------------
+    // --    Final Builder         ---
+    // -------------------------------
+
     /**
      * Terminal call to build immutable instance of {@link Query}.
      *
@@ -41,87 +152,5 @@ public class QueryBuilder {
     public Query build() {
         return new Query(this);
     }
-    
-    /**
-     * Only return those fields if provided
-     * 
-     * @param fields String
-     * @return SearchDocumentQueryBuilder
-     */
-    public QueryBuilder select(String... fields) {
-        Assert.notNull(fields, "fields");
-        this.fields = new HashSet<>(Arrays.asList(fields));
-        return this;
-    }
-    
-    /**
-     * Keep fields null but convenient for fluent api.
-     * @return
-     *      current query
-     */
-    public QueryBuilder selectAll() {
-        this.fields = null;
-        return this;
-    }
-    
-    /**
-     * Use 'where' to help you create
-     * 
-     * @param where String
-     * @return SearchDocumentQueryBuilder
-     */
-    public QueryBuilder jsonWhere(String where) {
-        if (this.whereClause != null) {
-            throw new IllegalArgumentException("Only a single where clause is allowed in a query");
-        }
-        Assert.hasLength(where, "where");
-        this.whereClause = where;
-        return this;
-    }
-    
-    /**
-     * Only return those fields if provided.
-     *
-     * @param fieldName String
-     * @return SearchDocumentWhere
-     */
-    public QueryBuilderFilter where(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (!filters.isEmpty()) {
-            throw new IllegalArgumentException("Invalid query please use and() as a where clause has been provided");
-        }
-        return new QueryBuilderFilter(this, fieldName);
-    }
-    
-    /**
-     * Only return those fields if provided
-     * @param fieldName String
-     * @return SearchDocumentWhere
-     */
-    public QueryBuilderFilter and(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (filters.isEmpty()) {
-            throw new IllegalArgumentException("Invalid query please use where() as you first condition");
-        }
-        return new QueryBuilderFilter(this, fieldName);
-    }
-    
-    /**
-     * Build Where Clause based on Filters.
-     *
-     * @return String
-     */
-    public String getWhereClause() {
-        // Explicit values (withWhereClause(0) will get priority on filters
-        if (Utils.hasLength(whereClause)) {
-            return whereClause;
-        }
-        // Use Filters
-        return "{" + filters.stream()
-                .map(Filter::toString)
-                .collect(Collectors.joining(",")) 
-                + "}";
-    }
-
     
 }

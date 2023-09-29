@@ -1,8 +1,11 @@
 package io.stargate.sdk.test.json;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.stargate.sdk.json.JsonDocumentsClient;
 import io.stargate.sdk.json.StargateJsonApiClient;
-import io.stargate.sdk.json.domain.CreateCollectionRequest;
-import io.stargate.sdk.json.domain.CreateNamespaceRequest;
+import io.stargate.sdk.json.domain.CollectionDefinition;
+import io.stargate.sdk.json.domain.JsonDocument;
+import io.stargate.sdk.json.domain.NamespaceDefinition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -10,11 +13,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.stargate.sdk.json.domain.CreateCollectionRequest.LLMProvider.openai;
-import static io.stargate.sdk.json.domain.CreateCollectionRequest.SimilarityMetric.cosine;
+import static io.stargate.sdk.json.domain.CollectionDefinition.LLMProvider.openai;
+import static io.stargate.sdk.json.domain.CollectionDefinition.SimilarityMetric.cosine;
 
 /**
  * This class test the data api for Keyspaces
@@ -26,9 +30,9 @@ public class AbstractJsonClientNamespacesTest {
 
     public static final String TEST_NAMESPACE_1 = "ns1";
     public static final String TEST_NAMESPACE_2 = "ns2";
-    public static final String TEST_COLLECTION_1 = "col1";
-    public static final String TEST_COLLECTION_2 = "col2";
-    public static final String TEST_COLLECTION_3 = "col3";
+    public static final String TEST_COLLECTION = "col1";
+    public static final String TEST_COLLECTION_VECTOR = "vector1";
+    public static final String TEST_COLLECTION_VECTORIZE = "vectorize1";
 
     /** Tested Store. */
     protected static StargateJsonApiClient stargateJsonApiClient;
@@ -53,9 +57,9 @@ public class AbstractJsonClientNamespacesTest {
     @Order(2)
     @DisplayName("02.Create a namespace with replication")
     public void shouldCreateNameSpaceWithReplication() {
-        stargateJsonApiClient.createNamespace(CreateNamespaceRequest.builder()
+        stargateJsonApiClient.createNamespace(NamespaceDefinition.builder()
                 .name(TEST_NAMESPACE_2)
-                .replicationStrategy(CreateNamespaceRequest.ReplicationStrategy.SimpleStrategy)
+                .replicationStrategy(NamespaceDefinition.ReplicationStrategy.SimpleStrategy)
                 .withOption("replication_factor", 1)
                 .build());
         Assertions.assertTrue(stargateJsonApiClient.findNamespaces()
@@ -102,11 +106,11 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("05.Create simple collection")
     public void shouldCreateCollection() {
         stargateJsonApiClient.namespace(TEST_NAMESPACE_1)
-                .createCollection(TEST_COLLECTION_1);
+                .createCollection(TEST_COLLECTION);
         Assertions.assertTrue(stargateJsonApiClient
                 .namespace(TEST_NAMESPACE_1).findCollections()
                 .collect(Collectors.toSet())
-                .contains(TEST_COLLECTION_1));
+                .contains(TEST_COLLECTION));
     }
 
     /**
@@ -117,15 +121,14 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("06.Create collection with Vector")
     public void shouldCreateCollectionWithVector() {
         stargateJsonApiClient.namespace(TEST_NAMESPACE_1)
-                .createCollection(CreateCollectionRequest.builder()
-                        .name(TEST_COLLECTION_2)
-                        .vectorDimension(1536)
-                        .similarityMetric(cosine)
+                .createCollection(CollectionDefinition.builder()
+                        .name(TEST_COLLECTION_VECTOR)
+                        .vector(14, cosine)
                         .build());
         Assertions.assertTrue(stargateJsonApiClient
                 .namespace(TEST_NAMESPACE_1).findCollections()
                 .collect(Collectors.toSet())
-                .contains(TEST_COLLECTION_2));
+                .contains(TEST_COLLECTION_VECTOR));
     }
 
     /**
@@ -133,18 +136,15 @@ public class AbstractJsonClientNamespacesTest {
      */
     public void shouldCreateCollectionVectorize() {
         stargateJsonApiClient.namespace(TEST_NAMESPACE_1)
-                .createCollection(CreateCollectionRequest.builder()
-                        .name(TEST_COLLECTION_3)
-                        .vectorDimension(1536)
-                        .similarityMetric(cosine)
-                        .llmProvider(openai)
-                        .llmModel("gpt3.5-turbo")
+                .createCollection(CollectionDefinition.builder()
+                        .name(TEST_COLLECTION_VECTORIZE)
+                        .vector(14, cosine)
+                        .vectorize(openai, "gpt3.5-turbo")
                         .build());
-
         Assertions.assertTrue(stargateJsonApiClient
                 .namespace(TEST_NAMESPACE_1).findCollections()
                 .collect(Collectors.toSet())
-                .contains(TEST_COLLECTION_3));
+                .contains(TEST_COLLECTION_VECTORIZE));
     }
 
     /**
@@ -158,16 +158,89 @@ public class AbstractJsonClientNamespacesTest {
         Assertions.assertTrue(stargateJsonApiClient
                 .namespace(TEST_NAMESPACE_1).findCollections()
                 .collect(Collectors.toSet())
-                .contains(TEST_COLLECTION_1));
+                .contains(TEST_COLLECTION));
 
         stargateJsonApiClient.namespace(TEST_NAMESPACE_1)
-                .dropCollection(TEST_COLLECTION_1);
+                .dropCollection(TEST_COLLECTION);
 
         Assertions.assertFalse(stargateJsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .findCollections()
                 .collect(Collectors.toSet())
-                .contains(TEST_COLLECTION_1));
+                .contains(TEST_COLLECTION));
     }
+
+    /**
+     * createNamespace1()
+     */
+    @Test
+    @Order(9)
+    @DisplayName("09.Inserting few documents")
+    public void shouldInsertDocuments() {
+        Assertions.assertTrue(stargateJsonApiClient
+                .namespace(TEST_NAMESPACE_1).findCollections()
+                .collect(Collectors.toSet())
+                .contains(TEST_COLLECTION_VECTOR));
+
+        JsonDocumentsClient myCollection = stargateJsonApiClient
+                .namespace(TEST_NAMESPACE_1)
+                .collection(TEST_COLLECTION_VECTOR);
+        myCollection.insert(
+            JsonDocument.builder()
+                .id("pf1844")
+                .document(new Product("HealthyFresh - Beef raw dog food"))
+                .vector(1d, 0d, 1d, 1d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d)
+                .build(),
+            new JsonDocument("pt0021")
+                .jsonDocument("{ \"product_name\": \"Dog Tennis Ball Toy\" }")
+                .vector(0d, 0d, 0d, 1d, 0d, 0d, 0d, 0d, 0d, 1d, 1d, 1d, 0d, 0d),
+            JsonDocument.builder()
+                .id("pf1843")
+                .document(Map.of("product_name", "HealthyFresh - Chicken raw dog food"))
+                .vector(1d, 1d, 1d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d)
+                .build(),
+            new JsonDocument("pt0041")
+                .put("product_name", "Dog Ring Chew Toy")
+                .vector(0d, 0d, 0d, 1d, 0d, 0d, 0d, 1d, 1d, 1d, 0d, 0d, 0d, 0d),
+            JsonDocument.builder()
+                .id("pf7043")
+                .document(new Product("PupperSausage Bacon dog Treats"))
+                .vector(0d, 0d, 0d, 1d, 0d, 0d, 1d, 0d, 0d, 0d, 0d, 0d, 1d, 1d)
+                .build(),
+            JsonDocument.builder()
+                .id("pf7044")
+                .document(new Product("PupperSausage Beef dog Treats"))
+                .vector(0d, 0d, 0d, 1d, 0d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 1d, 0d)
+                .build());
+    }
+
+    /**
+     * createNamespace1()
+     */
+    @Test
+    @Order(10)
+    @DisplayName("10.Count documents")
+    public void shouldCountDocuments() {
+        Assertions.assertTrue(stargateJsonApiClient
+                .namespace(TEST_NAMESPACE_1).findCollections()
+                .collect(Collectors.toSet())
+                .contains(TEST_COLLECTION_VECTOR));
+        Assertions.assertEquals(6, stargateJsonApiClient
+                .namespace(TEST_NAMESPACE_1)
+                .collection(TEST_COLLECTION_VECTOR)
+                .countDocuments());
+    }
+
+
+    // ---- Tests POJO --
+
+    private static class Product {
+        @JsonProperty("product_name")
+        private String name;
+        public Product(String name) {this.name = name;}
+        public String getName() { return name; }
+    }
+
+
 
 }

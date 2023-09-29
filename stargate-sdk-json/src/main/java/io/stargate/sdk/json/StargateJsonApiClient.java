@@ -7,7 +7,7 @@ import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
-import io.stargate.sdk.json.domain.CreateNamespaceRequest;
+import io.stargate.sdk.json.domain.NamespaceDefinition;
 import io.stargate.sdk.json.exception.JsonApiException;
 import io.stargate.sdk.json.utils.JsonApOperationUtils;
 import io.stargate.sdk.utils.Assert;
@@ -34,13 +34,13 @@ public class StargateJsonApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(StargateJsonApiClient.class);
 
     /** default endpoint. */
-    private static final String DEFAULT_ENDPOINT = "http://localhost:8181";
+    public static final String DEFAULT_ENDPOINT = "http://localhost:8181";
 
     /** default endpoint. */
-    private static final String PATH_HEALTH_CHECK = "/stargate/health";
+    public static final String PATH_HEALTH_CHECK = "/stargate/health";
 
     /** default service id. */
-    private static final String DEFAULT_SERVICE_ID = "sgv2-json";
+    public static final String DEFAULT_SERVICE_ID = "sgv2-json";
 
     /** default datacenter id. */
     private static final String DEFAULT_DATACENTER = "dc1";
@@ -125,7 +125,7 @@ public class StargateJsonApiClient {
      *      current namespace.
      */
     public void createNamespace(String namespace) {
-        this.createNamespace(CreateNamespaceRequest.builder().name(namespace).build());
+        this.createNamespace(NamespaceDefinition.builder().name(namespace).build());
     }
 
 /**
@@ -134,7 +134,7 @@ public class StargateJsonApiClient {
      * @param req
      *      current namespace.
      */
-    public void createNamespace(CreateNamespaceRequest req) {
+    public void createNamespace(NamespaceDefinition req) {
         String stringBody = JsonApOperationUtils.buildRequestBody("createNamespace", req);
         ApiResponseHttp res = stargateHttpClient.POST(rootResource, stringBody);
         Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
@@ -142,7 +142,7 @@ public class StargateJsonApiClient {
         if (body.containsKey("status")) {
             Map<?,?> status = (Map<?,?>) body.get("status");
             if (status.containsKey("ok")) {
-                LOGGER.info("+ Namespace   :[" + green("{}") + "] created", req.getName());
+                LOGGER.info("Namespace  '" + green("{}") + "' has been created", req.getName());
             }
         } else {
             throw new JsonApiException("Cannot create namespace: " + body);

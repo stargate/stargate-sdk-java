@@ -18,7 +18,7 @@ package io.stargate.sdk.rest.domain;
 
 import io.stargate.sdk.core.Sort;
 import io.stargate.sdk.http.domain.Filter;
-import io.stargate.sdk.http.domain.FilterCondition;
+import io.stargate.sdk.http.domain.FilterOperator;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.Utils;
 
@@ -273,7 +273,7 @@ public class SearchTableQuery {
          * @param value Object
          * @return SearchTableQueryBuilder
          */
-        private SearchTableQueryBuilder addFilter(FilterCondition op, Object value) {
+        private SearchTableQueryBuilder addFilter(FilterOperator op, Object value) {
             builder.filters.add(new Filter(fieldName,op, value));
             return builder;
         }
@@ -285,7 +285,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isLessThan(Object value) {
-            return addFilter(FilterCondition.LESS_THAN, value);
+            return addFilter(FilterOperator.LESS_THAN, value);
         }
 
         /**
@@ -295,7 +295,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isLessOrEqualsThan(Object value) {
-            return addFilter(FilterCondition.LESS_THAN_OR_EQUALS_TO, value);
+            return addFilter(FilterOperator.LESS_THAN_OR_EQUALS_TO, value);
         }
 
         /**
@@ -305,7 +305,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isGreaterThan(Object value) {
-            return addFilter(FilterCondition.GREATER_THAN, value);
+            return addFilter(FilterOperator.GREATER_THAN, value);
         }
         
         /**
@@ -315,7 +315,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isGreaterOrEqualsThan(Object value) {
-            return addFilter(FilterCondition.GREATER_THAN_OR_EQUALS_TO, value);
+            return addFilter(FilterOperator.GREATER_THAN_OR_EQUALS_TO, value);
         }
 
         /**
@@ -325,7 +325,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isEqualsTo(Object value) {
-            return addFilter(FilterCondition.EQUALS_TO, value);
+            return addFilter(FilterOperator.EQUALS_TO, value);
         }
 
         /**
@@ -335,7 +335,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isNotEqualsTo(Object value) {
-            return addFilter(FilterCondition.NOT_EQUALS_TO, value);
+            return addFilter(FilterOperator.NOT_EQUALS_TO, value);
         }
         
         /**
@@ -344,7 +344,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder exists() {
-            return addFilter(FilterCondition.EXISTS, null);
+            return addFilter(FilterOperator.EXISTS, null);
         }
 
         /**
@@ -354,7 +354,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder isIn(Collection<Object> values) {
-            return addFilter(FilterCondition.IN, values);
+            return addFilter(FilterOperator.IN, values);
         }
 
         /**
@@ -364,7 +364,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder contains(Object value) {
-            return addFilter(FilterCondition.CONTAINS, value);
+            return addFilter(FilterOperator.CONTAINS, value);
         }
 
         /**
@@ -374,7 +374,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder containsKey(Object value) {
-            return addFilter(FilterCondition.CONTAIN_KEY, value);
+            return addFilter(FilterOperator.CONTAIN_KEY, value);
         }
 
         /**
@@ -384,7 +384,7 @@ public class SearchTableQuery {
          * @return SearchTableQueryBuilder
          */
         public SearchTableQueryBuilder containsEntry(Object value) {
-            return addFilter(FilterCondition.CONTAIN_ENTRY, value);
+            return addFilter(FilterOperator.CONTAIN_ENTRY, value);
         }
     }
 

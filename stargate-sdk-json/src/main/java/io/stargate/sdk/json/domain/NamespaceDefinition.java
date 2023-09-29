@@ -1,17 +1,14 @@
 package io.stargate.sdk.json.domain;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Data
-public class CreateNamespaceRequest {
+public class NamespaceDefinition {
 
     public static enum ReplicationStrategy { SimpleStrategy, NetworkTopologyStrategy }
 
@@ -39,14 +36,26 @@ public class CreateNamespaceRequest {
 
     public static class Builder {
 
-        private final CreateNamespaceRequest config;
+        private final NamespaceDefinition config;
 
         public Builder() {
-            this.config = new CreateNamespaceRequest();
+            this.config = new NamespaceDefinition();
         }
 
         public Builder name(String name) {
             this.config.name = name;
+            return this;
+        }
+
+        public Builder simpleStrategy(int replicationFactor) {
+           replicationStrategy(ReplicationStrategy.SimpleStrategy);
+           withOption("replication_factor", replicationFactor);
+           return this;
+        }
+
+        public Builder networkTopologyStrategy(Map<String, Integer> datacenters) {
+            replicationStrategy(ReplicationStrategy.NetworkTopologyStrategy);
+            datacenters.forEach((dc, rf) -> withOption(dc, rf));
             return this;
         }
 
@@ -68,7 +77,7 @@ public class CreateNamespaceRequest {
             return this;
         }
 
-        public CreateNamespaceRequest build() {
+        public NamespaceDefinition build() {
             return this.config;
         }
     }

@@ -3,7 +3,7 @@ package io.stargate.sdk.json;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
-import io.stargate.sdk.json.domain.CreateCollectionRequest;
+import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.exception.JsonApiException;
 import io.stargate.sdk.json.utils.JsonApOperationUtils;
 import io.stargate.sdk.utils.Assert;
@@ -80,7 +80,7 @@ public class JsonNamespacesClient {
      *      current Collection.
      */
     public void createCollection(String collection) {
-        this.createCollection(CreateCollectionRequest.builder().name(collection).build());
+        this.createCollection(CollectionDefinition.builder().name(collection).build());
     }
 
     /**
@@ -89,7 +89,7 @@ public class JsonNamespacesClient {
      * @param req
      *      current Collection.
      */
-    public void createCollection(CreateCollectionRequest req) {
+    public void createCollection(CollectionDefinition req) {
         String stringBody = JsonApOperationUtils.buildRequestBody("createCollection", req);
         ApiResponseHttp res = stargateHttpClient.POST(namespaceResource, stringBody);
         Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
@@ -97,7 +97,7 @@ public class JsonNamespacesClient {
         if (body.containsKey("status")) {
             Map<?,?> status = (Map<?,?>) body.get("status");
             if (status.containsKey("ok")) {
-                LOGGER.info("+ Collection   :[" + green("{}") + "] created", req.getName());
+                LOGGER.info("Collection  '" + green("{}") + "' has been created", req.getName());
             }
         } else {
             throw new JsonApiException("Cannot create Collection: " + body);

@@ -3,6 +3,7 @@ package io.stargate.sdk;
 import io.stargate.sdk.api.TokenProvider;
 import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.http.ServiceHttp;
+import io.stargate.sdk.json.StargateJsonApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ public class StargateDataCenter {
 
     private List<ServiceHttp> graphqlNodes = new ArrayList<>();
 
+    private List<ServiceHttp> jsonApiNodes = new ArrayList<>();
+
     /**
      * Full constructor.
      *
@@ -52,6 +55,20 @@ public class StargateDataCenter {
                 StargateRestApiClient.DEFAULT_SERVICE_ID,
                 StargateRestApiClient.DEFAULT_ENDPOINT,
                 StargateRestApiClient.DEFAULT_ENDPOINT + StargateRestApiClient.PATH_HEALTH_CHECK)
+        );
+    }
+
+    /**
+     * Add default Rest service
+     *
+     * @return
+     *      data center
+     */
+    public StargateDataCenter withJson() {
+        return addJsonService(new ServiceHttp(
+                StargateJsonApiClient.DEFAULT_SERVICE_ID,
+                StargateJsonApiClient.DEFAULT_ENDPOINT,
+                StargateJsonApiClient.DEFAULT_ENDPOINT + StargateJsonApiClient.PATH_HEALTH_CHECK)
         );
     }
 
@@ -91,6 +108,19 @@ public class StargateDataCenter {
      */
     public StargateDataCenter addDocumenService(ServiceHttp s) {
         docNodes.add(s);
+        return this;
+    }
+
+    /**
+     * Add a new node to the DC.
+     *
+     * @param s
+     *      current node
+     * @return
+     *      current dc
+     */
+    public StargateDataCenter addJsonService(ServiceHttp s) {
+        jsonApiNodes.add(s);
         return this;
     }
 
@@ -175,9 +205,18 @@ public class StargateDataCenter {
     }
 
     /**
-     * Gets graphqlNodes
+     * Gets json Api Nodes
      *
-     * @return value of graphqlNodes
+     * @return value of grpcNodes
+     */
+    public List<ServiceHttp> getJsonNodes() {
+        return jsonApiNodes;
+    }
+
+    /**
+     * Gets GraohQL Nodes
+     *
+     * @return value of grpcNodes
      */
     public List<ServiceHttp> getGraphqlNodes() {
         return graphqlNodes;

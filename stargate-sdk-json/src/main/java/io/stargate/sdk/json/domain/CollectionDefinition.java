@@ -6,7 +6,7 @@ import lombok.Data;
  * Request to create a collection.
  */
 @Data
-public class CreateCollectionRequest {
+public class CollectionDefinition {
 
     private String name;
     private Options options;
@@ -61,6 +61,18 @@ public class CreateCollectionRequest {
             return this;
         }
 
+        public Builder vector(int dimension, SimilarityMetric function) {
+            similarityMetric(function);
+            vectorDimension(dimension);
+            return this;
+        }
+
+        public Builder vectorize(LLMProvider service, String modelName) {
+            llmProvider(service);
+            llmModel(modelName);
+            return this;
+        }
+
         public Builder similarityMetric(SimilarityMetric function) {
             if (options == null) {
                 options = new Options();
@@ -94,8 +106,8 @@ public class CreateCollectionRequest {
             return this;
         }
 
-        public CreateCollectionRequest build() {
-            CreateCollectionRequest req = new CreateCollectionRequest();
+        public CollectionDefinition build() {
+            CollectionDefinition req = new CollectionDefinition();
             req.name = this.name;
             req.options = this.options;
             return req;
