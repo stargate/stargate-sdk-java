@@ -59,6 +59,8 @@ public class JsonClientApiDemoTest {
     public void shouldCreateCollection() {
 
         jsonApi.createNamespace(NAMESPACE);
+
+
         jsonApi.createNamespace(NamespaceDefinition.builder()
                 .name(NAMESPACE)
                 .simpleStrategy(1)
