@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,8 @@ public class JsonDocument {
         this.vector = List.of(vector);
         return this;
     }
+
+
     public JsonDocument vector(List<Double> vector) {
         this.vector = vector;
         return this;

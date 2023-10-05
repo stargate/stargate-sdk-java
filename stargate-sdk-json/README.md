@@ -1,4 +1,6 @@
 
+## Sample Queries to help implementation
+
 #### Find: Similarity Search
 
 ```json

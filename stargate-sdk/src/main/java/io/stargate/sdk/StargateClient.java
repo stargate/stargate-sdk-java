@@ -130,8 +130,8 @@ public class StargateClient implements Closeable {
         } else {
             // 4 Stateless services
             ServiceDeployment<ServiceHttp> restDeploy = new ServiceDeployment<>();
-            ServiceDeployment<ServiceHttp> docDeploy = new ServiceDeployment<>();
-            ServiceDeployment<ServiceHttp> gqlDeploy = new ServiceDeployment<>();
+            ServiceDeployment<ServiceHttp> docDeploy  = new ServiceDeployment<>();
+            ServiceDeployment<ServiceHttp> gqlDeploy  = new ServiceDeployment<>();
             ServiceDeployment<ServiceHttp> jsonDeploy = new ServiceDeployment<>();
             config.getStargateNodesDC().values().forEach(dc -> {
                 restDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getRestNodes()));
@@ -143,6 +143,7 @@ public class StargateClient implements Closeable {
             this.apiDocumentClient = new StargateDocumentApiClient(docDeploy);
             this.apiGraphQLClient = new StargateGraphQLApiClient(gqlDeploy);
             this.apiJsonClient = new StargateJsonApiClient(jsonDeploy);
+
             // grpc service if needed
             if (config.isEnabledGrpc()) {
                 ServiceDeployment<ServiceGrpc> grpcDeploy = new ServiceDeployment<>();
@@ -170,10 +171,10 @@ public class StargateClient implements Closeable {
 
     /**
      * Datacenter name can be retrieved on multiple ways:
-     * - 1. Explicitely populated
-     * - 2. As a cql property
-     * - 3. In the Stargate node topology
-     * - 4. Default Value dc1
+     * 1. Explicitly populated
+     * 2. As a cql property
+     * 3. In the Stargate node topology
+     * 4. Default Value dc1
      *
      * @param config
      *      current configuration
@@ -205,7 +206,6 @@ public class StargateClient implements Closeable {
     
     /**
      * Initializing  CqlSession based on current parameters.
-     * 
      * - Parameters can be provided by the Builder populating Values
      * - Parameters can be provided by the configuration keys in Spring application.yaml
      *
@@ -215,8 +215,8 @@ public class StargateClient implements Closeable {
     public CqlSession initCqlSession() {
 
         /* ---------------------------------------
-         * Close and cleaan up existing session:
-         * This behaviour occurs when you failover from one DC to another in Astra
+         * Close and clean up existing session:
+         * This behaviour occurs when you fail over from one DC to another in Astra
          * ---------------------------------------*/
         if (null != cqlSession && !cqlSession.isClosed()) {
             cqlSession.close();
@@ -295,7 +295,7 @@ public class StargateClient implements Closeable {
      * Builder Pattern
      * @return StargateClientBuilder
      */
-    public static final StargateClientBuilder builder() {
+    public static StargateClientBuilder builder() {
         return new StargateClientBuilder();
     }
     
@@ -332,7 +332,7 @@ public class StargateClient implements Closeable {
      */
     public StargateJsonApiClient apiJson() {
         if (apiJsonClient == null) {
-            throw new IllegalStateException("GraphQL Api is not available please provide a service deployment for GraphQL");
+            throw new IllegalStateException("Json Api is not available please provide a service deployment for Json");
         }
         return this.apiJsonClient;
     }

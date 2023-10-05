@@ -16,22 +16,20 @@
 
     <dependencies>
 
+        <!-- Log -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
 
+        <!-- Retry -->
         <dependency>
             <groupId>com.evanlennick</groupId>
             <artifactId>retry4j</artifactId>
             <version>${retry4j.version}</version>
         </dependency>
 
-        <!--  http Client v5 -->
+        <!-- Http Client -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
@@ -41,6 +39,7 @@
             <artifactId>httpclient5-fluent</artifactId>
         </dependency>
 
+        <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -59,5 +58,15 @@
         </dependency>
 
     </dependencies>
+
+
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
 
 </project>

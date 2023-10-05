@@ -6,13 +6,11 @@ import io.stargate.sdk.api.TokenProvider;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
-import io.stargate.sdk.http.domain.ApiResponseHttp;
+import io.stargate.sdk.json.domain.JsonApiResponse;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
-import io.stargate.sdk.json.exception.JsonApiException;
-import io.stargate.sdk.json.utils.JsonApOperationUtils;
 import io.stargate.sdk.utils.Assert;
-import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,16 +20,15 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static io.stargate.sdk.json.utils.JsonApiClientUtils.executeOperation;
 import static io.stargate.sdk.utils.AnsiUtils.green;
 
 /**
  * Client for the JSON Document API.
  */
 @Getter
+@Slf4j
 public class StargateJsonApiClient {
-
-    /** Logger for our Client. */
-    private static final Logger LOGGER = LoggerFactory.getLogger(StargateJsonApiClient.class);
 
     /** default endpoint. */
     public static final String DEFAULT_ENDPOINT = "http://localhost:8181";
@@ -45,6 +42,7 @@ public class StargateJsonApiClient {
     /** default datacenter id. */
     private static final String DEFAULT_DATACENTER = "dc1";
 
+    /** path for json api. */
     public static final String PATH_V1  = "/v1";
 
     /**
@@ -92,7 +90,7 @@ public class StargateJsonApiClient {
     public StargateJsonApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
         Assert.notNull(serviceDeployment, "service deployment topology");
         this.stargateHttpClient = new LoadBalancedHttpClient(serviceDeployment);
-        LOGGER.info("+ API JSON     :[" + green("{}") + "]", "ENABLED");
+        log.info("+ API JSON     :[" + green("{}") + "]", "ENABLED");
     }
 
     // ------------------------------------------
@@ -107,15 +105,8 @@ public class StargateJsonApiClient {
      */
     @SuppressWarnings("unchecked")
     public Stream<String> findNamespaces() {
-        ApiResponseHttp res = stargateHttpClient.POST(rootResource, "{\"findNamespaces\": {}}");
-        Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
-        if (body.containsKey("status")) {
-            Map<?,?> status = (Map<?,?>) body.get("status");
-            if (status.containsKey("namespaces")) {
-                return ((ArrayList<String>) status.get("namespaces")).stream();
-            }
-        }
-        return Stream.empty();
+        return execute("findNamespaces", null)
+                .getStatusKeyAsStream("namespaces");
     }
 
     /**
@@ -128,25 +119,15 @@ public class StargateJsonApiClient {
         this.createNamespace(NamespaceDefinition.builder().name(namespace).build());
     }
 
-/**
+   /**
      * Create a Namespace providing a name.
      *
      * @param req
      *      current namespace.
      */
     public void createNamespace(NamespaceDefinition req) {
-        String stringBody = JsonApOperationUtils.buildRequestBody("createNamespace", req);
-        ApiResponseHttp res = stargateHttpClient.POST(rootResource, stringBody);
-        Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
-        JsonApOperationUtils.handleErrors(body);
-        if (body.containsKey("status")) {
-            Map<?,?> status = (Map<?,?>) body.get("status");
-            if (status.containsKey("ok")) {
-                LOGGER.info("Namespace  '" + green("{}") + "' has been created", req.getName());
-            }
-        } else {
-            throw new JsonApiException("Cannot create namespace: " + body);
-        }
+        execute("createNamespace", req);
+        log.info("Namespace  '" + green("{}") + "' has been created", req.getName());
     }
 
     /**
@@ -156,12 +137,19 @@ public class StargateJsonApiClient {
      *      current namespace
      */
     public void dropNamespace(String namespace) {
-        String stringBody = JsonApOperationUtils.buildRequestBody("dropNamespace",
-                JsonUtils.marshall(Map.of("name", namespace)));
-        ApiResponseHttp res = stargateHttpClient.POST(rootResource, stringBody);
-        if (res.getCode() != 200) {
-            throw new JsonApiException("Cannot drop namespace: " + res.getBody());
-        }
+        execute("dropNamespace", Map.of("name", namespace));
+        log.info("Namespace  '" + green("{}") + "' has been deleted", namespace);
+    }
+
+    /**
+     * Syntax sugar.
+     * @param operation
+     *      operation to run
+     * @param payload
+     *      payload returned
+     */
+    private JsonApiResponse execute(String operation, Object payload) {
+        return executeOperation(stargateHttpClient, rootResource, operation, payload);
     }
 
     // ---------------------------------

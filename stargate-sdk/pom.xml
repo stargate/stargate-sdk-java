@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.datastax.stargate</groupId>
 	<artifactId>stargate-sdk</artifactId>
 	<name>+ stargate-sdk</name>
 	<description>Connect to Stargate Data Gateway</description>
@@ -13,42 +12,52 @@
 	</parent>
 
 	<dependencies>
+
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-document</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-grpc</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-rest</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-graphql</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-cql</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-json</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>31.1-jre</version>
-		</dependency>
 
 	</dependencies>
+
+	<licenses>
+		<license>
+			<name>Apache-2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+			<comments>A business-friendly OSS license</comments>
+		</license>
+	</licenses>
 
 </project>

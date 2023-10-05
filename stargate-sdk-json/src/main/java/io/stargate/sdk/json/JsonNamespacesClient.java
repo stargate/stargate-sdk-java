@@ -2,29 +2,23 @@ package io.stargate.sdk.json;
 
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.json.domain.CollectionDefinition;
-import io.stargate.sdk.json.exception.JsonApiException;
-import io.stargate.sdk.json.utils.JsonApOperationUtils;
+import io.stargate.sdk.json.domain.JsonApiResponse;
 import io.stargate.sdk.utils.Assert;
-import io.stargate.sdk.utils.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static io.stargate.sdk.json.utils.JsonApiClientUtils.executeOperation;
 import static io.stargate.sdk.utils.AnsiUtils.green;
 
 /**
  * Work with namespace and collections.
  */
+@Slf4j
 public class JsonNamespacesClient {
-
-    /** Logger for our Client. */
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonNamespacesClient.class);
 
     /** Get Topology of the nodes. */
     protected final LoadBalancedHttpClient stargateHttpClient;
@@ -35,7 +29,7 @@ public class JsonNamespacesClient {
     /**
      * /v1/{namespace}
      */
-    public Function<ServiceHttp, String> namespaceResource = (node) ->
+    public final Function<ServiceHttp, String> namespaceResource = (node) ->
             StargateJsonApiClient.rootResource.apply(node) + "/" + namespace;
 
     /**
@@ -51,7 +45,7 @@ public class JsonNamespacesClient {
     }
 
     // ------------------------------------------
-    // ----     Collections operations        ----
+    // ----     Collections operations       ----
     // ------------------------------------------
 
     /**
@@ -60,17 +54,8 @@ public class JsonNamespacesClient {
      * @return
      *       a list of Collections
      */
-    @SuppressWarnings("unchecked")
     public Stream<String> findCollections() {
-        ApiResponseHttp res = stargateHttpClient.POST(namespaceResource, "{\"findCollections\": {}}");
-        Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
-        if (body.containsKey("status")) {
-            Map<?,?> status = (Map<?,?>) body.get("status");
-            if (status.containsKey("collections")) {
-                return ((ArrayList<String>) status.get("collections")).stream();
-            }
-        }
-        return Stream.empty();
+        return execute("findCollections", null).getStatusKeyAsStream("collections");
     }
 
     /**
@@ -90,18 +75,8 @@ public class JsonNamespacesClient {
      *      current Collection.
      */
     public void createCollection(CollectionDefinition req) {
-        String stringBody = JsonApOperationUtils.buildRequestBody("createCollection", req);
-        ApiResponseHttp res = stargateHttpClient.POST(namespaceResource, stringBody);
-        Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
-        JsonApOperationUtils.handleErrors(body);
-        if (body.containsKey("status")) {
-            Map<?,?> status = (Map<?,?>) body.get("status");
-            if (status.containsKey("ok")) {
-                LOGGER.info("Collection  '" + green("{}") + "' has been created", req.getName());
-            }
-        } else {
-            throw new JsonApiException("Cannot create Collection: " + body);
-        }
+        execute("createCollection", req);
+        log.info("Collection  '" + green("{}") + "' has been created", req.getName());
     }
 
     /**
@@ -111,14 +86,20 @@ public class JsonNamespacesClient {
      *      current Collection
      */
     public void dropCollection(String collection) {
-        String stringBody = JsonApOperationUtils.buildRequestBody("deleteCollection",
-                JsonUtils.marshall(Map.of("name", collection)));
-        ApiResponseHttp res = stargateHttpClient.POST(JsonNamespacesClient.this.namespaceResource, stringBody);
-        Map<?,?> body = JsonUtils.unmarshallBean(res.getBody(), Map.class);
-        JsonApOperationUtils.handleErrors(body);
-        if (res.getCode() != 200) {
-            throw new JsonApiException("Cannot drop Collection: " + res.getBody());
-        }
+        execute("dropCollection", Map.of("name", collection));
+        log.info("Collection  '" + green("{}") + "' has been deleted", collection);
+    }
+
+    /**
+     * Syntax sugar.
+     *
+     * @param operation
+     *      operation to run
+     * @param payload
+     *      payload returned
+     */
+    private JsonApiResponse execute(String operation, Object payload) {
+        return executeOperation(stargateHttpClient, namespaceResource, operation, payload);
     }
 
     // ---------------------------------

@@ -60,9 +60,8 @@ public class JsonClientApiDemoTest {
 
         jsonApi.createNamespace(NAMESPACE);
 
-
         jsonApi.createNamespace(NamespaceDefinition.builder()
-                .name(NAMESPACE)
+                .name(NAMESPACE + "_bis")
                 .simpleStrategy(1)
                 //.networkTopologyStrategy(Collections.singletonMap("dc1", 1))
                 .build());
