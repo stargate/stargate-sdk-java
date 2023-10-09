@@ -54,7 +54,7 @@ public enum FilterKeyword {
     /**
      * Keyword.
      */
-    private String keyword;
+    private final String keyword;
 
     /**
      * Constructor for the enum.
@@ -62,12 +62,16 @@ public enum FilterKeyword {
      * @param op
      *      current operator
      */
-    private FilterKeyword(String op) {
+    FilterKeyword(String op) {
         this.keyword = op;
     }
 
+    /**
+     * Gets keyword
+     *
+     * @return value of keyword
+     */
     public String getKeyword() {
         return keyword;
     }
-
 }

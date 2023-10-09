@@ -16,24 +16,28 @@
 
 package io.stargate.sdk.doc;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.stargate.sdk.api.ApiResponse;
+import io.stargate.sdk.api.odm.RecordMapper;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.doc.domain.CollectionDefinition;
 import io.stargate.sdk.doc.domain.PageableQuery;
 import io.stargate.sdk.doc.domain.Query;
-import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
+import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
 import io.stargate.sdk.utils.Utils;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -304,7 +308,7 @@ public class CollectionClient {
      * @return
      *      all items in the the collection
      */
-    public <DOC> Stream<Document<DOC>> findAll(DocumentMapper<DOC> documentMapper) {
+    public <DOC> Stream<Document<DOC>> findAll(RecordMapper<DOC> documentMapper) {
         return findAll(Query.builder().build(), documentMapper);
     }
     
@@ -355,7 +359,7 @@ public class CollectionClient {
      * @return
      *          all items matchin criteria
      */
-    public <DOC> Stream<Document<DOC>> findAll(Query query, DocumentMapper<DOC> documentMapper) {
+    public <DOC> Stream<Document<DOC>> findAll(Query query, RecordMapper<DOC> documentMapper) {
         return findAll(query, (PageSupplier<DOC>) (cc, q) -> cc.findPage(q, documentMapper));
     }
     
@@ -392,7 +396,6 @@ public class CollectionClient {
     private <DOC> Stream<Document<DOC>> findAll(Query query, PageSupplier<DOC> pageLoader) {
         List<Document<DOC>> documents = new ArrayList<>();
         PageableQuery pageQuery = new PageableQuery(query);
-        // Loop on pages up to no more pages (could be done)
         String pageState = null;
         do {
             Page<Document<DOC>> pageX = pageLoader.findPage(this, pageQuery);
@@ -402,7 +405,6 @@ public class CollectionClient {
                 pageState = null;
             }
             documents.addAll(pageX.getResults());
-            // Reuissing query for next page
             pageQuery.setPageState(pageState);
         } while(pageState != null);
         return documents.stream();
@@ -513,7 +515,7 @@ public class CollectionClient {
      * @return
      *      page of results
      */
-    public <DOC> Page<Document<DOC>> findPage(DocumentMapper<DOC> documentMapper) {
+    public <DOC> Page<Document<DOC>> findPage(RecordMapper<DOC> documentMapper) {
         return findPage(PageableQuery.builder().build(), documentMapper);
     }
     
@@ -528,7 +530,7 @@ public class CollectionClient {
      * @return
      *      page of results
      */
-    public <DOC> Page<Document<DOC>> findPage(PageableQuery query, DocumentMapper<DOC> documentMapper) {
+    public <DOC> Page<Document<DOC>> findPage(PageableQuery query, RecordMapper<DOC> documentMapper) {
         Page<Document<String>> raw = findPage(query);
         return new Page<Document<DOC>> (
                 raw.getPageSize(), 

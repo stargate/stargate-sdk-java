@@ -1,24 +1,25 @@
-package io.stargate.sdk.doc;
+package io.stargate.sdk.json.domain.odm;
+
+import io.stargate.sdk.json.domain.JsonRecord;
+import io.stargate.sdk.json.domain.JsonResult;
 
 /**
  * Extension point for the user to implement its own parser for a record.
  *
- * @author Cedrick LUNVEN (@clunven)
- *
- * @param <DOC>
+ * @param <T>
  *      working bean
  */
 @FunctionalInterface
-public interface DocumentMapper<DOC> {
-    
+public interface RecordMapper<T> {
+
     /**
      * Extension point for the user to implement its own parser for a record.
-     * 
+     *
      * @param record
      *      current record
      * @return
      *      the object marshalled
      */
-    DOC map(String record);
+    Record<T> map(JsonResult record);
 
 }

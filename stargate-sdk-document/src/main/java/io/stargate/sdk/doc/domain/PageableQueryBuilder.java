@@ -35,6 +35,11 @@ public class PageableQueryBuilder {
     
     /** Page state. */ 
     protected String pageState = null;
+
+    /**
+     * Default constructor.
+     */
+    public PageableQueryBuilder() {}
     
     /**
      * Enable paging.

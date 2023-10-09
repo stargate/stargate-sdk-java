@@ -1,7 +1,7 @@
 package io.stargate.sdk.json.domain;
 
-import io.stargate.sdk.http.domain.FilterKeyword;
 import io.stargate.sdk.http.domain.FilterOperator;
+import io.stargate.sdk.http.domain.FilterKeyword;
 
 import java.util.Map;
 
@@ -10,24 +10,22 @@ import java.util.Map;
  * 
  * @author Cedrick LUNVEN (@clunven)
  */
-public class JsonFilterBuilder {
-
+public class SelectQueryFilterBuilder {
+    
     /** Required field name. */
     private final String fieldName;
-
+    
     /** Working builder to override the 'where' field and move with builder. */
-    private final JsonFilter filter;
-
+    private final SelectQueryBuilder builder;
+    
     /**
      * Only constructor allowed
-     *
-     * @param filter
-     *  sample filter
-     * @param fieldName
-     *      field name
+     * 
+     * @param builder SearchDocumentQueryBuilder
+     * @param fieldName String
      */
-    protected JsonFilterBuilder(JsonFilter filter, String fieldName) {
-        this.filter    = filter;
+    protected SelectQueryFilterBuilder(SelectQueryBuilder builder, String fieldName) {
+        this.builder   = builder;
         this.fieldName = fieldName;
     }
 
@@ -40,9 +38,9 @@ public class JsonFilterBuilder {
      * @return
      *      builder
      */
-    private JsonFilter simpleOperator(FilterOperator cond, Object value) {
-        filter.filter.put(fieldName, Map.of(cond.getOperator(), value));
-        return filter;
+    private SelectQueryBuilder simpleOperator(FilterOperator cond, Object value) {
+        builder.filter.put(fieldName, Map.of(cond.getOperator(), value));
+        return builder;
     }
 
     /**
@@ -55,9 +53,9 @@ public class JsonFilterBuilder {
      * @return
      *      builder
      */
-    private JsonFilter simpleKeyword(FilterKeyword key, Object value) {
-        filter.filter.put(fieldName, Map.of(key.getKeyword(), value));
-        return filter;
+    private SelectQueryBuilder simpleKeyword(FilterKeyword key, Object value) {
+        builder.filter.put(fieldName, Map.of(key.getKeyword(), value));
+        return builder;
     }
 
     /**
@@ -68,9 +66,9 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter isEqualsTo(Object value) {
-        filter.filter.put(fieldName, value);
-        return filter;
+    public SelectQueryBuilder isEqualsTo(Object value) {
+        builder.filter.put(fieldName, value);
+        return builder;
     }
 
     /**
@@ -81,7 +79,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter isAnArrayContaining(Object[] value) {
+    public SelectQueryBuilder isAnArrayContaining(Object[] value) {
         return simpleOperator(FilterOperator.EQUALS_TO, value);
     }
 
@@ -93,9 +91,9 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter isAnArrayExactlyEqualsTo(Object[] value) {
-        filter.filter.put(fieldName, Map.of(FilterKeyword.ALL.getKeyword(), value));
-        return filter;
+    public SelectQueryBuilder isAnArrayExactlyEqualsTo(Object[] value) {
+        builder.filter.put(fieldName, Map.of(FilterKeyword.ALL.getKeyword(), value));
+        return builder;
     }
 
     /**
@@ -106,7 +104,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter hasSubFieldsEqualsTo(Map<String, Object> value) {
+    public SelectQueryBuilder hasSubFieldsEqualsTo(Map<String, Object> value) {
         return simpleOperator(FilterOperator.EQUALS_TO, value);
     }
 
@@ -118,7 +116,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter isLessThan(Object value) {
+    public SelectQueryBuilder isLessThan(Object value) {
         return simpleOperator(FilterOperator.LESS_THAN, value);
     }
     
@@ -130,7 +128,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter isLessOrEqualsThan(Object value) {
+    public SelectQueryBuilder isLessOrEqualsThan(Object value) {
         return simpleOperator(FilterOperator.LESS_THAN_OR_EQUALS_TO, value);
     }
     
@@ -142,7 +140,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */        
-    public JsonFilter isGreaterThan(Object value) {
+    public SelectQueryBuilder isGreaterThan(Object value) {
         return simpleOperator(FilterOperator.GREATER_THAN, value);
     }
     
@@ -154,7 +152,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */        
-    public JsonFilter isGreaterOrEqualsThan(Object value) {
+    public SelectQueryBuilder isGreaterOrEqualsThan(Object value) {
         return simpleOperator(FilterOperator.GREATER_THAN_OR_EQUALS_TO, value);
     }
     
@@ -166,7 +164,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */        
-    public JsonFilter isNotEqualsTo(Object value) {
+    public SelectQueryBuilder isNotEqualsTo(Object value) {
         return simpleOperator(FilterOperator.NOT_EQUALS_TO, value);
     }
     
@@ -176,7 +174,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter exists() {
+    public SelectQueryBuilder exists() {
         return simpleKeyword(FilterKeyword.EXISTS, true);
     }
     
@@ -188,7 +186,7 @@ public class JsonFilterBuilder {
      * @return
      *      self reference
      */
-    public JsonFilter hasSize(int size) {
+    public SelectQueryBuilder hasSize(int size) {
         return simpleKeyword(FilterKeyword.SIZE, true);
     }
 

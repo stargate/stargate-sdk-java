@@ -17,7 +17,7 @@
 package io.stargate.sdk.rest;
 
 import io.stargate.sdk.api.ApiResponse;
-import io.stargate.sdk.core.domain.Row;
+import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.RowMapper;
 import io.stargate.sdk.core.domain.RowResultPage;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
@@ -203,7 +203,7 @@ public class TableClient {
                  result.getPageState(), 
                  result.getData().stream()
                        .map(map -> {
-                         Row r = new Row();
+                         ObjectMap r = new ObjectMap();
                          for (Entry<String, ?> val : map.entrySet()) {
                              r.put(val.getKey(), val.getValue());
                          }

@@ -11,6 +11,11 @@ import java.util.function.Supplier;
 public class CompletableFutures {
 
     /**
+     * Hide constructor in utilities.
+     */
+    private CompletableFutures() {}
+
+    /**
      * Merge multiple CompletionStage in a single one
      * @param inputs
      *      list of completion stages

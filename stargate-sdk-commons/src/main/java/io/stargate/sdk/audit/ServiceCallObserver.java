@@ -5,8 +5,13 @@ import com.evanlennick.retry4j.Status;
 
 /**
  * If register in the HttpApisClient, will be triggered asynchronously
- * 
- * @author Cedrick LUNVEN (@clunven)
+ *
+ * @param <RESPONSE>
+ *     response type
+ * @param <S>
+ *     service type
+ * @param <T>
+ *     event handler
  */
 public interface ServiceCallObserver<RESPONSE, S extends Service, T extends ServiceCallEvent<S>> {
 

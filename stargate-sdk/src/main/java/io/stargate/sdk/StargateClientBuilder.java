@@ -214,6 +214,25 @@ public class StargateClientBuilder implements Serializable {
      *
      * @param dc
      *     target datacenter
+     * @param json
+     *      target json service
+     * @return
+     *      current reference
+     */
+    public StargateClientBuilder addServiceJson(String dc, ServiceHttp json) {
+        if (!stargateNodesDC.containsKey(dc)) {
+            stargateNodesDC.put(dc, new StargateDataCenter(dc));
+        }
+        this.stargateNodesDC.get(dc).addJsonService(json);
+        return this;
+    }
+
+    /**
+     * Populate current datacenter. Will be used as localDc in cqlSession if provided
+     * or local DC at Http level.
+     *
+     * @param dc
+     *     target datacenter
      * @param rest
      *      target service
      * @return

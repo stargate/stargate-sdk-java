@@ -5,7 +5,8 @@ import io.stargate.sdk.Service;
 /**
  * Event triggered for Api Invocation with input/output tracing.
  *
- * @author Cedrick LUNVEN (@clunven)
+ * @param <SERVICE>
+ *     the type of the service in use
  */
 public class ServiceCallEvent<SERVICE extends Service> {
 

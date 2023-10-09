@@ -41,8 +41,9 @@ public class ResultSetGrpc extends Page<RowGrpc> {
             this.columnsIndexes.put(cs.getName(), i);
             this.columnsNames.add(cs.getName());
         }
+
         // Mapping Results
-        setResult(rs.getRowsList()
+        setResults(rs.getRowsList()
                 .stream()
                 .map(r -> new RowGrpc(this, r))
                 .collect(Collectors.toList()));

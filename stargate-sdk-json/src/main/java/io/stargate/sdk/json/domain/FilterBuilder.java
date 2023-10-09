@@ -1,9 +1,8 @@
 package io.stargate.sdk.json.domain;
 
-import io.stargate.sdk.http.domain.FilterOperator;
 import io.stargate.sdk.http.domain.FilterKeyword;
+import io.stargate.sdk.http.domain.FilterOperator;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -11,22 +10,24 @@ import java.util.Map;
  * 
  * @author Cedrick LUNVEN (@clunven)
  */
-public class QueryFilterBuilder {
-    
+public class FilterBuilder {
+
     /** Required field name. */
     private final String fieldName;
-    
+
     /** Working builder to override the 'where' field and move with builder. */
-    private final QueryBuilder builder;
-    
+    private final Filter filter;
+
     /**
      * Only constructor allowed
-     * 
-     * @param builder SearchDocumentQueryBuilder
-     * @param fieldName String
+     *
+     * @param filter
+     *  sample filter
+     * @param fieldName
+     *      field name
      */
-    protected QueryFilterBuilder(QueryBuilder builder, String fieldName) {
-        this.builder   = builder;
+    protected FilterBuilder(Filter filter, String fieldName) {
+        this.filter    = filter;
         this.fieldName = fieldName;
     }
 
@@ -39,9 +40,9 @@ public class QueryFilterBuilder {
      * @return
      *      builder
      */
-    private QueryBuilder simpleOperator(FilterOperator cond, Object value) {
-        builder.filter.put(fieldName, Map.of(cond.getOperator(), value));
-        return builder;
+    private Filter simpleOperator(FilterOperator cond, Object value) {
+        filter.filter.put(fieldName, Map.of(cond.getOperator(), value));
+        return filter;
     }
 
     /**
@@ -54,9 +55,9 @@ public class QueryFilterBuilder {
      * @return
      *      builder
      */
-    private QueryBuilder simpleKeyword(FilterKeyword key, Object value) {
-        builder.filter.put(fieldName, Map.of(key.getKeyword(), value));
-        return builder;
+    private Filter simpleKeyword(FilterKeyword key, Object value) {
+        filter.filter.put(fieldName, Map.of(key.getKeyword(), value));
+        return filter;
     }
 
     /**
@@ -67,9 +68,9 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder isEqualsTo(Object value) {
-        builder.filter.put(fieldName, value);
-        return builder;
+    public Filter isEqualsTo(Object value) {
+        filter.filter.put(fieldName, value);
+        return filter;
     }
 
     /**
@@ -80,7 +81,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder isAnArrayContaining(Object[] value) {
+    public Filter isAnArrayContaining(Object[] value) {
         return simpleOperator(FilterOperator.EQUALS_TO, value);
     }
 
@@ -92,9 +93,9 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder isAnArrayExactlyEqualsTo(Object[] value) {
-        builder.filter.put(fieldName, Map.of(FilterKeyword.ALL.getKeyword(), value));
-        return builder;
+    public Filter isAnArrayExactlyEqualsTo(Object[] value) {
+        filter.filter.put(fieldName, Map.of(FilterKeyword.ALL.getKeyword(), value));
+        return filter;
     }
 
     /**
@@ -105,7 +106,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder hasSubFieldsEqualsTo(Map<String, Object> value) {
+    public Filter hasSubFieldsEqualsTo(Map<String, Object> value) {
         return simpleOperator(FilterOperator.EQUALS_TO, value);
     }
 
@@ -117,7 +118,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder isLessThan(Object value) {
+    public Filter isLessThan(Object value) {
         return simpleOperator(FilterOperator.LESS_THAN, value);
     }
     
@@ -129,7 +130,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder isLessOrEqualsThan(Object value) {
+    public Filter isLessOrEqualsThan(Object value) {
         return simpleOperator(FilterOperator.LESS_THAN_OR_EQUALS_TO, value);
     }
     
@@ -141,7 +142,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */        
-    public QueryBuilder isGreaterThan(Object value) {
+    public Filter isGreaterThan(Object value) {
         return simpleOperator(FilterOperator.GREATER_THAN, value);
     }
     
@@ -153,7 +154,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */        
-    public QueryBuilder isGreaterOrEqualsThan(Object value) {
+    public Filter isGreaterOrEqualsThan(Object value) {
         return simpleOperator(FilterOperator.GREATER_THAN_OR_EQUALS_TO, value);
     }
     
@@ -165,7 +166,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */        
-    public QueryBuilder isNotEqualsTo(Object value) {
+    public Filter isNotEqualsTo(Object value) {
         return simpleOperator(FilterOperator.NOT_EQUALS_TO, value);
     }
     
@@ -175,7 +176,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder exists() {
+    public Filter exists() {
         return simpleKeyword(FilterKeyword.EXISTS, true);
     }
     
@@ -187,7 +188,7 @@ public class QueryFilterBuilder {
      * @return
      *      self reference
      */
-    public QueryBuilder hasSize(int size) {
+    public Filter hasSize(int size) {
         return simpleKeyword(FilterKeyword.SIZE, true);
     }
 

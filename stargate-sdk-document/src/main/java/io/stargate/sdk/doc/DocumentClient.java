@@ -16,6 +16,7 @@
 
 package io.stargate.sdk.doc;
 
+import io.stargate.sdk.api.odm.RecordMapper;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
@@ -146,7 +147,7 @@ public class DocumentClient {
      *      document mapper
      * @return a document if exist     
      */
-    public <DOC> Optional<DOC> find(DocumentMapper<DOC> docm) {
+    public <DOC> Optional<DOC> find(RecordMapper<DOC> docm) {
         Assert.notNull(docm, "documentMapper");
         Optional<String> f = find();
         if (f.isPresent()) {

@@ -32,9 +32,9 @@
 		<junit-platform.version>1.10.0</junit-platform.version>
 		<junit-jupiter.version>5.10.0</junit-jupiter.version>
 		<!-- Java -->
-		<maven.plugin.compiler.source>1.8</maven.plugin.compiler.source>
-		<maven.plugin.compiler.target>1.8</maven.plugin.compiler.target>
-		<maven.plugin.javadoc.source>8</maven.plugin.javadoc.source>
+		<maven.plugin.compiler.source>11</maven.plugin.compiler.source>
+		<maven.plugin.compiler.target>11</maven.plugin.compiler.target>
+		<maven.plugin.javadoc.source>11</maven.plugin.javadoc.source>
 		<!-- Maven -->
 		<version.maven.plugin.failsafe>3.1.2</version.maven.plugin.failsafe>
 		<version.maven.plugin.surefire>3.1.2</version.maven.plugin.surefire>
@@ -230,7 +230,7 @@
 				</configuration>
 			</plugin>
 
-			<!-- Compiler to jdk8 -->
+			<!-- Compiler to jdk11 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

@@ -45,6 +45,7 @@ public class JsonApiResponse {
         return Stream.empty();
     }
 
+
     /**
      * Syntax sugar.
      *

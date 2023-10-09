@@ -16,8 +16,6 @@
 
 package io.stargate.sdk.core.domain;
 
-import io.stargate.sdk.core.domain.Row;
-
 /**
  * Row Mapper.
  *
@@ -31,11 +29,11 @@ public interface RowMapper<T> {
     /**
      * Convert row to bean.
      *
-     * @param row
+     * @param objectMap
      *      current row sent to API
      * @return
      *      marshalled bean
      */
-    T map(Row row);
+    T map(ObjectMap objectMap);
 
 }

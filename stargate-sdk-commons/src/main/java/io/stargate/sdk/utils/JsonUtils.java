@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.stargate.sdk.core.domain.ObjectMap;
 
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -75,7 +76,7 @@ public class JsonUtils {
      * @return
      *      escaped JSON
      */
-    public static final String escapeJson(String value) {
+    public static String escapeJson(String value) {
         if (value == null ) return null;
         StringBuilder output = new StringBuilder();
         final int len = value.length();
@@ -132,7 +133,7 @@ public class JsonUtils {
      * @return
      *      target json expression
      */
-    public static final String valueAsJson(Object value) {
+    public static String valueAsJson(Object value) {
         if (value == null )          return "null";
         if (value instanceof String) return "\"" + escapeJson(value.toString()) + "\"";
         return value.toString();
@@ -145,7 +146,7 @@ public class JsonUtils {
      * @param pCollec input collection
      * @return collection as String
      */
-    public static final <T> String collectionAsJson(final Collection < T > pCollec) {
+    public static <T> String collectionAsJson(final Collection < T > pCollec) {
         if (pCollec == null)   return "null";
         if (pCollec.isEmpty()) return "[]";
         StringBuilder json = new StringBuilder("[");
@@ -167,7 +168,7 @@ public class JsonUtils {
      * @param pMap target properties
      * @return target json expression
      */
-    public static final <K,V> String mapAsJson(final Map<K,V> pMap) {
+    public static <K,V> String mapAsJson(final Map<K,V> pMap) {
         if (pMap == null)   return "null";
         if (pMap.isEmpty()) return "{}";
         StringBuilder json = new StringBuilder("{");
@@ -210,6 +211,21 @@ public class JsonUtils {
         } catch (Exception e) {
             throw new RuntimeException("Cannot marshall object " + o, e);
         } 
+    }
+
+    /**
+     * Jackson deserialization.
+     * @param bean
+     *      current beam
+     * @param clazz
+     *      target class
+     * @return
+     *      serialized
+     * @param <T>
+     *     current type
+     */
+    public static <T> T convertValue(Object bean, Class<T> clazz) {
+       return  getObjectMapper().convertValue(bean, clazz);
     }
     
     /**

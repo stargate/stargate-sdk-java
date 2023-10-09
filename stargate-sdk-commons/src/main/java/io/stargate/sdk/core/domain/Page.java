@@ -16,6 +16,8 @@
 
 package io.stargate.sdk.core.domain;
 
+import lombok.Getter;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +31,13 @@ import java.util.Optional;
  */
 public class Page<R> {
  
-    /** size of page asked. */
+    /** size of page asked.
+     * -- GETTER --
+     *  Getter accessor for attribute 'pageSize'.
+     *
+     * @return
+     *       current value of 'pageSize'
+     */
     private final int pageSize;
     
     /** Of present there is a next page. */
@@ -63,39 +71,57 @@ public class Page<R> {
      * @param results List
      */
     public Page(int pageSize, String pageState, List<R> results) {
-        this.pageSize  = pageSize;
         this.pageState = pageState;
         this.results   = results;
+        this.pageSize  = pageSize;
     }
- 
+
     /**
-     * Getter accessor for attribute 'pageSize'.
+     * Express if results is empty.
      *
      * @return
-     *       current value of 'pageSize'
+     *      return value
+     */
+    public boolean isEmpty() {
+        return results== null || results.isEmpty();
+    }
+
+    /**
+     * Gets pageSize
+     *
+     * @return value of pageSize
      */
     public int getPageSize() {
         return pageSize;
     }
 
     /**
-     * Getter accessor for attribute 'pageState'.
+     * Set value for results
      *
-     * @return
-     *       current value of 'pageState'
+     * @param results new value for results
      */
-    public Optional<String> getPageState() {
-        return Optional.ofNullable(pageState);
+    public void setResults(List<R> results) {
+        this.results = results;
     }
 
     /**
-     * Getter accessor for attribute 'results'.
+     * Gets results
      *
-     * @return
-     *       current value of 'results'
+     * @return value of results
      */
     public List<R> getResults() {
         return results;
+    }
+
+    /**
+     * Expected from a stream of result.
+     *
+     * @return
+     *      first result if exist
+     */
+    public Optional<R> getFindFirst() {
+        if (!isEmpty()) return Optional.ofNullable(results.get(0));
+        return Optional.empty();
     }
 
     /**
@@ -112,12 +138,12 @@ public class Page<R> {
     }
 
     /**
-     * Update result list.
+     * Getter accessor for attribute 'pageState'.
      *
-     * @param results
-     *      result list
+     * @return
+     *       current value of 'pageState'
      */
-    public void setResult(List<R> results) {
-        this.results = results;
+    public Optional<String> getPageState() {
+        return Optional.ofNullable(pageState);
     }
 }

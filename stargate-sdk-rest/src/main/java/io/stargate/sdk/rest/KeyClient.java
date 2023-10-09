@@ -25,7 +25,7 @@ import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.rest.domain.QueryWithKey;
 import io.stargate.sdk.rest.domain.QueryWithKey.QueryRowBuilder;
-import io.stargate.sdk.core.domain.Row;
+import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.RowMapper;
 import io.stargate.sdk.core.domain.RowResultPage;
 import io.stargate.sdk.utils.Assert;
@@ -90,8 +90,8 @@ public class KeyClient {
      * 
      * @return a list of rows
      */
-    public Stream<Row> findAll() {
-        List<Row> rows = new ArrayList<>();
+    public Stream<ObjectMap> findAll() {
+        List<ObjectMap> objectMaps = new ArrayList<>();
         // Loop on pages up to no more pages (could be done)
         String pageState = null;
         do {
@@ -101,9 +101,9 @@ public class KeyClient {
             } else {
                 pageState = null;
             }
-            rows.addAll(pageX.getResults());
+            objectMaps.addAll(pageX.getResults());
         } while(pageState != null);
-        return rows.stream();
+        return objectMaps.stream();
     }
     
     /**
@@ -170,7 +170,7 @@ public class KeyClient {
         return new RowResultPage(query.getPageSize(), result.getPageState(), 
            result.getData().stream()
                  .map(map -> {
-                        Row r = new Row();
+                        ObjectMap r = new ObjectMap();
                         r.putAll(map);
                         return r;
                  })

@@ -7,7 +7,9 @@ import java.util.List;
 @Data
 public class JsonApiData {
 
-    private List<JsonDocumentResult> documents;
+    private List<JsonResult> documents;
+
+    private JsonResult document;
 
     private String nextPageState;
 

@@ -79,8 +79,8 @@ public class RetryHttpClient implements ApiConstants {
     protected CloseableHttpClient httpClient = null;
     
     /** Observers. */
-    protected static Map<String, ServiceCallObserver> apiInvocationsObserversMap = new ConcurrentHashMap<>();
-    
+    protected static Map<String, ServiceCallObserver<?,?,?>> apiInvocationsObserversMap = new ConcurrentHashMap<>();
+
     /** Default request configuration. */
     protected static RequestConfig requestConfig = RequestConfig.custom()
             .setCookieSpec(StandardCookieSpec.STRICT)
@@ -89,7 +89,7 @@ public class RetryHttpClient implements ApiConstants {
             .setResponseTimeout(Timeout.ofSeconds(DEFAULT_TIMEOUT_CONNECT))
             .setTargetPreferredAuthSchemes(Arrays.asList(StandardAuthScheme.NTLM, StandardAuthScheme.DIGEST))
             .build();
-    
+
     /** Default retry configuration. */
     protected static RetryConfig retryConfig = new RetryConfigBuilder()
             //.retryOnSpecificExceptions(ConnectException.class, IOException.class)
@@ -98,7 +98,7 @@ public class RetryHttpClient implements ApiConstants {
             .withExponentialBackoff()
             .withMaxNumberOfTries(DEFAULT_RETRY_COUNT)
             .build();
-    
+
     /**
      * Update Retry configuration of the HTTPClient.
      *
@@ -108,7 +108,7 @@ public class RetryHttpClient implements ApiConstants {
     public static void withRetryConfig(RetryConfig conf) {
         retryConfig= conf;
     }
-    
+
     /**
      * Update RequestConfig configuration of the HTTPClient.
      *
@@ -118,7 +118,7 @@ public class RetryHttpClient implements ApiConstants {
     public static void withRequestConfig(RequestConfig conf) {
         requestConfig = conf;
     }
-    
+
     /**
      * Register a new listener.
      *
@@ -127,7 +127,7 @@ public class RetryHttpClient implements ApiConstants {
      * @param listener
      *      current listener
      */
-    public static void registerListener(String name, ServiceCallObserver listener) {
+    public static void registerListener(String name, ServiceCallObserver<?,?,?> listener) {
         apiInvocationsObserversMap.put(name, listener);
     }
     

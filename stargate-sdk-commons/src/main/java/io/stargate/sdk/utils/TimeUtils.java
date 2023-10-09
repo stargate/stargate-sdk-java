@@ -21,8 +21,6 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * Mapping from Time objects to String.
- *
- * @author Cedrick LUNVEN (@clunven)
  */
 public class TimeUtils {
     
@@ -34,7 +32,12 @@ public class TimeUtils {
     
     /** defaut value. */
     private static final long EPOCH_AS_CQL_LONG = (1L << 31);
-    
+
+    /**
+     * Hide constructor.
+     */
+    private TimeUtils() {}
+
     /**
      * Convert {@link LocalDate} to String.
      *

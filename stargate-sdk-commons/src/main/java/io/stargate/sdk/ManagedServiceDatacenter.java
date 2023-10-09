@@ -11,8 +11,9 @@ import java.util.List;
 /**
  * CqlSession and Endpoints are associated to a dedicated DataCenter. The fail-over
  * will be performed by the SDK. As such a StargateClient will have multiple DC.
- * 
- * @author Cedrick LUNVEN (@clunven)
+ *
+ * @param <SERVICE>
+ *     the type of the service in use
  */
 public class ManagedServiceDatacenter<SERVICE extends Service> {
 

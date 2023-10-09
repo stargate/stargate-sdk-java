@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author Cedrick LUNVEN (@clunven)s
  */
-public class RowResultPage extends Page<Row> {
+public class RowResultPage extends Page<ObjectMap> {
 
     /**
      * Default constructor.
@@ -39,7 +39,7 @@ public class RowResultPage extends Page<Row> {
      * @param pageState String
      * @param results List
      */
-    public RowResultPage(int pageSize, String pageState, List<Row> results) {
+    public RowResultPage(int pageSize, String pageState, List<ObjectMap> results) {
         super(pageSize,pageState,results);
     }
 }

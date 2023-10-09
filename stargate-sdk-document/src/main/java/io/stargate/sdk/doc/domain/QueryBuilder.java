@@ -29,7 +29,12 @@ public class QueryBuilder {
      * - FieldName + condition + value
      */
     protected List<Filter> filters = new ArrayList<>();
-    
+
+    /**
+     * Default constructor.
+     */
+    public QueryBuilder() {}
+
     /**
      * Terminal call to build immutable instance of {@link Query}.
      *

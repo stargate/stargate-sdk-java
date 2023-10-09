@@ -13,14 +13,16 @@ import java.util.Date;
 
 /**
  * Listener that log call in the Db
- *
- * @author Cedrick LUNVEN (@clunven)
- *
  */
 public class AnsiLoggerObserverHttp implements ServiceCallObserver<String, ServiceHttp, ServiceHttpCallEvent> {
 
     /** Logger for our Client. */
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceCallObserverAnsiLogger.class);
+
+    /**
+     * Default constructor.
+     */
+    public AnsiLoggerObserverHttp() {}
 
     /** {@inheritDoc} */
     @Override
@@ -51,23 +53,25 @@ public class AnsiLoggerObserverHttp implements ServiceCallObserver<String, Servi
         }
     }
 
-
-
+    /** {@inheritDoc} */
     @Override
     public void onSuccess(Status<String> s) {
         LOGGER.info("SUCCESS");
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onCompletion(Status<String> s) {
         LOGGER.info("COMPLETION");
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onFailure(Status<String> s) {
         LOGGER.info("FAILURE");
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onFailedTry(Status<String> s) {
         LOGGER.info("FAILED_TRY");

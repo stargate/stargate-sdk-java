@@ -16,6 +16,9 @@
 
 package io.stargate.sdk.core.domain;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.NonNull;
+
 import java.util.HashMap;
 
 /**
@@ -23,10 +26,20 @@ import java.util.HashMap;
  * 
  * @author Cedrick LUNVEN (@clunven)
  */
-public class Row extends HashMap<String, Object> {
+public class ObjectMap extends HashMap<String, Object> {
+
+    /**
+     * Object Mapper.
+     */
+    static protected final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
 
     /** Serial. */
     private static final long serialVersionUID = 3279531139420446635L;
+
+    /**
+     * Default constructor.
+     */
+    public ObjectMap() {}
     
     /**
      * Retrieve value and check existence.
@@ -72,5 +85,17 @@ public class Row extends HashMap<String, Object> {
      */
     public Integer getInt(String colName) {
         return getDouble(colName).intValue();
+    }
+
+    /**
+     * Convert if possible.
+     *
+     * @param o
+     *      current object
+     * @return
+     *      object map
+     */
+    public static ObjectMap of(@NonNull  Object o) {
+        return JACKSON_MAPPER.convertValue(o, ObjectMap.class);
     }
 }

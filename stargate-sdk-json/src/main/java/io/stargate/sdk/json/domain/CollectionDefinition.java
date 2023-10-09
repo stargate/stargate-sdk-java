@@ -1,5 +1,6 @@
 package io.stargate.sdk.json.domain;
 
+import io.stargate.sdk.json.vector.SimilarityMetric;
 import lombok.Data;
 
 /**
@@ -15,10 +16,6 @@ public class CollectionDefinition {
         return new Builder();
     }
 
-    public static enum SimilarityMetric { cosine, euclidean, dot_product}
-
-    public static enum LLMProvider { openai, vertex_ai, hugging_face }
-
     @Data
     public static class Options {
         private Vector vector;
@@ -32,7 +29,7 @@ public class CollectionDefinition {
 
         @Data
         public static class Vectorize {
-            private LLMProvider service;
+            private String service;
             private OptionsForVectorize options;
             @Data
             public static class OptionsForVectorize {
@@ -67,7 +64,7 @@ public class CollectionDefinition {
             return this;
         }
 
-        public Builder vectorize(LLMProvider service, String modelName) {
+        public Builder vectorize(String service, String modelName) {
             llmProvider(service);
             llmModel(modelName);
             return this;
@@ -84,7 +81,7 @@ public class CollectionDefinition {
             return this;
         }
 
-        public Builder llmProvider(LLMProvider service) {
+        public Builder llmProvider(String service) {
             if (options == null) {
                 options = new Options();
             }

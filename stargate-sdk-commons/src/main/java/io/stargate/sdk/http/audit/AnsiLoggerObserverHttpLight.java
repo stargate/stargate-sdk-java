@@ -7,13 +7,16 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Listener that log call in the Db
- *
- * @author Cedrick LUNVEN (@clunven)
  */
 public class AnsiLoggerObserverHttpLight extends AnsiLoggerObserverHttp {
 
     /** Logger for our Client. */
     private static final Logger LOGGER = LoggerFactory.getLogger(AnsiLoggerObserverHttpLight.class);
+
+    /**
+     * Default constructor.
+     */
+    public AnsiLoggerObserverHttpLight() {}
 
     /** {@inheritDoc} */
     @Override

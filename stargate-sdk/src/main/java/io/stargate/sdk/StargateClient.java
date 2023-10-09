@@ -27,7 +27,7 @@ import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.grpc.StargateGrpcApiClient;
 import io.stargate.sdk.http.RetryHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.json.StargateJsonApiClient;
+import io.stargate.sdk.json.JsonApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Utils;
@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.sql.SQLOutput;
 import java.util.*;
 
 import static io.stargate.sdk.utils.AnsiUtils.green;
@@ -84,7 +83,7 @@ public class StargateClient implements Closeable {
     /**
      * Wrapping JSON Api Client
      */
-    protected StargateJsonApiClient apiJsonClient;
+    protected JsonApiClient apiJsonClient;
 
     // ------------------------------------------------
     // ---------------- Initializing   ----------------
@@ -123,7 +122,7 @@ public class StargateClient implements Closeable {
             this.apiDataClient      = new StargateRestApiClient();
             this.apiDocumentClient  = new StargateDocumentApiClient();
             this.apiGraphQLClient   = new StargateGraphQLApiClient();
-            this.apiJsonClient      = new StargateJsonApiClient();
+            this.apiJsonClient      = new JsonApiClient();
             if (config.isEnabledGrpc()) {
                 this.apiGrpcClient = new StargateGrpcApiClient();
             }
@@ -142,7 +141,7 @@ public class StargateClient implements Closeable {
             this.apiDataClient = new StargateRestApiClient(restDeploy);
             this.apiDocumentClient = new StargateDocumentApiClient(docDeploy);
             this.apiGraphQLClient = new StargateGraphQLApiClient(gqlDeploy);
-            this.apiJsonClient = new StargateJsonApiClient(jsonDeploy);
+            this.apiJsonClient = new JsonApiClient(jsonDeploy);
 
             // grpc service if needed
             if (config.isEnabledGrpc()) {
@@ -330,7 +329,7 @@ public class StargateClient implements Closeable {
      * @return
      *      Api graphQL client
      */
-    public StargateJsonApiClient apiJson() {
+    public JsonApiClient apiJson() {
         if (apiJsonClient == null) {
             throw new IllegalStateException("Json Api is not available please provide a service deployment for Json");
         }

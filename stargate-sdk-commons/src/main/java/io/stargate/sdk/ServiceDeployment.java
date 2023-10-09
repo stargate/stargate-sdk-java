@@ -12,6 +12,9 @@ import java.util.stream.Collectors;
  * The http client implements:
  * - load balancing in healthy nodes of the same datacenter
  * - Fail-over across datacenter when no node available
+ *
+ * @param <SERVICE>
+ *     the type of the service in use
  */
 public class ServiceDeployment<SERVICE extends Service> {
 

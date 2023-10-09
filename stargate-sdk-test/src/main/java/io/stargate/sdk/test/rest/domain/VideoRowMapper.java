@@ -16,7 +16,7 @@
 
 package io.stargate.sdk.test.rest.domain;
 
-import io.stargate.sdk.core.domain.Row;
+import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.RowMapper;
 
 /**
@@ -28,11 +28,11 @@ public class VideoRowMapper implements RowMapper<Video> {
 
     /** {@inheritDoc} */
     @Override
-    public Video map(Row row) {
+    public Video map(ObjectMap objectMap) {
         Video video = new Video();
-        video.setGenre(row.getString("genre"));
-        video.setTitle(row.getString("title"));
-        video.setYear(row.getInt("year"));
+        video.setGenre(objectMap.getString("genre"));
+        video.setTitle(objectMap.getString("title"));
+        video.setYear(objectMap.getInt("year"));
         return video;
     }
 

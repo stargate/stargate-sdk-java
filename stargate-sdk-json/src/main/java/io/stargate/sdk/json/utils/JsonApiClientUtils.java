@@ -10,8 +10,6 @@ import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static io.stargate.sdk.utils.AnsiUtils.yellow;
@@ -76,27 +74,6 @@ public class JsonApiClientUtils {
      */
     public static String buildRequestBody(String function) {
         return buildRequestBody(function, null);
-    }
-
-    /**
-     * Parse Errors in the output body if present.
-     * @param body
-     *     body to parse
-     */
-    public static void handleErrors(Map<?,?> body) {
-        Objects.requireNonNull(body, "body");
-        if (body.containsKey("error")) {
-            Map<?,?> error = (Map<?,?>) body.get("error");
-            String message = "Error in creating the Keyspace";
-            if (error.containsKey("message")) {
-                message = (String) error.get("message");
-            }
-            String exceptionClass="";
-            if (error.containsKey("exceptionClass")) {
-                exceptionClass = (String) error.get("exceptionClass");
-            }
-            throw new JsonApiException(message, exceptionClass);
-        }
     }
 
     /**

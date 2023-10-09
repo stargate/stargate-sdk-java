@@ -13,7 +13,7 @@ import java.util.Map;
  * Filter Builder.
  */
 @Getter
-public class JsonFilter {
+public class Filter {
 
     static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
 
@@ -23,7 +23,7 @@ public class JsonFilter {
     /**
      * Default constructor.
      */
-    public JsonFilter() {}
+    public Filter() {}
 
     /**
      * Default constructor.
@@ -31,7 +31,7 @@ public class JsonFilter {
      * @param json
      *      filter expression as JSON
      */
-    public JsonFilter(String json) {
+    public Filter(String json) {
         try {
             this.filter = JACKSON_MAPPER.readValue(json, Map.class);
         } catch (JsonProcessingException e) {
@@ -47,14 +47,14 @@ public class JsonFilter {
      * @return
      *      builder for the filter
      */
-    public JsonFilterBuilder where(String fieldName) {
+    public FilterBuilder where(String fieldName) {
         Assert.hasLength(fieldName, "fieldName");
         if (filter != null) {
             throw new IllegalArgumentException("Invalid query please use and() " +
                     "as a where clause has been provided");
         }
         filter = new HashMap<>();
-        return new JsonFilterBuilder(this, fieldName);
+        return new FilterBuilder(this, fieldName);
     }
 
     /**
@@ -65,13 +65,13 @@ public class JsonFilter {
      * @return SearchDocumentWhere
      *          current builder
      */
-    public JsonFilterBuilder andWhere(String fieldName) {
+    public FilterBuilder andWhere(String fieldName) {
         Assert.hasLength(fieldName, "fieldName");
         if (filter == null || filter.isEmpty()) {
             throw new IllegalArgumentException("Invalid query please use where() " +
                     "as a where clause has been provided");
         }
-        return new JsonFilterBuilder(this, fieldName);
+        return new FilterBuilder(this, fieldName);
     }
 
 

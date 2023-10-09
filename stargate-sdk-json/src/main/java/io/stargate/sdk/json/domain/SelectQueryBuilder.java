@@ -11,12 +11,15 @@ import java.util.Map;
 /**
  * Helper to build queries
  */
-public class QueryBuilder {
+public class SelectQueryBuilder {
 
+    /**
+     * Json Marshalling.
+     */
     static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
 
     // -----------------------------------
-    // --     Working with Project     ---
+    // -- Projection: 'select'         ---
     // -----------------------------------
 
     /**
@@ -24,7 +27,15 @@ public class QueryBuilder {
      */
     public Map<String, Object> projection;
 
-    public QueryBuilder select(String... keys) {
+    /**
+     * List of fields to be returned.
+     *
+     * @param keys
+     *      keys
+     * @return
+     *     reference to the builder
+     */
+    public SelectQueryBuilder select(String... keys) {
         if (null == projection) {
             projection = new HashMap<>();
         }
@@ -36,22 +47,21 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder selectVector() {
+    public SelectQueryBuilder selectVector() {
         return select(FilterKeyword.VECTOR.getKeyword());
     }
 
-    public QueryBuilder selectSimilarity() {
+    public SelectQueryBuilder selectSimilarity() {
         return select(FilterKeyword.SIMILARITY.getKeyword());
     }
 
-
     // -----------------------------------
-    // --     Working with Sort        ---
+    // -- Sort: 'order by'             ---
     // -----------------------------------
 
     public Map<String, Object> sort;
 
-    public QueryBuilder orderBy(String key, Object value) {
+    public SelectQueryBuilder orderBy(String key, Object value) {
         if (null == sort) {
             sort = new HashMap<>();
         }
@@ -59,16 +69,16 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder orderByAnn(Double... vector) {
+    public SelectQueryBuilder orderByAnn(Float... vector) {
         return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
     }
 
-    public QueryBuilder orderByAnn(String textFragment) {
+    public SelectQueryBuilder orderByAnn(String textFragment) {
         return orderBy(FilterKeyword.VECTORIZE.getKeyword(), textFragment);
     }
 
     // -----------------------------------
-    // --     Working with Options     ---
+    // --  Options: limit...          ---
     // -----------------------------------
 
     /**
@@ -76,14 +86,78 @@ public class QueryBuilder {
      */
     public Map<String, Object> options;
 
-    public QueryBuilder limit(int limit) {
-        if (null == options) {
-            options = new HashMap<>();
-        }
-        options.put("limit", limit);
-        return this;
+    /**
+     * Max result.
+     *
+     * @param limit
+     *      maximum number of returned object
+     * @return
+     *      number of items
+     */
+    public SelectQueryBuilder withLimit(int limit) {
+        return withOption("limit", limit);
     }
 
+    /**
+     * Max result.
+     *
+     * @param limit
+     *      maximum number of returned object
+     * @return
+     *      number of items
+     */
+    public SelectQueryBuilder withPageSize(int limit) {
+        return withLimit(limit);
+    }
+
+    /**
+     * Max result.
+     *
+     * @param skip
+     *      maximum number of returned object
+     * @return
+     *      number of items
+     */
+    public SelectQueryBuilder withSkip(int skip) {
+        return withOption("skip", skip);
+    }
+
+    /**
+     * Paging State
+     *
+     * @param pagingState
+     *      get second page
+     * @return
+     *      current builder
+     */
+    public SelectQueryBuilder withPagingState(String pagingState) {
+        return withOption("pagingState", pagingState);
+    }
+
+    /**
+     * Paging State
+     *
+     * @return
+     *     current builder
+     */
+    public SelectQueryBuilder withIncludeSimilarity() {
+        return withOption("includeSimilarity", "true");
+    }
+
+    /**
+     * Add an option to the request
+     * @param key
+     *      current key
+     * @param value
+     *       current value
+     * @return
+     *      reference to self
+     */
+    protected SelectQueryBuilder withOption(String key, Object value)  {
+        if (null == options) options = new HashMap<>();
+        options.put(key, value);
+        return this;
+    }
 
     // -----------------------------------
     // --     Working with Filter      ---
@@ -94,8 +168,15 @@ public class QueryBuilder {
      */
     public Map<String, Object> filter;
 
+    /**
+     * Full filter as a json string.
+     * @param jsonFilter
+     *      filter
+     * @return
+     *      reference to self
+     */
     @SuppressWarnings("unchecked")
-    public QueryBuilder withJsonFilter(String jsonFilter) {
+    public SelectQueryBuilder withJsonFilter(String jsonFilter) {
         try {
             this.filter = JACKSON_MAPPER.readValue(jsonFilter, Map.class);
         } catch (JsonProcessingException e) {
@@ -112,14 +193,14 @@ public class QueryBuilder {
      * @return
      *      builder for the filter
      */
-    public QueryFilterBuilder where(String fieldName) {
+    public SelectQueryFilterBuilder where(String fieldName) {
         Assert.hasLength(fieldName, "fieldName");
         if (filter != null) {
             throw new IllegalArgumentException("Invalid query please use and() " +
                     "as a where clause has been provided");
         }
         filter = new HashMap<>();
-        return new QueryFilterBuilder(this, fieldName);
+        return new SelectQueryFilterBuilder(this, fieldName);
     }
 
     /**
@@ -130,13 +211,13 @@ public class QueryBuilder {
      * @return SearchDocumentWhere
      *          current builder
      */
-    public QueryFilterBuilder andWhere(String fieldName) {
+    public SelectQueryFilterBuilder andWhere(String fieldName) {
         Assert.hasLength(fieldName, "fieldName");
         if (filter == null || filter.isEmpty()) {
             throw new IllegalArgumentException("Invalid query please use where() " +
                     "as a where clause has been provided");
         }
-        return new QueryFilterBuilder(this, fieldName);
+        return new SelectQueryFilterBuilder(this, fieldName);
     }
 
     // -------------------------------
@@ -144,13 +225,13 @@ public class QueryBuilder {
     // -------------------------------
 
     /**
-     * Terminal call to build immutable instance of {@link Query}.
+     * Terminal call to build immutable instance of {@link SelectQuery}.
      *
      * @return
-     *      immutable instance of {@link Query}.
+     *      immutable instance of {@link SelectQuery}.
      */
-    public Query build() {
-        return new Query(this);
+    public SelectQuery build() {
+        return new SelectQuery(this);
     }
     
 }

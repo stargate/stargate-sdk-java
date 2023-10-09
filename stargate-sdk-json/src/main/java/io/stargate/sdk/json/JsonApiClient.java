@@ -8,13 +8,11 @@ import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
 import io.stargate.sdk.json.domain.JsonApiResponse;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
+import io.stargate.sdk.json.exception.NamespaceNotFoundException;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
@@ -26,9 +24,9 @@ import static io.stargate.sdk.utils.AnsiUtils.green;
 /**
  * Client for the JSON Document API.
  */
-@Getter
 @Slf4j
-public class StargateJsonApiClient {
+@Getter
+public class JsonApiClient {
 
     /** default endpoint. */
     public static final String DEFAULT_ENDPOINT = "http://localhost:8181";
@@ -56,7 +54,7 @@ public class StargateJsonApiClient {
     /**
      * Default Constructor
      */
-    public StargateJsonApiClient() {
+    public JsonApiClient() {
         this(DEFAULT_ENDPOINT);
     }
 
@@ -66,7 +64,7 @@ public class StargateJsonApiClient {
      * @param endpoint
      *      service endpoint
      */
-    public StargateJsonApiClient(String endpoint) {
+    public JsonApiClient(String endpoint) {
         Assert.hasLength(endpoint, "stargate endpoint");
         // Single instance running
         ServiceHttp rest = new ServiceHttp(DEFAULT_SERVICE_ID, endpoint, endpoint + PATH_HEALTH_CHECK);
@@ -87,7 +85,7 @@ public class StargateJsonApiClient {
      * @param serviceDeployment
      *      http client topology aware
      */
-    public StargateJsonApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
+    public JsonApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
         Assert.notNull(serviceDeployment, "service deployment topology");
         this.stargateHttpClient = new LoadBalancedHttpClient(serviceDeployment);
         log.info("+ API JSON     :[" + green("{}") + "]", "ENABLED");
@@ -96,6 +94,18 @@ public class StargateJsonApiClient {
     // ------------------------------------------
     // ----      Namespace operations        ----
     // ------------------------------------------
+
+    /**
+     * Evaluate if a namespace exists.
+     *
+     * @param namespace
+     *      namespace name.
+     * @return
+     *      if namespace exists
+     */
+    public boolean existNamespace(String namespace) {
+        return findNamespaces().anyMatch(namespace::equals);
+    }
 
     /**
      * Find Namespaces.
@@ -162,8 +172,9 @@ public class StargateJsonApiClient {
      * @param namespace String
      * @return NamespaceClient
      */
-    public JsonNamespacesClient namespace(String namespace) {
-        return new JsonNamespacesClient(stargateHttpClient, namespace);
+    public JsonNamespaceClient namespace(String namespace) {
+        if (findNamespaces().noneMatch(namespace::equals)) throw new NamespaceNotFoundException(namespace);
+        return new JsonNamespaceClient(stargateHttpClient, namespace);
     }
 
 }

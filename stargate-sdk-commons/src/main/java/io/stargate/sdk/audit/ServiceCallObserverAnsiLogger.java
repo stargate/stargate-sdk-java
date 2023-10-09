@@ -21,9 +21,14 @@ public class ServiceCallObserverAnsiLogger implements ServiceCallObserver<String
     /** Logger for our Client. */
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceCallObserverAnsiLogger.class);
 
+    /**
+     * Default constructor.
+     */
+    public ServiceCallObserverAnsiLogger() {}
+
     /** {@inheritDoc} */
     @Override
-    public void onCall(ServiceCallEvent event) {
+    public void onCall(ServiceCallEvent<Service> event) {
         LOGGER.info("Service [" + yellow(event.getService().getId()) + "]");
         LOGGER.info("[" + yellow(event.getRequestId()) + "] Endpoint         : [" + green(event.getService().getId()) + "]");
         LOGGER.info("Request [" + yellow(event.getRequestId()) + "]");

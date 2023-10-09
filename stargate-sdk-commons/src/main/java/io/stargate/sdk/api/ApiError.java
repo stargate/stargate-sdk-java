@@ -20,8 +20,6 @@ import java.io.Serializable;
 
 /**
  * Specialized error for Stargate.
- * 
- * @author Cedrick LUNVEN (@clunven)
  */
 public class ApiError implements Serializable {
     
@@ -35,6 +33,11 @@ public class ApiError implements Serializable {
     private int code;
 
     /**
+     * Default constructor.
+     */
+    public ApiError() {}
+
+    /**
      * Getter accessor for attribute 'description'.
      *
      * @return
@@ -46,6 +49,7 @@ public class ApiError implements Serializable {
 
     /**
      * Setter accessor for attribute 'description'.
+     *
      * @param description
      * 		new value for 'description '
      */
@@ -65,6 +69,7 @@ public class ApiError implements Serializable {
 
     /**
      * Setter accessor for attribute 'code'.
+     *
      * @param code
      * 		new value for 'code '
      */

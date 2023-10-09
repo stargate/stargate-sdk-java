@@ -10,7 +10,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Allow to load beans.
  *
- * @author Cedrick LUNVEN (@clunven)
+ * @param <DOC>
+ *     working document
  */
 public class StargateDocumentDataLoader<DOC> implements Closeable {
     
