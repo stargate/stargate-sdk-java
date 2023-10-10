@@ -125,8 +125,9 @@ public class JsonApiClient {
      * @param namespace
      *      current namespace.
      */
-    public void createNamespace(String namespace) {
+    public JsonNamespaceClient createNamespace(String namespace) {
         this.createNamespace(NamespaceDefinition.builder().name(namespace).build());
+        return new JsonNamespaceClient(stargateHttpClient, namespace);
     }
 
    /**

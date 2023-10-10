@@ -60,7 +60,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
         JsonCollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
-        Optional<JsonResult> opt = colClient.findOneByVector(1.0f,1.0f,1.0f,1.0f,1.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f);
+        Optional<JsonResult> opt = colClient.findOneByVector(new float[] {1.0f,1.0f,1.0f,1.0f,1.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f});
         Assertions.assertTrue(opt.isPresent());
         System.out.println(opt.get());
 
@@ -74,13 +74,13 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
-        Page<JsonResult> page = colClient.findAllPageable(SelectQuery.builder()
+        Page<JsonResult> page = colClient.findPage(SelectQuery.builder()
                 // Projection
                 //.selectVector()
                 //.selectSimilarity()
                 // ann search
-                .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
-                .withLimit(2)
+                //.orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                .limit(2)
                 .build());
         System.out.println("Result Size=" + page.getPageSize());
         for(JsonResult result : page.getResults()) {
@@ -106,7 +106,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
         JsonCollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
-        Page<JsonResult> resultSet = col1.findAllPageable(SelectQuery.builder().build());
+        Page<JsonResult> resultSet = col1.findPage(SelectQuery.builder().build());
         System.out.println("Page 1: state=" + resultSet.getPageState());
         for(JsonResult result : resultSet.getResults()) {
             System.out.println(result.toString());

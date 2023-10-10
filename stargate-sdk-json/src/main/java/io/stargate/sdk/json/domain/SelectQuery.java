@@ -65,7 +65,7 @@ public class SelectQuery {
         return SelectQuery.builder().where("_id").isEqualsTo(id).build();
     }
 
-    public static SelectQuery findByVector(@NonNull Float... embeddings) {
+    public static SelectQuery findByVector(@NonNull float[] embeddings) {
         return SelectQuery.builder().selectVector()
                 .selectSimilarity()
                 .orderByAnn(embeddings).build();

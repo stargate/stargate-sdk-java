@@ -29,7 +29,7 @@ public class Record<T> {
     /**
      * Embeddings
      */
-    protected List<Float> vector;
+    protected float[] vector;
 
     /**
      * Similarity

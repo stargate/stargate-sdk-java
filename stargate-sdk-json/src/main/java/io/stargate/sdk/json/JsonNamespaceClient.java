@@ -93,6 +93,21 @@ public class JsonNamespaceClient {
      *      current Collection.
      * @param dimension
      *      dimension of the vector
+     */
+    public void createCollectionVector(String collection, int dimension) {
+        this.createCollection(CollectionDefinition.builder()
+                .name(collection)
+                .vector(dimension,
+                        SimilarityMetric.cosine).build());
+    }
+
+    /**
+     * Create a Collection for vector purpose
+     *
+     * @param collection name
+     *      current Collection.
+     * @param dimension
+     *      dimension of the vector
      * @param metric
      *      similarity metric
      */

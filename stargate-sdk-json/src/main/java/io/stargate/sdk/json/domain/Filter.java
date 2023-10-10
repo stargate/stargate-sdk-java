@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stargate.sdk.utils.Assert;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -14,8 +15,6 @@ import java.util.Map;
  */
 @Getter
 public class Filter {
-
-    static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Map<String, Object> filter;
@@ -31,12 +30,9 @@ public class Filter {
      * @param json
      *      filter expression as JSON
      */
+    @SuppressWarnings("unchecked")
     public Filter(String json) {
-        try {
-            this.filter = JACKSON_MAPPER.readValue(json, Map.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Cannot parse json", e);
-        }
+        this.filter = JsonUtils.unmarshallBean(json, Map.class);
     }
 
     /**

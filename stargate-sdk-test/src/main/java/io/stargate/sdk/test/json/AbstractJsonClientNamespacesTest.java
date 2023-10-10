@@ -225,18 +225,18 @@ public class AbstractJsonClientNamespacesTest {
         colVector.insertOne(
                 "product1",
                 new Product("something Good", 9.99),
-                Arrays.asList(1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f));
+                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
 
         // Add vector without an id
         colVector.insertOne(
                 new Product("id will be generated for you", 10.99),
-                Arrays.asList(1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f));
+                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
 
         // Insert a full-fledged object
         colVector.insertOne(new JsonRecord()
                 .id("pf2000")
                 .put("attribute", "test")
-                .vector(Arrays.asList(1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)));
+                .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
     }
 
     /**
@@ -259,23 +259,24 @@ public class AbstractJsonClientNamespacesTest {
                 new JsonRecord()
                         .id("pf1844")
                         .data(new Product("HealthyFresh - Beef raw dog food", 9.99))
-                        .vector(1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f),
+                        .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}),
                 new JsonRecord("pt0021")
                         .data("{ \"product_name\": \"Dog Tennis Ball Toy\" }")
-                        .vector(0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f),
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f}),
                 new JsonRecord()
                         .id("pf1843")
                         .data(Map.of("product_name", "HealthyFresh - Chicken raw dog food"))
-                        .vector(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f),
+                        .vector(new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}),
                 new JsonRecord("pt0041")
                         .put("product_name", "Dog Ring Chew Toy")
-                        .vector(0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f, 0f, 0f),
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f, 0f, 0f}),
                 new JsonRecord("pf7043", new Product("Pepper Sausage Bacon dog Treats", 9.99))
-                        .vector(0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f),
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f}),
                 new JsonRecord()
                         .id("pf7044")
                         .data(new Product("Pepper Sausage Beef dog Treats", 10.99))
-                        .vector(0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f));
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f})
+        );
 
     }
 

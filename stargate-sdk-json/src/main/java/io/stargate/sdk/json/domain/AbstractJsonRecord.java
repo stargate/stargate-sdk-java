@@ -23,8 +23,7 @@ public abstract class AbstractJsonRecord {
      * Embeddings vector.
      */
     @JsonProperty("$vector")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    protected List<Float> vector;
+    protected float[] vector;
 
     /**
      * Gets id
@@ -40,7 +39,7 @@ public abstract class AbstractJsonRecord {
      *
      * @return value of vector
      */
-    public List<Float> getVector() {
+    public float[] getVector() {
         return vector;
     }
 

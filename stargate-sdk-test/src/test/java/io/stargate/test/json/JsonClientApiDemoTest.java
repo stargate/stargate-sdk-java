@@ -83,7 +83,7 @@ public class JsonClientApiDemoTest {
 
         String vectorId1 = vectorStore.insert("1",
                 new Product("HealthyFresh - Beef raw dog food", 12.99),
-                Arrays.asList(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f));
+                new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
 
         Record<Product> ve = vectorStore.findById(vectorId1).get();
         //vectorStore.save(ve);

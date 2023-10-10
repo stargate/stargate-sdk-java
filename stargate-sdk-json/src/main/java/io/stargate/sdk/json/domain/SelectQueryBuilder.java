@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stargate.sdk.http.domain.FilterKeyword;
 import io.stargate.sdk.utils.Assert;
+import io.stargate.sdk.utils.JsonUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,11 +13,6 @@ import java.util.Map;
  * Helper to build queries
  */
 public class SelectQueryBuilder {
-
-    /**
-     * Json Marshalling.
-     */
-    static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
 
     // -----------------------------------
     // -- Projection: 'select'         ---
@@ -73,6 +69,10 @@ public class SelectQueryBuilder {
         return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
     }
 
+    public SelectQueryBuilder orderByAnn(float... vector) {
+        return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
+    }
+
     public SelectQueryBuilder orderByAnn(String textFragment) {
         return orderBy(FilterKeyword.VECTORIZE.getKeyword(), textFragment);
     }
@@ -94,20 +94,8 @@ public class SelectQueryBuilder {
      * @return
      *      number of items
      */
-    public SelectQueryBuilder withLimit(int limit) {
+    public SelectQueryBuilder limit(int limit) {
         return withOption("limit", limit);
-    }
-
-    /**
-     * Max result.
-     *
-     * @param limit
-     *      maximum number of returned object
-     * @return
-     *      number of items
-     */
-    public SelectQueryBuilder withPageSize(int limit) {
-        return withLimit(limit);
     }
 
     /**
@@ -177,11 +165,7 @@ public class SelectQueryBuilder {
      */
     @SuppressWarnings("unchecked")
     public SelectQueryBuilder withJsonFilter(String jsonFilter) {
-        try {
-            this.filter = JACKSON_MAPPER.readValue(jsonFilter, Map.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Cannot parse json", e);
-        }
+        this.filter = JsonUtils.unmarshallBean(jsonFilter, Map.class);
         return this;
     }
 

@@ -25,7 +25,6 @@ import lombok.NonNull;
 import lombok.Setter;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 
@@ -91,7 +90,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param vector
      *      vector
      */
-    public JsonRecord(String id, Map<String, Object > data, List<Float> vector) {
+    public JsonRecord(String id, Map<String, Object > data, float[] vector) {
         this.id   = id;
         this.vector = vector;
         this.data = asObjectMap(data);
@@ -107,7 +106,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param vector
      *      vector
      */
-    public JsonRecord(String id, Object bean, List<Float> vector) {
+    public JsonRecord(String id, Object bean, float[] vector) {
         this.id = id;
         this.vector = vector;
         this.data = asObjectMap(bean);
@@ -203,19 +202,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @return
      *      self reference
      */
-    public JsonRecord vector(Float... vector) {
-        return vector(Arrays.asList(vector));
-    }
-
-    /**
-     * Populate vector.
-     *
-     * @param vector
-     *      embeddings
-     * @return
-     *      self reference
-     */
-    public JsonRecord vector(List<Float> vector) {
+    public JsonRecord vector(float[] vector) {
         this.vector = vector;
         return this;
     }

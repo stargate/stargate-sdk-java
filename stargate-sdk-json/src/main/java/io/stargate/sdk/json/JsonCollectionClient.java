@@ -1,10 +1,9 @@
 package io.stargate.sdk.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
+import io.stargate.sdk.json.domain.DeleteQuery;
 import io.stargate.sdk.json.domain.JsonApiData;
 import io.stargate.sdk.json.domain.JsonApiResponse;
 import io.stargate.sdk.json.domain.Filter;
@@ -13,7 +12,6 @@ import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
-import io.stargate.sdk.json.domain.UpdateQueryBuilder;
 import io.stargate.sdk.json.domain.UpdateStatus;
 import io.stargate.sdk.json.domain.odm.Record;
 import io.stargate.sdk.json.domain.odm.RecordMapper;
@@ -101,7 +99,6 @@ public class JsonCollectionClient {
         return insertOne(id, bean, null);
     }
 
-
     /**
      * Insert one Record.
      *
@@ -112,7 +109,7 @@ public class JsonCollectionClient {
      * @return
      *      record identifier
      */
-    public String insertOne(Object bean, List<Float> vector) {
+    public String insertOne(Object bean, float[] vector) {
         return insertOne(null, bean, vector);
     }
 
@@ -128,7 +125,7 @@ public class JsonCollectionClient {
      * @return
      *      identifier for the document
      */
-    public String insertOne(String id, Object bean, List<Float> vector) {
+    public String insertOne(String id, Object bean, float[] vector) {
         log.debug("insert into {}/{}", green(namespace), green(collection));
         return execute("insertOne", Map.of("document", new JsonRecord(id, bean, vector)))
                 .getStatusKeyAsStream("insertedIds")
@@ -195,18 +192,48 @@ public class JsonCollectionClient {
     // ---     Find One      ----
     // --------------------------
 
+    /**
+     * Find one document matching the query.
+     *
+     * @param query
+     *      query documents and vector
+     * @return
+     *      result if exists
+     */
     public Optional<JsonResult> findOne(SelectQuery query) {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         return Optional.ofNullable(execute("findOne", query).getData().getDocument());
     }
 
+    /**
+     * Find one document matching the query.
+     *
+     * @param query
+     *      query documents and vector
+     * @param clazz
+     *     class of the document
+     * @return
+     *      result if exists
+     */
     public <T> Optional<Record<T>> findOne(SelectQuery query, Class<T> clazz) {
         return findOne(query).map(r -> new Record<>(r, clazz));
     }
 
+    /**
+     * Find one document matching the query.
+     *
+     * @param query
+     *      query documents and vector
+     * @return
+     *      result if exists
+     */
     public <T> Optional<Record<T>> findOne(SelectQuery query, RecordMapper<T> mapper) {
         return findOne(query).map(mapper::map);
     }
+
+    // --------------------------
+    // ---    Find By Id     ----
+    // --------------------------
 
     public Optional<JsonResult> findById(String id) {
         return findOne(SelectQuery.findById(id));
@@ -220,16 +247,20 @@ public class JsonCollectionClient {
         return findById(id).map(mapper::map);
     }
 
-    public Optional<JsonResult> findOneByVector(Float... vector) {
+    // --------------------------
+    // --- Find By Vector    ----
+    // --------------------------
+
+    public Optional<JsonResult> findOneByVector(float[] vector) {
         return findOne(SelectQuery.findByVector(vector));
     }
 
-    public <T> Optional<Record<T>> findOneByVector(List<Float> vector, Class<T> clazz) {
-        return findOneByVector(vector.toArray(new Float[]{})).map(r -> new Record<>(r, clazz));
+    public <T> Optional<Record<T>> findOneByVector(float[] vector, Class<T> clazz) {
+        return findOneByVector(vector).map(r -> new Record<>(r, clazz));
     }
 
-    public <T> Optional<Record<T>> findOneByVector(List<Float> vector, RecordMapper<T> mapper) {
-        return findOneByVector(vector.toArray(new Float[]{})).map(mapper::map);
+    public <T> Optional<Record<T>> findOneByVector(float[] vector, RecordMapper<T> mapper) {
+        return findOneByVector(vector).map(mapper::map);
     }
 
     // --------------------------
@@ -259,7 +290,7 @@ public class JsonCollectionClient {
         AtomicInteger pageCount = new AtomicInteger(0);
         do {
             log.debug("Fetching page "  + pageCount.incrementAndGet());
-            Page<JsonResult> pageX = findAllPageable(pageQuery);
+            Page<JsonResult> pageX = findPage(pageQuery);
             if (pageX.getPageState().isPresent())  {
                 pageState = pageX.getPageState().get();
             } else {
@@ -306,51 +337,58 @@ public class JsonCollectionClient {
      * @return
      *      page of results
      */
-    public Page<JsonResult> findAllPageable(SelectQuery query) {
+    public Page<JsonResult> findPage(SelectQuery query) {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         JsonApiData apiData = execute("find", query).getData();
         int pageSize = (query != null) ? query.getPageSize() : SelectQuery.DEFAULT_PAGE_SIZE;
         return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
     }
 
-    public <T> Page<Record<T>> findAllPageable(SelectQuery query, Class<T> clazz) {
-        Page<JsonResult> pageJson = findAllPageable(query);
-        return new Page<>(pageJson.getPageSize(),
+    public <T> Page<Record<T>> findPage(SelectQuery query, Class<T> clazz) {
+        Page<JsonResult> pageJson = findPage(query);
+        return new Page<>(
+                pageJson.getPageSize(),
                 pageJson.getPageState().orElse(null),
-                pageJson.getResults().stream().map(r -> new Record<>(r, clazz)).collect(Collectors.toList()));
+                pageJson.getResults()
+                        .stream()
+                        .map(r -> new Record<>(r, clazz))
+                        .collect(Collectors.toList()));
     }
 
-    private <T> Page<Record<T>> findAllPageable(SelectQuery query, RecordMapper<T> mapper) {
-        Page<JsonResult> pageJson = findAllPageable(query);
-        return new Page<>(pageJson.getPageSize(),
+    private <T> Page<Record<T>> findPage(SelectQuery query, RecordMapper<T> mapper) {
+        Page<JsonResult> pageJson = findPage(query);
+        return new Page<>(
+                pageJson.getPageSize(),
                 pageJson.getPageState().orElse(null),
-                pageJson.getResults().stream().map(mapper::map).collect(Collectors.toList()));
+                pageJson.getResults().stream()
+                        .map(mapper::map)
+                        .collect(Collectors.toList()));
     }
 
     // --------------------------
     // ---     Delete One    ----
     // --------------------------
 
-    public int deleteOne(Filter filter) {
+    public int deleteOne(DeleteQuery deleteQuery) {
         log.debug("Delete in {}/{}", green(namespace), green(collection));
-        return execute("deleteOne", filter).getStatusKeyAsInt("deletedCount");
+        return execute("deleteOne", deleteQuery).getStatusKeyAsInt("deletedCount");
     }
 
     public int deleteById(String id) {
-        return deleteOne(new Filter().where("_id").isEqualsTo(id));
+        return deleteOne(DeleteQuery.deleteById(id));
     }
 
-    public int deleteByVector(Float... vector) {
-        return deleteOne(new Filter().where("vector").isEqualsTo(vector));
+    public int deleteByVector(float[] vector) {
+        return deleteOne(DeleteQuery.deleteByVector(vector));
     }
 
     // --------------------------
     // ---     Delete Many   ----
     // --------------------------
 
-    public int deleteMany(Filter filter) {
+    public int deleteMany(DeleteQuery deleteQuery) {
         log.debug("Delete in {}/{}", green(namespace), green(collection));
-        return execute("deleteMany", filter).getStatusKeyAsInt("deletedCount");
+        return execute("deleteMany", deleteQuery).getStatusKeyAsInt("deletedCount");
     }
 
     public int deleteAll() {
@@ -358,7 +396,7 @@ public class JsonCollectionClient {
     }
 
     // --------------------------
-    // ---  findOne*         ----
+    // ---  Update           ----
     // --------------------------
 
     public JsonResultUpdate findOneAndUpdate(UpdateQuery query) {
