@@ -4,17 +4,18 @@ import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.json.domain.DeleteQuery;
+import io.stargate.sdk.json.domain.Filter;
 import io.stargate.sdk.json.domain.JsonApiData;
 import io.stargate.sdk.json.domain.JsonApiResponse;
-import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.JsonRecord;
+import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
 import io.stargate.sdk.json.domain.UpdateStatus;
-import io.stargate.sdk.json.domain.odm.Record;
-import io.stargate.sdk.json.domain.odm.RecordMapper;
+import io.stargate.sdk.json.domain.odm.Document;
+import io.stargate.sdk.json.domain.odm.Result;
+import io.stargate.sdk.json.domain.odm.ResultMapper;
 import io.stargate.sdk.utils.Assert;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -127,7 +128,26 @@ public class JsonCollectionClient {
      */
     public String insertOne(String id, Object bean, float[] vector) {
         log.debug("insert into {}/{}", green(namespace), green(collection));
-        return execute("insertOne", Map.of("document", new JsonRecord(id, bean, vector)))
+        JsonDocument jsonDocument = new JsonDocument(id, bean, vector);
+        if (bean instanceof JsonDocument) {
+            jsonDocument = (JsonDocument) bean;
+            if (id != null) {
+                jsonDocument.id(id);
+            }
+            if (vector != null) {
+                jsonDocument.vector(vector);
+            }
+        }
+        if (bean instanceof Document) {
+            jsonDocument = ((Document<?>) bean).toJsonDocument();
+            if (id != null) {
+                jsonDocument.id(id);
+            }
+            if (vector != null) {
+                jsonDocument.vector(vector);
+            }
+        }
+        return execute("insertOne", Map.of("document", jsonDocument))
                 .getStatusKeyAsStream("insertedIds")
                 .findAny()
                 .orElse(null);
@@ -145,22 +165,10 @@ public class JsonCollectionClient {
      * @return
      *      list of ids
      */
-    public final Stream<String> insertMany(JsonRecord... documents) {
-        Objects.requireNonNull(documents, "documents");
-        return insertMany(List.of(documents));
-    }
-    /**
-     * Low level insertion of multiple records
-     *
-     * @param documents
-     *      list of documents
-     * @return
-     *      list of ids
-     */
-    public final Stream<String> insertMany(List<JsonRecord> documents) {
+    public final List<String> insertMany(List<JsonDocument> documents) {
         Objects.requireNonNull(documents, "documents");
         log.debug("insert into {}/{}", green(namespace), green(collection));
-        return execute("insertMany", Map.of("documents", documents)).getStatusKeyAsStream("insertedIds");
+        return execute("insertMany", Map.of("documents", documents)).getStatusKeyAsList("insertedIds");
     }
 
     // --------------------------
@@ -215,8 +223,8 @@ public class JsonCollectionClient {
      * @return
      *      result if exists
      */
-    public <T> Optional<Record<T>> findOne(SelectQuery query, Class<T> clazz) {
-        return findOne(query).map(r -> new Record<>(r, clazz));
+    public <T> Optional<Result<T>> findOne(SelectQuery query, Class<T> clazz) {
+        return findOne(query).map(r -> new Result<>(r, clazz));
     }
 
     /**
@@ -227,7 +235,7 @@ public class JsonCollectionClient {
      * @return
      *      result if exists
      */
-    public <T> Optional<Record<T>> findOne(SelectQuery query, RecordMapper<T> mapper) {
+    public <T> Optional<Result<T>> findOne(SelectQuery query, ResultMapper<T> mapper) {
         return findOne(query).map(mapper::map);
     }
 
@@ -239,11 +247,11 @@ public class JsonCollectionClient {
         return findOne(SelectQuery.findById(id));
     }
 
-    public <T> Optional<Record<T>> findById(@NonNull String id, Class<T> clazz) {
-        return findById(id).map(r -> new Record<>(r, clazz));
+    public <T> Optional<Result<T>> findById(@NonNull String id, Class<T> clazz) {
+        return findById(id).map(r -> new Result<>(r, clazz));
     }
 
-    public <T> Optional<Record<T>> findById(@NonNull String id, RecordMapper<T> mapper) {
+    public <T> Optional<Result<T>> findById(@NonNull String id, ResultMapper<T> mapper) {
         return findById(id).map(mapper::map);
     }
 
@@ -255,11 +263,11 @@ public class JsonCollectionClient {
         return findOne(SelectQuery.findByVector(vector));
     }
 
-    public <T> Optional<Record<T>> findOneByVector(float[] vector, Class<T> clazz) {
-        return findOneByVector(vector).map(r -> new Record<>(r, clazz));
+    public <T> Optional<Result<T>> findOneByVector(float[] vector, Class<T> clazz) {
+        return findOneByVector(vector).map(r -> new Result<>(r, clazz));
     }
 
-    public <T> Optional<Record<T>> findOneByVector(float[] vector, RecordMapper<T> mapper) {
+    public <T> Optional<Result<T>> findOneByVector(float[] vector, ResultMapper<T> mapper) {
         return findOneByVector(vector).map(mapper::map);
     }
 
@@ -274,7 +282,7 @@ public class JsonCollectionClient {
      *      all items
      */
     public Stream<JsonResult> findAll() {
-        return findAll(SelectQuery.builder().build());
+        return query(SelectQuery.builder().build());
     }
 
     /**
@@ -284,13 +292,13 @@ public class JsonCollectionClient {
      * @return
      *      all items
      */
-    public Stream<JsonResult> findAll(SelectQuery pageQuery) {
+    public Stream<JsonResult> query(SelectQuery pageQuery) {
         List<JsonResult> documents = new ArrayList<>();
         String pageState = null;
         AtomicInteger pageCount = new AtomicInteger(0);
         do {
             log.debug("Fetching page "  + pageCount.incrementAndGet());
-            Page<JsonResult> pageX = findPage(pageQuery);
+            Page<JsonResult> pageX = queryForPage(pageQuery);
             if (pageX.getPageState().isPresent())  {
                 pageState = pageX.getPageState().get();
             } else {
@@ -303,12 +311,12 @@ public class JsonCollectionClient {
         return documents.stream();
     }
 
-    public  <T> Stream<Record<T>>  findAll(SelectQuery pageQuery, Class<T> clazz) {
-        return findAll(pageQuery).map(r -> new Record<>(r, clazz));
+    public  <T> Stream<Result<T>> query(SelectQuery pageQuery, Class<T> clazz) {
+        return query(pageQuery).map(r -> new Result<>(r, clazz));
     }
 
-    public  <T> Stream<Record<T>>  findAll(SelectQuery pageQuery, RecordMapper<T> mapper) {
-        return findAll(pageQuery).map(mapper::map);
+    public  <T> Stream<Result<T>> query(SelectQuery pageQuery, ResultMapper<T> mapper) {
+        return query(pageQuery).map(mapper::map);
     }
 
     /**
@@ -321,11 +329,11 @@ public class JsonCollectionClient {
      * @param <T>
      *       class to be marshalled
      */
-    public <T> Stream<Record<T>> findAll(Class<T> clazz) {
-        return findAll().map(r -> new Record<>(r, clazz));
+    public <T> Stream<Result<T>> findAll(Class<T> clazz) {
+        return findAll().map(r -> new Result<>(r, clazz));
     }
 
-    public <T> Stream<Record<T>> findAll(RecordMapper<T> mapper) {
+    public <T> Stream<Result<T>> findAll(ResultMapper<T> mapper) {
         return findAll().map(mapper::map);
     }
 
@@ -337,26 +345,26 @@ public class JsonCollectionClient {
      * @return
      *      page of results
      */
-    public Page<JsonResult> findPage(SelectQuery query) {
+    public Page<JsonResult> queryForPage(SelectQuery query) {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         JsonApiData apiData = execute("find", query).getData();
         int pageSize = (query != null) ? query.getPageSize() : SelectQuery.DEFAULT_PAGE_SIZE;
         return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
     }
 
-    public <T> Page<Record<T>> findPage(SelectQuery query, Class<T> clazz) {
-        Page<JsonResult> pageJson = findPage(query);
+    public <T> Page<Result<T>> queryForPage(SelectQuery query, Class<T> clazz) {
+        Page<JsonResult> pageJson = queryForPage(query);
         return new Page<>(
                 pageJson.getPageSize(),
                 pageJson.getPageState().orElse(null),
                 pageJson.getResults()
                         .stream()
-                        .map(r -> new Record<>(r, clazz))
+                        .map(r -> new Result<>(r, clazz))
                         .collect(Collectors.toList()));
     }
 
-    private <T> Page<Record<T>> findPage(SelectQuery query, RecordMapper<T> mapper) {
-        Page<JsonResult> pageJson = findPage(query);
+    private <T> Page<Result<T>> queryForPage(SelectQuery query, ResultMapper<T> mapper) {
+        Page<JsonResult> pageJson = queryForPage(query);
         return new Page<>(
                 pageJson.getPageSize(),
                 pageJson.getPageState().orElse(null),

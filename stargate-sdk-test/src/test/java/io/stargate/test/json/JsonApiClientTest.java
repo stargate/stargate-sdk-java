@@ -8,7 +8,8 @@ import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
 import io.stargate.sdk.json.domain.UpdateQueryBuilder;
-import io.stargate.sdk.json.domain.odm.Record;
+import io.stargate.sdk.json.domain.odm.Document;
+import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.test.json.AbstractJsonClientNamespacesTest;
 import io.stargate.sdk.utils.JsonUtils;
 import org.junit.jupiter.api.Assertions;
@@ -23,7 +24,7 @@ import java.util.stream.Stream;
 /**
  * Default settings (localhost:8180).
  */
-public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
+public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     @BeforeAll
     public static void initStargateRestApiClient() {
         jsonApiClient = new JsonApiClient();
@@ -64,7 +65,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
         Assertions.assertTrue(opt.isPresent());
         System.out.println(opt.get());
 
-        Record<Product> vector = new Record<>(colClient.findById("pf1844").get(), Product.class);
+        Result<Product> vector = new Result<>(colClient.findById("pf1844").get(), Product.class);
     }
 
     @Test
@@ -74,7 +75,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
-        Page<JsonResult> page = colClient.findPage(SelectQuery.builder()
+        Page<JsonResult> page = colClient.queryForPage(SelectQuery.builder()
                 // Projection
                 //.selectVector()
                 //.selectSimilarity()
@@ -106,7 +107,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
         JsonCollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
-        Page<JsonResult> resultSet = col1.findPage(SelectQuery.builder().build());
+        Page<JsonResult> resultSet = col1.queryForPage(SelectQuery.builder().build());
         System.out.println("Page 1: state=" + resultSet.getPageState());
         for(JsonResult result : resultSet.getResults()) {
             System.out.println(result.toString());
@@ -120,7 +121,7 @@ public class JsonClientNamespacesTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
         System.out.println(col1.countDocuments());
-        Stream<JsonResult> resultSet = col1.findAll(SelectQuery.builder().build());
+        Stream<JsonResult> resultSet = col1.query(SelectQuery.builder().build());
         System.out.println(resultSet.count());
     }
 

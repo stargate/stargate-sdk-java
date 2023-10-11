@@ -7,6 +7,7 @@ import lombok.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Data
@@ -43,6 +44,10 @@ public class JsonApiResponse {
             return ((ArrayList<String>) status.get(key)).stream();
         }
         return Stream.empty();
+    }
+
+    public List<String> getStatusKeyAsList(@NonNull String key) {
+        return getStatusKeyAsStream(key).collect(Collectors.toList());
     }
 
 

@@ -24,7 +24,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-import java.util.Arrays;
 import java.util.Map;
 
 
@@ -32,7 +31,7 @@ import java.util.Map;
  * Json Api Payload.
  */
 @Getter @Setter
-public class JsonRecord extends AbstractJsonRecord {
+public class JsonDocument extends AbstractJsonRecord {
 
     /**
      * Data for inputs.
@@ -44,7 +43,7 @@ public class JsonRecord extends AbstractJsonRecord {
     /**
      * Default constructor.
      */
-    public JsonRecord() {}
+    public JsonDocument() {}
 
     /**
      * Constructor with id.
@@ -52,7 +51,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param id
      *      identifier
      */
-    public JsonRecord(String id) {
+    public JsonDocument(String id) {
         this(id, null, null);
     }
 
@@ -64,7 +63,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param data
      *      data as a map
      */
-    public JsonRecord(String id, Map<String, Object > data) {
+    public JsonDocument(String id, Map<String, Object > data) {
         this(id, data, null);
     }
 
@@ -76,7 +75,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param bean
      *      data as a beam
      */
-    public JsonRecord(String id, Object bean) {
+    public JsonDocument(String id, Object bean) {
         this(id, bean, null);
     }
 
@@ -90,7 +89,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param vector
      *      vector
      */
-    public JsonRecord(String id, Map<String, Object > data, float[] vector) {
+    public JsonDocument(String id, Map<String, Object > data, float[] vector) {
         this.id   = id;
         this.vector = vector;
         this.data = asObjectMap(data);
@@ -106,7 +105,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @param vector
      *      vector
      */
-    public JsonRecord(String id, Object bean, float[] vector) {
+    public JsonDocument(String id, Object bean, float[] vector) {
         this.id = id;
         this.vector = vector;
         this.data = asObjectMap(bean);
@@ -147,7 +146,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @return
      *      new JsonRecord
      */
-    public JsonRecord id(String id) {
+    public JsonDocument id(String id) {
         this.id = id;
         return this;
     }
@@ -162,7 +161,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @return
      *      self reference
      */
-    public JsonRecord put(String key, Object value) {
+    public JsonDocument put(String key, Object value) {
         if (null == data) data = new ObjectMap();
         data.put(key, value);
         return this;
@@ -176,7 +175,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @return
      *      self reference
      */
-    public JsonRecord data(@NonNull Object bean) {
+    public JsonDocument data(@NonNull Object bean) {
         this.data = asObjectMap(bean);
         return this;
     }
@@ -189,7 +188,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @return
      *      self reference
      */
-    public JsonRecord data(@NonNull Map<String, Object > map) {
+    public JsonDocument data(@NonNull Map<String, Object > map) {
         this.data = asObjectMap(map);
         return this;
     }
@@ -202,7 +201,7 @@ public class JsonRecord extends AbstractJsonRecord {
      * @return
      *      self reference
      */
-    public JsonRecord vector(float[] vector) {
+    public JsonDocument vector(float[] vector) {
         this.vector = vector;
         return this;
     }

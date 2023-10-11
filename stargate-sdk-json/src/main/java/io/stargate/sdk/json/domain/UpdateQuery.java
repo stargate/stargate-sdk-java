@@ -1,11 +1,8 @@
 package io.stargate.sdk.json.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
-import lombok.NonNull;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -23,7 +20,7 @@ public class UpdateQuery {
 
     private Map<String, Object> update;
 
-    private JsonRecord replacement;
+    private JsonDocument replacement;
 
     /**
      * Default constructor.

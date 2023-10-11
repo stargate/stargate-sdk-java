@@ -81,7 +81,7 @@ public class FilterBuilder {
      * @return
      *      self reference
      */
-    public Filter isAnArrayContaining(Object[] value) {
+    public Filter isAnArrayContaining(Object... value) {
         return simpleOperator(FilterOperator.EQUALS_TO, value);
     }
 

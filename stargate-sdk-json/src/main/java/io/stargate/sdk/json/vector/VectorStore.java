@@ -1,18 +1,18 @@
 package io.stargate.sdk.json.vector;
 
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.json.JsonApiRepository;
+import io.stargate.sdk.json.CollectionRepository;
 import io.stargate.sdk.json.JsonCollectionClient;
 import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.JsonRecord;
+import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.SelectQueryBuilder;
 import io.stargate.sdk.json.domain.UpdateQuery;
-import io.stargate.sdk.json.domain.odm.Record;
+import io.stargate.sdk.json.domain.odm.Result;
 import lombok.NonNull;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Optional;
 
 /**
@@ -21,7 +21,7 @@ import java.util.Optional;
  * @param <BEAN>
  *     curren vector object
  */
-public class VectorStore<BEAN> extends JsonApiRepository<BEAN> {
+public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
 
     /**
      * Default constructor.
@@ -36,7 +36,7 @@ public class VectorStore<BEAN> extends JsonApiRepository<BEAN> {
     }
 
     // --------------------------
-    // ---      Create       ----
+    // ---      Insert       ----
     // --------------------------
 
     /**
@@ -68,6 +68,10 @@ public class VectorStore<BEAN> extends JsonApiRepository<BEAN> {
         return collectionClient.insertOne(current, vector);
     }
 
+    // --------------------------
+    // ---      save         ----
+    // --------------------------
+
     /**
      * Generate a new document with a new id.
      *
@@ -98,7 +102,7 @@ public class VectorStore<BEAN> extends JsonApiRepository<BEAN> {
                 .findOneAndReplace(UpdateQuery.builder()
                         .where("_id")
                         .isEqualsTo(id)
-                        .replaceBy(new JsonRecord(id, current, vector))
+                        .replaceBy(new JsonDocument(id, current, vector))
                         .build());
         return res.getUpdateStatus().getModifiedCount() > 0;
     }
@@ -115,7 +119,7 @@ public class VectorStore<BEAN> extends JsonApiRepository<BEAN> {
      * @return
      *      object if presents
      */
-    public Optional<Record<BEAN>> findByVector(@NonNull float[] embeddings) {
+    public Optional<Result<BEAN>> findByVector(@NonNull float[] embeddings) {
         return collectionClient.findOneByVector(embeddings, docClass);
     }
 
@@ -123,15 +127,27 @@ public class VectorStore<BEAN> extends JsonApiRepository<BEAN> {
         return collectionClient.deleteByVector(vector) > 0;
     }
 
-    public Page<Record<BEAN>> annSearch(float[] embeddings, Filter filter, Integer limit) {
+    public Page<Result<BEAN>> similaritySearch(float[] embeddings) {
+        return similaritySearch(embeddings, null, null);
+    }
+
+    public Page<Result<BEAN>> similaritySearch(float[] embeddings, Integer limit) {
+        return similaritySearch(embeddings, null, limit);
+    }
+
+    public Page<Result<BEAN>> similaritySearch(float[] embeddings, Filter filter, Integer limit) {
         SelectQueryBuilder builder = SelectQuery.builder().orderByAnn(embeddings);
         if (filter != null) {
+            if (builder.filter == null) {
+                builder.filter = new HashMap<>();
+            }
             builder.filter.putAll(filter.getFilter());
         }
+        builder.withIncludeSimilarity();
         if (limit!=null) {
             builder.limit(limit);
         }
-        return collectionClient.findPage(builder.build(), docClass);
+        return collectionClient.queryForPage(builder.build(), docClass);
     }
 
 }

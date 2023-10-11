@@ -3,14 +3,15 @@ package io.stargate.sdk.json;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.json.domain.DeleteQuery;
 import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.JsonRecord;
+import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
-import io.stargate.sdk.json.domain.odm.Record;
+import io.stargate.sdk.json.domain.odm.Document;
+import io.stargate.sdk.json.domain.odm.Result;
 import lombok.NonNull;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -21,8 +22,9 @@ import java.util.stream.Stream;
  * Crud repository with Json Api
  *
  * @param <BEAN>
+ *     current bean
  */
-public class JsonApiRepository<BEAN> {
+public class CollectionRepository<BEAN> {
 
     protected final JsonCollectionClient collectionClient;
 
@@ -37,7 +39,7 @@ public class JsonApiRepository<BEAN> {
      * @param clazz
      *      working bean class
      */
-    public JsonApiRepository(JsonCollectionClient col, Class<BEAN> clazz) {
+    public CollectionRepository(JsonCollectionClient col, Class<BEAN> clazz) {
         this.collectionClient = col;
         this.docClass  = clazz;
     }
@@ -63,8 +65,20 @@ public class JsonApiRepository<BEAN> {
     }
 
     // --------------------------
-    // ---        Save       ----
+    // ---    insertOne      ----
     // --------------------------
+
+    /**
+     * Insert with a Json Document.
+     *
+     * @param jsonDocument
+     *      current bean
+     * @return
+     *      new id
+     */
+    public final String insert(@NonNull JsonDocument jsonDocument) {
+        return collectionClient.insertOne(jsonDocument);
+    }
 
     /**
      * Create a new document a generating identifier.
@@ -73,7 +87,7 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      generated id
      */
-    public final String create(@NonNull BEAN current) {
+    public final String insert(@NonNull BEAN current) {
         return collectionClient.insertOne(current, null);
     }
 
@@ -85,9 +99,25 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      generated id
      */
-    public final String create( @NonNull String id, @NonNull BEAN current) {
+    public final String insert( @NonNull String id, @NonNull BEAN current) {
         return collectionClient.insertOne(id, current, null);
     }
+
+    /**
+     * Insert with a Json Document.
+     *
+     * @param bean
+     *      current bean
+     * @return
+     *      new id
+     */
+    public final String insert(@NonNull Document<BEAN> bean) {
+        return collectionClient.insertOne(bean.toJsonDocument());
+    }
+
+    // --------------------------
+    // ---      SaveOne      ----
+    // --------------------------
 
     /**
      * Generate a new document with a new id.
@@ -98,7 +128,7 @@ public class JsonApiRepository<BEAN> {
      *      generated id
      */
     public final String save(@NonNull BEAN current) {
-        return create(current);
+        return insert(current);
     }
 
     /**
@@ -112,14 +142,14 @@ public class JsonApiRepository<BEAN> {
      */
     public boolean save(String id, @NonNull BEAN current) {
         if (!exists(id)) {
-            create(id, current);
+            insert(id, current);
             return true;
         }
         JsonResultUpdate res = collectionClient
                 .findOneAndReplace(UpdateQuery.builder()
                 .where("_id")
                 .isEqualsTo(id)
-                .replaceBy(new JsonRecord(id, current))
+                .replaceBy(new JsonDocument(id, current))
                 .build());
         return res.getUpdateStatus().getModifiedCount() > 0;
     }
@@ -132,41 +162,54 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      an unique identifier for the document
      */
-    public final String save(@NonNull Record<BEAN> current) {
-        if (current.getId() != null && !exists(current.getId())) {
-            create(current.getId(), current.getData());
+    public final String save(@NonNull Document<BEAN> current) {
+        String id = current.getId();
+        if (id == null || !exists(id)) {
+            return collectionClient.insertOne(current.getId(), current.getData(), current.getVector());
         }
-
-
-        return collectionClient.insertOne(current.asJsonRecord());
+        // Already Exist
+        collectionClient.findOneAndReplace(UpdateQuery.builder()
+              .where("_id")
+              .isEqualsTo(id)
+              .replaceBy(current.toJsonDocument())
+              .build());
+        return id;
     }
+
+    public final String save(@NonNull JsonDocument current) {
+        String id = current.getId();
+        if (id == null || !exists(id)) {
+            return collectionClient.insertOne(current.getId(), current.getData(), current.getVector());
+        }
+        // Already Exist
+        collectionClient.findOneAndReplace(UpdateQuery.builder()
+                .where("_id")
+                .isEqualsTo(id)
+                .replaceBy(current)
+                .build());
+        return id;
+    }
+
+    // --------------------------
+    // ---    saveAll        ----
+    // --------------------------
 
     /**
      * Create a new document a generating identifier.
      *
-     * @param current
+     * @param documentList
      *      object Mapping
      * @return
      *      an unique identifier for the document
      */
-    public final int saveAll(@NonNull Record<BEAN> current) {
-        //if (current.getId() != null) return save(current.getId(), current.getData());
-        //return collectionClient.insertOne(current.asJsonRecord());
-        return 0;
+    public final List<String> saveAll(@NonNull List<Document<BEAN>> documentList) {
+        if (documentList.isEmpty()) return new ArrayList<>();
+        return documentList.stream().map(this::save).collect(Collectors.toList());
     }
 
-    /**
-     * Low level insertion of multiple records
-     *
-     * @param records
-     *      list of records
-     * @return
-     *      list of ids
-     */
-    @SafeVarargs
-    public final Stream<String> createAll(Record<BEAN>... records) {
-        if (records == null || records.length == 0) return Stream.empty();
-        return createAll(Arrays.asList(records));
+    public final List<String> saveAllJsonDocuments(@NonNull List<JsonDocument> documentList) {
+        if (documentList.isEmpty()) return new ArrayList<>();
+        return documentList.stream().map(this::save).collect(Collectors.toList());
     }
 
     /**
@@ -177,12 +220,19 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      list of ids
      */
-    public final Stream<String> createAll(List<Record<BEAN>> documents) {
-        if (documents == null || documents.isEmpty()) return Stream.empty();
+    public final List<String> insertAll(List<Document<BEAN>> documents) {
+        if (documents == null || documents.isEmpty()) return new ArrayList<>();
         return collectionClient.insertMany(documents.stream()
-                .map(Record::asJsonRecord)
+                .map(Document::toJsonDocument)
                 .collect(Collectors.toList()));
     }
+
+    public final List<String> insertAllJsonDocuments(@NonNull List<JsonDocument> documentList) {
+        if (documentList.isEmpty()) return new ArrayList<>();
+        return collectionClient.insertMany(documentList);
+    }
+
+
 
     // --------------------------
     // ---      Count        ----
@@ -220,7 +270,7 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      object if presents
      */
-    public Optional<Record<BEAN>> findOne(@NonNull SelectQuery query) {
+    public Optional<Result<BEAN>> findOne(@NonNull SelectQuery query) {
         return collectionClient.findOne(query, docClass);
     }
 
@@ -232,7 +282,7 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      object if presents
      */
-    public Optional<Record<BEAN>> findById(@NonNull String id) {
+    public Optional<Result<BEAN>> findById(@NonNull String id) {
         return collectionClient.findById(id, docClass);
     }
 
@@ -242,7 +292,7 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      retrieve all items
      */
-    public Stream<Record<BEAN>> findAll() {
+    public Stream<Result<BEAN>> findAll() {
         return collectionClient.findAll(docClass);
     }
 
@@ -252,8 +302,8 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      retrieve all items
      */
-    public Stream<Record<BEAN>> findAll(SelectQuery query) {
-        return collectionClient.findAll(query, docClass);
+    public Stream<Result<BEAN>> findAll(SelectQuery query) {
+        return collectionClient.query(query, docClass);
     }
 
     /**
@@ -264,17 +314,17 @@ public class JsonApiRepository<BEAN> {
      * @return
      *      page of records
      */
-    public Page<Record<BEAN>> findPage(SelectQuery query) {
-        return collectionClient.findPage(query, docClass);
+    public Page<Result<BEAN>> findPage(SelectQuery query) {
+        return collectionClient.queryForPage(query, docClass);
     }
 
     // --------------------------
     // ---     Delete        ----
     // --------------------------
 
-    public boolean delete(@NonNull Record<BEAN> record) {
-        if (record.getId() != null) return deleteById(record.getId());
-        if (record.getVector() != null) return collectionClient.deleteByVector(record.getVector()) > 0;
+    public boolean delete(@NonNull Document<BEAN> document) {
+        if (document.getId() != null) return deleteById(document.getId());
+        if (document.getVector() != null) return collectionClient.deleteByVector(document.getVector()) > 0;
         throw new IllegalArgumentException("Cannot delete record without id or vector");
     }
 
@@ -289,13 +339,13 @@ public class JsonApiRepository<BEAN> {
     /**
      * Use parallelism and async to delete all records.
      *
-     * @param records
+     * @param documents
      *      list of records
      * @return
      *      number of records deleted
      */
-    public int deleteAll(List<Record<BEAN>> records) {
-        List<CompletableFuture<Integer>> futures = records.stream()
+    public int deleteAll(List<Document<BEAN>> documents) {
+        List<CompletableFuture<Integer>> futures = documents.stream()
                 .map(record -> CompletableFuture.supplyAsync(() -> delete(record) ? 1 : 0))
                 .collect(Collectors.toList());
         return futures.stream()

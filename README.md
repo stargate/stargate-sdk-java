@@ -62,9 +62,9 @@ videoTable.upsert(data);
 data.put("title", "title2");
 demoTable.upsert(data);
 
-// Delete a record
-KeyClient record = demoTable.key("Sci-Fi", 1990);
-record.delete();
+// Delete a document
+KeyClient document = demoTable.key("Sci-Fi", 1990);
+document.delete();
 
 // Search table (by PK)
 RowResultPage res1 = demoTable.search(

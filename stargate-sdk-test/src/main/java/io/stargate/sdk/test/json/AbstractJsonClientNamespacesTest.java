@@ -6,7 +6,7 @@ import io.stargate.sdk.json.JsonCollectionClient;
 import io.stargate.sdk.json.JsonNamespaceClient;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.JsonRecord;
+import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -140,7 +140,7 @@ public class AbstractJsonClientNamespacesTest {
                         .vector(14, cosine)
                         .build());
         jsonApiClient.namespace(TEST_NAMESPACE_1)
-                .createCollectionVector("tmp_vector", 14, cosine);
+                .createCollection("tmp_vector", 14, cosine);
         // Then
         Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION_VECTOR));
         Assertions.assertTrue(nsClient.existCollection("tmp_vector"));
@@ -162,7 +162,7 @@ public class AbstractJsonClientNamespacesTest {
        // Then
        Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION_VECTORIZE));
 
-       nsClient.createCollectionVector("tmp_vectorize", 14,
+       nsClient.createCollection("tmp_vectorize", 14,
                 cosine, "openai", "gpt3.5-turbo");
 
     }
@@ -205,7 +205,7 @@ public class AbstractJsonClientNamespacesTest {
         col.insertOne("id3", "{\"key\": \"value\"}");
 
         // fine-grained json
-        col.insertOne(new JsonRecord("pf1844").put("attribute", "test"));
+        col.insertOne(new JsonDocument("pf1844").put("attribute", "test"));
     }
 
     @Test
@@ -213,7 +213,7 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("10.Insert One Vector")
     public void shouldInsertOneVector() {
         JsonNamespaceClient ns = jsonApiClient.namespace(TEST_NAMESPACE_1);
-        ns.createCollectionVector(TEST_COLLECTION_VECTOR, 14, cosine);
+        ns.createCollection(TEST_COLLECTION_VECTOR, 14, cosine);
 
         // Insert with a Json record => KV access
         JsonCollectionClient colVector = ns.collection(TEST_COLLECTION_VECTOR);
@@ -233,7 +233,7 @@ public class AbstractJsonClientNamespacesTest {
                 new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
 
         // Insert a full-fledged object
-        colVector.insertOne(new JsonRecord()
+        colVector.insertOne(new JsonDocument()
                 .id("pf2000")
                 .put("attribute", "test")
                 .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
@@ -255,27 +255,27 @@ public class AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
-        myCollection.insertMany(
-                new JsonRecord()
+        myCollection.insertMany(List.of(
+                new JsonDocument()
                         .id("pf1844")
                         .data(new Product("HealthyFresh - Beef raw dog food", 9.99))
                         .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}),
-                new JsonRecord("pt0021")
+                new JsonDocument("pt0021")
                         .data("{ \"product_name\": \"Dog Tennis Ball Toy\" }")
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f}),
-                new JsonRecord()
+                new JsonDocument()
                         .id("pf1843")
                         .data(Map.of("product_name", "HealthyFresh - Chicken raw dog food"))
                         .vector(new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}),
-                new JsonRecord("pt0041")
+                new JsonDocument("pt0041")
                         .put("product_name", "Dog Ring Chew Toy")
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f, 0f, 0f}),
-                new JsonRecord("pf7043", new Product("Pepper Sausage Bacon dog Treats", 9.99))
+                new JsonDocument("pf7043", new Product("Pepper Sausage Bacon dog Treats", 9.99))
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f}),
-                new JsonRecord()
+                new JsonDocument()
                         .id("pf7044")
                         .data(new Product("Pepper Sausage Beef dog Treats", 10.99))
-                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f})
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f}))
         );
 
     }

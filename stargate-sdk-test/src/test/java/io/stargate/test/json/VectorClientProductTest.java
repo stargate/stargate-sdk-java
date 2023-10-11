@@ -1,15 +1,20 @@
 package io.stargate.test.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.json.JsonApiClient;
 import io.stargate.sdk.json.JsonCollectionClient;
-import io.stargate.sdk.json.vector.VectorStore;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.Filter;
+import io.stargate.sdk.json.domain.JsonDocument;
+import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
-import io.stargate.sdk.json.domain.odm.Record;
-import lombok.Builder;
+import io.stargate.sdk.json.domain.SelectQuery;
+import io.stargate.sdk.json.domain.odm.Result;
+import io.stargate.sdk.json.vector.VectorStore;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -20,14 +25,15 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static io.stargate.sdk.json.vector.SimilarityMetric.cosine;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class JsonClientApiDemoTest {
+class VectorClientProductTest {
 
-    @Data @Builder
-    private static class Product {
+    @Data @NoArgsConstructor @AllArgsConstructor
+    static class Product {
 
         @JsonProperty("product_name")
         private String name;
@@ -36,19 +42,21 @@ public class JsonClientApiDemoTest {
         private Double price;
     }
 
-    public static final String NAMESPACE = "demo";
-    public static final String COLLECTION = "sample_collection";
-    public static final String COLLECTION_VECTOR = "pet_supply_vectors";
+    static final String NAMESPACE = "demo";
+    static final String COLLECTION = "sample_collection";
+    static final String COLLECTION_VECTOR = "pet_supply_vectors";
 
-    public static JsonApiClient jsonApi;
+    static JsonApiClient jsonApi;
 
-    public static JsonCollectionClient myCollection;
+    static JsonCollectionClient myCollection;
+
+    static VectorStore<Product> vectorStore;
 
     @BeforeAll
     public static void setup() {
         // If default (localhost:8181) no parameter needed
         jsonApi = new JsonApiClient();
-        //jsonApi.dropNamespace(NAMESPACE);
+        jsonApi.dropNamespace(NAMESPACE);
     }
 
     @Test
@@ -77,59 +85,49 @@ public class JsonClientApiDemoTest {
         Assertions.assertTrue(collections.contains(COLLECTION_VECTOR));
 
         // Vector Store Experience
-        VectorStore<Product> vectorStore = jsonApi
-                .namespace(NAMESPACE)
-                .vectorStore(COLLECTION_VECTOR, Product.class);
+        myCollection = jsonApi.namespace(NAMESPACE).collection(COLLECTION_VECTOR);
+        vectorStore  = jsonApi.namespace(NAMESPACE).vectorStore(COLLECTION_VECTOR, Product.class);
 
+        float[] sampleVector = new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
         String vectorId1 = vectorStore.insert("1",
                 new Product("HealthyFresh - Beef raw dog food", 12.99),
-                new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
+                sampleVector);
 
-        Record<Product> ve = vectorStore.findById(vectorId1).get();
-        //vectorStore.save(ve);
-
+        Assertions.assertTrue(vectorStore.findById(vectorId1).isPresent());
+        Assertions.assertTrue(vectorStore.findByVector(sampleVector).isPresent());
     }
 
     @Test
     @Order(2)
     @DisplayName("02. Insert Records")
     public void shouldInsertVectors() {
-
-        VectorStore<String> s;
-/*
         // (Insert Many)
-        myCollection.insert(
+        myCollection.insertMany(List.of(
                 // Add keys
-                new JsonVectorRecord("pf1844")
+                new JsonDocument("pf1844")
                         .put("product_name", "HealthyFresh - Beef raw dog food")
                         .put("product_price", 12.99)
-                        .vector(1d, 0d, 1d, 1d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d),
-                // Constructor and Map
-                new JsonRecord("pf1843")
-                        .vector(1d, 1d, 1d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d)
-                        .metadatas(Map.of("product_name", "HealthyFresh - Chicken raw dog food")),
-                // Builder and json String
-                JsonRecord.builder()
+                        .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}),
+                new JsonDocument("pf1843")
+                        .vector(new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
+                        .data(Map.of("product_name", "HealthyFresh - Chicken raw dog food")),
+                new JsonDocument()
                         .id("pt0021")
-                        .metadatasJson("{ \"product_name\": \"Dog Tennis Ball Toy\" }")
-                        .vector(0d, 0d, 0d, 1d, 0d, 0d, 0d, 0d, 0d, 1d, 1d, 1d, 0d, 0d)
-                        .build(),
+                        .data("{ \"product_name\": \"Dog Tennis Ball Toy\" }")
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f}),
                 // Builder and bean
-                JsonRecord.builder()
+                new JsonDocument()
                         .id("pt0041")
-                        .metadatas(new Product("Dog Ring Chew Toy", 9.99))
-                        .vector(0d, 0d, 0d, 1d, 0d, 0d, 0d, 1d, 1d, 1d, 0d, 0d, 0d, 0d)
-                        .build(),
-                JsonRecord.builder()
+                        .data(new Product("Dog Ring Chew Toy", 9.99))
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f, 0f, 0f}),
+                new JsonDocument()
                         .id("pf7043")
-                        .metadatas(new Product("PupperSausage Bacon dog Treats", 9.99))
-                        .vector(0d, 0d, 0d, 1d, 0d, 0d, 1d, 0d, 0d, 0d, 0d, 0d, 1d, 1d)
-                        .build(),
-                JsonRecord.builder()
+                        .data(new Product("Pepper Sausage Bacon dog Treats", 9.99))
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f}),
+                new JsonDocument()
                         .id("pf7044")
-                        .metadatas(new Product("PupperSausage Beef dog Treats", 9.99))
-                        .vector(0d, 0d, 0d, 1d, 0d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 1d, 0d)
-                        .build());*/
+                        .data(new Product("Pepper Sausage Beef dog Treats", 9.99))
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f})));
     }
 
     @Test
@@ -153,39 +151,47 @@ public class JsonClientApiDemoTest {
         JsonCollectionClient myCollection = jsonApi
                 .namespace(NAMESPACE)
                 .collection(COLLECTION_VECTOR);
-/*
-        Page<JsonVectorResult> page = myCollection.find(Query.builder()
-                // Projection
+
+        Page<JsonResult> page = myCollection.queryForPage(SelectQuery.builder()
                 .selectVector()
                 .selectSimilarity()
-                // ann search
-                .orderByAnn(1d, 1d, 1d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d)
-                .maxResults(2)
+                .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                .limit(2)
                 .build());
 
+        Page<Result<Product>> pageProduct = myCollection.queryForPage(SelectQuery.builder()
+                .selectVector()
+                .selectSimilarity()
+                .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                .limit(2)
+                .build(), Product.class);
+
         System.out.println("Result Size=" + page.getPageSize());
-        for(JsonVectorResult result : page.getResults()) {
-            System.out.println(result.getId() + ") similarity=" + result.getSimilarity() + ", vector=" + result.getVector());
-        }*/
+        System.out.println("Result Size=" + pageProduct.getPageSize());
+        for(JsonResult result : page.getResults()) {
+            System.out.println(result.getId() + ") similarity=" + result.getSimilarity() + ", vector=" +
+                    Arrays.toString(result.getVector()));
+        }
     }
 
     @Test
     @Order(5)
     @DisplayName("05. Meta Data Filtering")
     public void shouldMetaDataFiltering() {
-/*
-            Page<JsonVectorResult> page =  myCollection.find(Query.builder()
+
+            Page<JsonResult> page =  myCollection.queryForPage(SelectQuery.builder()
                     .selectVector()
                     .selectSimilarity()
                     .where("product_price").isEqualsTo(9.99)
-                    .orderByAnn(1d, 1d, 1d, 1d, 1d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d, 0d)
-                    .maxResults(2)
+                    .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                    .limit(2)
                     .build());
 
             System.out.println("Result Size=" + page.getPageSize());
-            for(JsonVectorResult result : page.getResults()) {
-                System.out.println(result.getId() + ") similarity=" + result.getSimilarity() + ", vector=" + result.getVector());
-            }*/
+            for(JsonResult result : page.getResults()) {
+                System.out.println(result.getId() + ") similarity=" + result.getSimilarity() + ", vector=" +
+                        Arrays.toString(result.getVector()));
+            }
     }
 
 }

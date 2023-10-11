@@ -169,9 +169,9 @@ public class UpdateQueryBuilder {
     /**
      * replacement recod
      */
-    public JsonRecord replacement;
+    public JsonDocument replacement;
 
-    public UpdateQueryBuilder replaceBy(JsonRecord replacement) {
+    public UpdateQueryBuilder replaceBy(JsonDocument replacement) {
         this.replacement = replacement;
         return this;
     }

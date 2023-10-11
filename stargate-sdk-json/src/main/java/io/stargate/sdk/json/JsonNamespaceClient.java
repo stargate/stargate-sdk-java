@@ -94,7 +94,7 @@ public class JsonNamespaceClient {
      * @param dimension
      *      dimension of the vector
      */
-    public void createCollectionVector(String collection, int dimension) {
+    public void createCollection(String collection, int dimension) {
         this.createCollection(CollectionDefinition.builder()
                 .name(collection)
                 .vector(dimension,
@@ -111,7 +111,7 @@ public class JsonNamespaceClient {
      * @param metric
      *      similarity metric
      */
-    public void createCollectionVector(String collection, int dimension, SimilarityMetric metric) {
+    public void createCollection(String collection, int dimension, SimilarityMetric metric) {
         this.createCollection(CollectionDefinition.builder()
                 .name(collection)
                 .vector(dimension, metric).build());
@@ -131,7 +131,7 @@ public class JsonNamespaceClient {
      * @param model
      *      model to be used
      */
-    public void createCollectionVector(String collection, int dimension, SimilarityMetric metric, String llm, String model) {
+    public void createCollection(String collection, int dimension, SimilarityMetric metric, String llm, String model) {
         this.createCollection(CollectionDefinition.builder()
                 .name(collection)
                 .vector(dimension, metric)
@@ -190,6 +190,15 @@ public class JsonNamespaceClient {
         return new JsonCollectionClient(stargateHttpClient, namespace, collectionName);
     }
 
+    public CollectionRepository<ObjectMap> repository(String collectionName) {
+        return repository(collectionName, ObjectMap.class);
+    }
+
+    public <T> CollectionRepository<T> repository(String collectionName, Class<T> clazz) {
+        if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
+        return new CollectionRepository<>(collection(collectionName), clazz);
+    }
+
     /**
      * Vector store with object mapping and native function.
      *
@@ -203,6 +212,7 @@ public class JsonNamespaceClient {
      *      type parameter
      */
     public <T> VectorStore<T> vectorStore(String collectionName, Class<T> recordClass) {
+        if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
         return new VectorStore<>(collection(collectionName), recordClass);
     }
 

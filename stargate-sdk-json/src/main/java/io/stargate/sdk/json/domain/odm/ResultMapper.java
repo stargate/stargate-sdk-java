@@ -1,6 +1,5 @@
 package io.stargate.sdk.json.domain.odm;
 
-import io.stargate.sdk.json.domain.JsonRecord;
 import io.stargate.sdk.json.domain.JsonResult;
 
 /**
@@ -10,7 +9,7 @@ import io.stargate.sdk.json.domain.JsonResult;
  *      working bean
  */
 @FunctionalInterface
-public interface RecordMapper<T> {
+public interface ResultMapper<T> {
 
     /**
      * Extension point for the user to implement its own parser for a record.
@@ -20,6 +19,6 @@ public interface RecordMapper<T> {
      * @return
      *      the object marshalled
      */
-    Record<T> map(JsonResult record);
+    Result<T> map(JsonResult record);
 
 }

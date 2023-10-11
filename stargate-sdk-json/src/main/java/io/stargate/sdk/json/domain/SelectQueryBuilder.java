@@ -65,10 +65,6 @@ public class SelectQueryBuilder {
         return this;
     }
 
-    public SelectQueryBuilder orderByAnn(Float... vector) {
-        return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
-    }
-
     public SelectQueryBuilder orderByAnn(float... vector) {
         return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
     }
