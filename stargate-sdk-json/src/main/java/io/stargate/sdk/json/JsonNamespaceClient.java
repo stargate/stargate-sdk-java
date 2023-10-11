@@ -5,6 +5,7 @@ import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.JsonApiResponse;
+import io.stargate.sdk.json.vector.JsonVectorStore;
 import io.stargate.sdk.json.vector.SimilarityMetric;
 import io.stargate.sdk.json.exception.CollectionNotFoundException;
 import io.stargate.sdk.json.vector.VectorStore;
@@ -224,9 +225,8 @@ public class JsonNamespaceClient {
      * @return
      *      vector store.
      */
-    public VectorStore<ObjectMap> vectorStore(String collectionName) {
-        return vectorStore(collectionName, ObjectMap.class);
+    public JsonVectorStore vectorStore(String collectionName) {
+        return new JsonVectorStore(collection(collectionName));
     }
-
 
 }

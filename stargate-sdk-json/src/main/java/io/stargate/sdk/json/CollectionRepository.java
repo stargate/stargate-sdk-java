@@ -44,6 +44,16 @@ public class CollectionRepository<BEAN> {
         this.docClass  = clazz;
     }
 
+    /**
+     * Return name of the store.
+     *
+     * @return
+     *      sotre name
+     */
+    public String getName() {
+        return collectionClient.getCollection();
+    }
+
     // --------------------------
     // ---     Exists        ----
     // --------------------------
@@ -67,6 +77,18 @@ public class CollectionRepository<BEAN> {
     // --------------------------
     // ---    insertOne      ----
     // --------------------------
+
+    /**
+     * Insert a full JSON thing.
+     *
+     * @param jsonString
+     *      json String
+     * @return
+     *      value
+     */
+    public final String insert(@NonNull String jsonString) {
+        return collectionClient.insertOne(jsonString);
+    }
 
     /**
      * Insert with a Json Document.

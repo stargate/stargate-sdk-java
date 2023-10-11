@@ -17,6 +17,7 @@ import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.json.domain.odm.ResultMapper;
 import io.stargate.sdk.utils.Assert;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,16 +45,18 @@ public class JsonCollectionClient {
     protected final LoadBalancedHttpClient stargateHttpClient;
 
     /** Namespace identifier. */
-    private String namespace;
+    @Getter
+    private final String namespace;
 
     /** Collection identifier. */
-    private String collection;
+    @Getter
+    private final String collection;
 
     /**
      * Resource for collection: /v1/{namespace}/{collection}
      */
     public Function<ServiceHttp, String> collectionResource = (node) ->
-            JsonApiClient.rootResource.apply(node) + "/" + namespace + "/" + collection;
+            JsonApiClient.rootResource.apply(node) + "/" + getNamespace() + "/" + getCollection();
 
     /**
      * Full constructor.
