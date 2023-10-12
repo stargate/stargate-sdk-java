@@ -114,7 +114,7 @@ public class VectorClientPhilosopherTest {
                 .vectorStore("philosophers", Quote.class);
 
         float[] embeddings = vectorize("We struggle all our life for nothing");
-        vectorStore.similaritySearch(embeddings, 3).getResults()
+        vectorStore.similaritySearch(embeddings, 3)
                 .stream()
                 .map(Document::getData)
                 .map(Quote::getQuote)
@@ -129,13 +129,10 @@ public class VectorClientPhilosopherTest {
         new JsonApiClient()
                 .namespace("vector_openai")
                 .vectorStore("philosophers", Quote.class)
-
                 .similaritySearch(
                         vectorize("We struggle all our life for nothing"),
                         new Filter().where("philosopher").isEqualsTo("plato"),
                         2)
-
-                .getResults()
                 .forEach(r -> System.out.println(r.getSimilarity() + " - " + r.getData().getQuote()));
     }
 
@@ -177,7 +174,7 @@ public class VectorClientPhilosopherTest {
                 .similaritySearch(
                         vectorize(topic),
                         new Filter().where("philosopher").isEqualsTo(author),2)
-                .getResults().stream()
+                .stream()
                 .map(r -> r.getData().getQuote())
                 .collect(Collectors.toList());
 

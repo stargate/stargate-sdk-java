@@ -26,6 +26,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.stargate.sdk.json.vector.SimilarityMetric.cosine;
 
@@ -71,7 +72,9 @@ class VectorClientProductTest {
                 .simpleStrategy(1)
                 //.networkTopologyStrategy(Collections.singletonMap("dc1", 1))
                 .build());
-        Assertions.assertTrue(jsonApi.findNamespaces().toList().contains(NAMESPACE));
+        Assertions.assertTrue(jsonApi.findNamespaces()
+                .collect(Collectors.toList())
+                .contains(NAMESPACE));
 
         // Create a collection
         jsonApi.namespace(NAMESPACE).createCollection(COLLECTION);
@@ -80,7 +83,8 @@ class VectorClientProductTest {
                 .name(COLLECTION_VECTOR)
                 .vector(14, cosine)
                 .build());
-        List<String> collections = jsonApi.namespace(NAMESPACE).findCollections().toList();
+        List<String> collections = jsonApi.namespace(NAMESPACE).findCollections()
+                .collect(Collectors.toList());
         Assertions.assertTrue(collections.contains(COLLECTION));
         Assertions.assertTrue(collections.contains(COLLECTION_VECTOR));
 
@@ -155,14 +159,14 @@ class VectorClientProductTest {
         Page<JsonResult> page = myCollection.queryForPage(SelectQuery.builder()
                 .selectVector()
                 .selectSimilarity()
-                .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
                 .limit(2)
                 .build());
 
         Page<Result<Product>> pageProduct = myCollection.queryForPage(SelectQuery.builder()
                 .selectVector()
                 .selectSimilarity()
-                .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
                 .limit(2)
                 .build(), Product.class);
 
@@ -183,7 +187,7 @@ class VectorClientProductTest {
                     .selectVector()
                     .selectSimilarity()
                     .where("product_price").isEqualsTo(9.99)
-                    .orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+                    .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
                     .limit(2)
                     .build());
 
