@@ -124,6 +124,8 @@ public class JsonApiClient {
      *
      * @param namespace
      *      current namespace.
+     * @return
+     *      client for namespace
      */
     public JsonNamespaceClient createNamespace(String namespace) {
         this.createNamespace(NamespaceDefinition.builder().name(namespace).build());

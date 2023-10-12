@@ -2,6 +2,9 @@ package io.stargate.sdk.json.domain;
 
 import lombok.Data;
 
+/**
+ * Payload of Api when updating documents.
+ */
 @Data
 public class UpdateStatus {
 
@@ -24,4 +27,11 @@ public class UpdateStatus {
      * Number of items delete
      */
     private Integer deletedCount;
+
+    /**
+     * Default constructor.
+     */
+    public UpdateStatus() {
+    }
+
 }

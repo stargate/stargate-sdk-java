@@ -53,7 +53,7 @@ public class QueryWithKey {
     
     /** List of items to retrieve. */
     private final List<Sort> fieldsToSort;
-    
+
     /**
      * builder
      * 
@@ -92,7 +92,13 @@ public class QueryWithKey {
         
         /** Fields. */ 
         protected List<Sort> fieldsToSort = new ArrayList<>();
-        
+
+        /**
+         * Default constructor.
+         */
+        public QueryRowBuilder() {
+        }
+
         /**
          * build
          * 

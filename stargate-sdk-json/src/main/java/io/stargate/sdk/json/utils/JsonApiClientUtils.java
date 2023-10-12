@@ -27,8 +27,13 @@ public class JsonApiClientUtils {
 
     /**
      * Accessing api.
+     *
+     * @param stargateHttpClient
+     *      http client
      * @param operation
-     *      expected operation
+     *      name of the operation
+     * @param rootResource
+     *      rest resource
      * @param body
      *      body to send
      * @return
@@ -55,6 +60,8 @@ public class JsonApiClientUtils {
      *      the function to call
      * @param content
      *      Object to serialize as json
+     * @return
+     *    request body
      */
     public static String buildRequestBody(String function, Object content) {
         return "{\"" +

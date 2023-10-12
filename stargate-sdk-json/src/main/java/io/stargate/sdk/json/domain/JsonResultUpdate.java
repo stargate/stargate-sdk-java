@@ -3,18 +3,25 @@ package io.stargate.sdk.json.domain;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+/**
+ * Payload for json Api update.
+ */
 @Data
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonResultUpdate {
 
    /**
     * Json document
      */
-    private JsonResult jsonResult;
+   JsonResult jsonResult;
 
     /**
      * Status Returned
      */
-    private UpdateStatus updateStatus;
+    UpdateStatus updateStatus;
 
+    /**
+     * Default constructor.
+     */
+    public JsonResultUpdate() {
+    }
 }

@@ -16,7 +16,13 @@ public abstract class AbstractGraphClientTest implements TestGraphQLClientConsta
 
     /** Tested Store. */
     protected static StargateGraphQLApiClient stargateGraphQLApiClient;
-    
+
+    /**
+     * Default constructor.
+     */
+    public AbstractGraphClientTest() {
+    }
+
     /**
      * Test.
      */

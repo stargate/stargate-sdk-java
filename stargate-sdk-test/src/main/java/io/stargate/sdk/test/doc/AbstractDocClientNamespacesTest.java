@@ -27,7 +27,13 @@ public abstract class AbstractDocClientNamespacesTest implements TestDocClientCo
     // -----------------------------------------
     //           Operation on Namespaces
     // -----------------------------------------
-    
+
+    /**
+     * Default constructor.
+     */
+    public AbstractDocClientNamespacesTest() {
+    }
+
     /**
      * Create a namespace.
      *

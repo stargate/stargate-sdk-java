@@ -16,71 +16,32 @@
 
 package io.stargate.sdk.test.rest.domain;
 
+import lombok.Data;
+
 /**
- * 
- * @author Cedrick LUNVEN (@clunven)
+ * Pojo for tests
  */
+@Data
 public class Video {
-    
-    private String genre;
-    private String title;
-    private int year;
 
     /**
-     * Getter accessor for attribute 'genre'.
-     *
-     * @return
-     *       current value of 'genre'
+     * genre
      */
-    public String getGenre() {
-        return genre;
-    }
+    String genre;
 
     /**
-     * Setter accessor for attribute 'genre'.
-     * @param genre
-     * 		new value for 'genre '
+     * title
      */
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
+    String title;
 
     /**
-     * Getter accessor for attribute 'year'.
-     *
-     * @return
-     *       current value of 'year'
+     * year
      */
-    public int getYear() {
-        return year;
-    }
+    int year;
 
     /**
-     * Setter accessor for attribute 'year'.
-     * @param year
-     * 		new value for 'year '
+     * default constructor
      */
-    public void setYear(int year) {
-        this.year = year;
+    public Video() {
     }
-
-    /**
-     * Getter accessor for attribute 'title'.
-     *
-     * @return
-     *       current value of 'title'
-     */
-    public String getTitle() {
-        return title;
-    }
-
-    /**
-     * Setter accessor for attribute 'title'.
-     * @param title
-     * 		new value for 'title '
-     */
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
 }

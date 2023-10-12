@@ -113,7 +113,13 @@ public class SearchTableQuery {
          * - FieldName + condition + value
          */
         protected List<Filter> filters = new ArrayList<>();
-        
+
+        /**
+         * Default constructor.
+         */
+        public SearchTableQueryBuilder() {
+        }
+
         /**
          * Terminal call to build immutable instance of {@link SearchTableQuery}.
          *

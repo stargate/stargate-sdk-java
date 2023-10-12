@@ -16,6 +16,12 @@ public class StreamObserverToReactivePublisher<T> implements Publisher<T>, Strea
     /** subscriber. */
     private Subscriber<? super T> subscriber;
 
+    /**
+     * Default constructor.
+     */
+    public StreamObserverToReactivePublisher() {
+    }
+
     @Override
     /** @{inheritDocs} */
     public void onNext(T l) {

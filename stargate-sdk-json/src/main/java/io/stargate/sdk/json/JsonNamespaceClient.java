@@ -23,8 +23,7 @@ import static io.stargate.sdk.utils.AnsiUtils.green;
 /**
  * Work with namespace and collections.
  */
-@Getter
-@Slf4j
+@Getter  @Slf4j
 public class JsonNamespaceClient {
 
     /** Get Topology of the nodes. */
@@ -191,10 +190,30 @@ public class JsonNamespaceClient {
         return new JsonCollectionClient(stargateHttpClient, namespace, collectionName);
     }
 
+    /**
+     * Build repository for a collection.
+     *
+     * @param collectionName
+     *      collection name
+     * @return
+     *      collection repository
+     */
     public CollectionRepository<ObjectMap> repository(String collectionName) {
         return repository(collectionName, ObjectMap.class);
     }
 
+    /**
+     * Build repository for a collection.
+     *
+     * @param clazz
+     *      pojo class
+     * @param collectionName
+     *      collection name
+     * @return
+     *      collection repository
+     * @param <T>
+     *      type parameter
+     */
     public <T> CollectionRepository<T> repository(String collectionName, Class<T> clazz) {
         if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
         return new CollectionRepository<>(collection(collectionName), clazz);

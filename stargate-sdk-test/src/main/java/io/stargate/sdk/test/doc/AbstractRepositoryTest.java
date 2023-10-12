@@ -32,7 +32,14 @@ public abstract class AbstractRepositoryTest implements TestDocClientConstants {
     // -----------------------------------------
     //        Operation on Repositories
     // -----------------------------------------
-    
+
+    /**
+     * Default constructor.
+     */
+    public AbstractRepositoryTest() {
+    }
+
+
     /**
      * Test.
      * 

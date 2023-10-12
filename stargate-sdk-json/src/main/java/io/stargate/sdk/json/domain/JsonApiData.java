@@ -4,13 +4,30 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * Payload for json api response.
+ */
 @Data
 public class JsonApiData {
 
-    private List<JsonResult> documents;
+    /**
+     * List of documents.
+     */
+    List<JsonResult> documents;
 
-    private JsonResult document;
+    /**
+     * Document.
+     */
+    JsonResult document;
 
-    private String nextPageState;
+    /**
+     * Next page state.
+     */
+    String nextPageState;
 
+    /**
+     * Default constructor.
+     */
+    public JsonApiData() {
+    }
 }

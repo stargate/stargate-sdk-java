@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Payload for json api response.
+ */
 @Data
 public class JsonApiResponse {
 
@@ -31,6 +34,12 @@ public class JsonApiResponse {
     private JsonApiData data;
 
     /**
+     * Default constructor.
+     */
+    public JsonApiResponse() {
+    }
+
+    /**
      * Syntax sugar.
      *
      * @param key
@@ -46,10 +55,17 @@ public class JsonApiResponse {
         return Stream.empty();
     }
 
+    /**
+     * Syntax sugar.
+     *
+     * @param key
+     *      key to be retrieved
+     * @return
+     *      list of values
+     */
     public List<String> getStatusKeyAsList(@NonNull String key) {
         return getStatusKeyAsStream(key).collect(Collectors.toList());
     }
-
 
     /**
      * Syntax sugar.

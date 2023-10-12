@@ -30,6 +30,12 @@ public class KVPair {
     private String value;
 
     /**
+     * Default constructor.
+     */
+    public KVPair() {
+    }
+
+    /**
      * Getter accessor for attribute 'key'.
      *
      * @return

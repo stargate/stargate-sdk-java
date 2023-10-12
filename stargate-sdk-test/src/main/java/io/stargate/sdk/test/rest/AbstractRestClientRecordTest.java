@@ -37,6 +37,12 @@ public abstract class AbstractRestClientRecordTest implements TestRestClientCons
     protected static TableClient videoTable;
 
     /**
+     * Default constructor.
+     */
+    public AbstractRestClientRecordTest() {
+    }
+
+    /**
      * Test.
      */
     @Test

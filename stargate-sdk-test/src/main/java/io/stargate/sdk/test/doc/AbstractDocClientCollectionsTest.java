@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 
 /**
  * This class test the document api for namespaces
- * 
- * @author Cedrick LUNVEN (@clunven)
  */
 @TestMethodOrder(OrderAnnotation.class)
 public abstract class AbstractDocClientCollectionsTest implements TestDocClientConstants {
@@ -42,7 +40,13 @@ public abstract class AbstractDocClientCollectionsTest implements TestDocClientC
 
     /** Tested Store. */
     protected static NamespaceClient nsClient;
-    
+
+    /**
+     * Default constructor.
+     */
+    public AbstractDocClientCollectionsTest() {
+    }
+
     // -----------------------------------------
     //         Operation on Collection
     // -----------------------------------------
@@ -78,6 +82,9 @@ public abstract class AbstractDocClientCollectionsTest implements TestDocClientC
         LOGGER.info("Collection now exist");
     }
 
+    /**
+     * Test.
+     */
     @Test
     @Order(2)
     @DisplayName("02-Should list collections")

@@ -1,7 +1,5 @@
 package io.stargate.sdk.json.domain;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stargate.sdk.http.domain.FilterKeyword;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
@@ -24,6 +22,12 @@ public class SelectQueryBuilder {
     public Map<String, Object> projection;
 
     /**
+     * Default constructor.
+     */
+    public SelectQueryBuilder() {
+    }
+
+    /**
      * List of fields to be returned.
      *
      * @param keys
@@ -43,10 +47,22 @@ public class SelectQueryBuilder {
         return this;
     }
 
+    /**
+     * Add vector in the projection.
+     *
+     * @return
+     *      self reference
+     */
     public SelectQueryBuilder selectVector() {
         return select(FilterKeyword.VECTOR.getKeyword());
     }
 
+    /**
+     * Add similarity in the projection.
+     *
+     * @return
+     *      self reference
+     */
     public SelectQueryBuilder selectSimilarity() {
         return select(FilterKeyword.SIMILARITY.getKeyword());
     }
@@ -55,8 +71,21 @@ public class SelectQueryBuilder {
     // -- Sort: 'order by'             ---
     // -----------------------------------
 
+    /**
+     * order by.
+     */
     public Map<String, Object> sort;
 
+    /**
+     * Builder Pattern
+     *
+     * @param key
+     *      updated key
+     * @param value
+     *      updated value
+     * @return
+     *      self reference
+     */
     public SelectQueryBuilder orderBy(String key, Object value) {
         if (null == sort) {
             sort = new HashMap<>();
@@ -65,10 +94,26 @@ public class SelectQueryBuilder {
         return this;
     }
 
-    public SelectQueryBuilder orderByAnn(float... vector) {
+    /**
+     * Builder Pattern
+     *
+     * @param vector
+     *      add vector in the order by
+     * @return
+     *      self reference
+     */
+    public SelectQueryBuilder orderByAnn(float[] vector) {
         return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
     }
 
+    /**
+     * Builder Pattern
+     *
+     * @param textFragment
+     *      add text in the order by (vectorize)
+     * @return
+     *      self reference
+     */
     public SelectQueryBuilder orderByAnn(String textFragment) {
         return orderBy(FilterKeyword.VECTORIZE.getKeyword(), textFragment);
     }
@@ -91,6 +136,9 @@ public class SelectQueryBuilder {
      *      number of items
      */
     public SelectQueryBuilder limit(int limit) {
+        if (limit > 20) {
+            throw new IllegalArgumentException("Limit must be less than 20");
+        }
         return withOption("limit", limit);
     }
 
@@ -124,12 +172,13 @@ public class SelectQueryBuilder {
      * @return
      *     current builder
      */
-    public SelectQueryBuilder withIncludeSimilarity() {
+    public SelectQueryBuilder includeSimilarity() {
         return withOption("includeSimilarity", "true");
     }
 
     /**
-     * Add an option to the request
+     * Add an option to the request.
+     *
      * @param key
      *      current key
      * @param value

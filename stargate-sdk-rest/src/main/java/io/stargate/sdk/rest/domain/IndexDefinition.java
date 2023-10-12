@@ -56,6 +56,12 @@ public class IndexDefinition implements Serializable {
     private String kind;
 
     /**
+     * Default constructor.
+     */
+    public IndexDefinition() {
+    }
+
+    /**
      * Getter accessor for attribute 'index_name'.
      *
      * @return

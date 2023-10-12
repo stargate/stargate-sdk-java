@@ -12,14 +12,34 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UpdateQuery {
 
-    private Map<String, Object> sort;
+    /**
+     * Select.
+     */
+    private Map<String, Object> projection;
 
-    private Map<String, Object> options;
-
+    /**
+     * where clause
+     */
     private Map<String, Object> filter;
 
+    /**
+     * Order by.
+     */
+    private Map<String, Object> sort;
+
+    /**
+     * Options.
+     */
+    private Map<String, Object> options;
+
+    /**
+     * Update.
+     */
     private Map<String, Object> update;
 
+    /**
+     * Replacement.
+     */
     private JsonDocument replacement;
 
     /**
@@ -37,6 +57,12 @@ public class UpdateQuery {
         return new UpdateQueryBuilder();
     }
 
+    /**
+     * Constructor with builder.
+     *
+     * @param builder
+     *      builder
+     */
     public UpdateQuery(UpdateQueryBuilder builder) {
         // where
         this.filter = builder.filter;

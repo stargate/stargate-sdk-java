@@ -8,7 +8,6 @@ import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
 import io.stargate.sdk.json.domain.UpdateQueryBuilder;
-import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.test.json.AbstractJsonClientNamespacesTest;
 import io.stargate.sdk.utils.JsonUtils;
@@ -146,7 +145,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
                 .where("_id").isEqualsTo("9")
                 .updateSet("val1", "updated_from_code")
                 .withReturnDocument(UpdateQueryBuilder.ReturnDocument.after)
-                .withUpsert()
+                .enableUpsert()
                 .build());
         System.out.println(JsonUtils.marshall(result));
     }

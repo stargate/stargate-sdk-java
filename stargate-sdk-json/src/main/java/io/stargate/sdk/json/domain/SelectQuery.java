@@ -15,17 +15,36 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SelectQuery {
 
+    /**
+     * Default page size.
+     */
     public static final int DEFAULT_PAGE_SIZE = 21;
 
+    /**
+     * Max page size.
+     */
     public static final int PAGING_SIZE_MAX = 20;
 
-    private Map<String, Object> sort;
-
+    /**
+     * Select.
+     */
     private Map<String, Object> projection;
 
+    /**
+     * where clause
+     */
+    private Map<String, Object> filter;
+
+    /**
+     * Order by.
+     */
+    private Map<String, Object> sort;
+
+    /**
+     * Options.
+     */
     private Map<String, Object> options;
 
-    private Map<String, Object> filter;
 
     /**
      * Default constructor.
@@ -42,6 +61,12 @@ public class SelectQuery {
         return new SelectQueryBuilder();
     }
 
+    /**
+     * Constructor from a builder.
+     *
+     * @param builder
+     *      current builder
+     */
     public SelectQuery(SelectQueryBuilder builder) {
         // select
         this.projection = builder.projection;
@@ -54,7 +79,7 @@ public class SelectQuery {
     }
 
     /**
-     * Common request avalaible as static function.
+     * Build the find by id request
      *
      * @param id
      *      identifier
@@ -65,14 +90,24 @@ public class SelectQuery {
         return SelectQuery.builder().where("_id").isEqualsTo(id).build();
     }
 
-    public static SelectQuery findByVector(@NonNull float[] embeddings) {
+    /**
+     * Build the find by vector request
+     *
+     * @param vector
+     *      document vector
+     * @return
+     *      query
+     */
+    public static SelectQuery findByVector(float[] vector) {
+        if (vector == null) throw new IllegalArgumentException("vector cannot be null");
         return SelectQuery.builder().selectVector()
                 .selectSimilarity()
-                .orderByAnn(embeddings).build();
+                .orderByAnn(vector).build();
     }
 
     /**
      * Look for pageSize.
+     *
      * @return
      *      page size
      */
@@ -85,6 +120,12 @@ public class SelectQuery {
         return pageSize;
     }
 
+    /**
+     * Update page state
+     *
+     * @param pageState
+     *      new value for page state
+     */
     @JsonIgnore
     public void setPageState(String pageState) {
         if (options == null) {

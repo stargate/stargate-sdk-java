@@ -12,13 +12,25 @@ import java.util.Map;
 /**
  * Json Results.
  */
-@Getter @Setter @NoArgsConstructor
+@Getter @Setter
 public class JsonResult extends AbstractJsonRecord {
 
+    /**
+     * Similarity value in the response.
+     */
     @JsonProperty("$similarity")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     protected Float similarity;
 
+    /**
+     * Output as a map (to use JsonAySetter annotation).
+     */
     @JsonAnySetter
     protected Map<String, Object> data;
+
+    /**
+     * Default constructor.
+     */
+    public JsonResult() {
+    }
+
 }

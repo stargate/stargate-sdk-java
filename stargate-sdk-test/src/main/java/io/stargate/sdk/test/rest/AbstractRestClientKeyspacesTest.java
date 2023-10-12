@@ -25,6 +25,12 @@ public abstract class AbstractRestClientKeyspacesTest implements TestRestClientC
     protected static StargateRestApiClient stargateRestApiClient;
 
     /**
+     * Default constructor.
+     */
+    public AbstractRestClientKeyspacesTest() {
+    }
+
+    /**
      * Create a keyspace
      * POST /v2/schemas/keyspaces
      *

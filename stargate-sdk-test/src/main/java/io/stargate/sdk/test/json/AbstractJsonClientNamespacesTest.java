@@ -32,19 +32,30 @@ import static io.stargate.sdk.json.vector.SimilarityMetric.cosine;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AbstractJsonClientNamespacesTest {
 
+    /** test constants. */
     public static final String TEST_NAMESPACE_1 = "ns1";
+    /** test constants. */
     public static final String TEST_NAMESPACE_2 = "ns2";
+    /** test constants. */
     public static final String TEST_COLLECTION = "col1";
+    /** test constants. */
     public static final String TEST_COLLECTION_VECTOR = "vector1";
+    /** test constants. */
     public static final String TEST_COLLECTION_VECTORIZE = "vectorize1";
 
     /** Tested Store. */
     protected static JsonApiClient jsonApiClient;
-
+    /** Tested Namespace. */
     protected static JsonNamespaceClient nsClient;
 
     /**
-     * createNamespace1()
+     * Default constructor.
+     */
+    public AbstractJsonClientNamespacesTest() {
+    }
+
+    /**
+     * shouldCreateNameSpace()
      */
     @Test
     @Order(1)
@@ -60,7 +71,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * createNamespace1()
+     * shouldCreateNameSpaceWithReplication()
      */
     @Test
     @Order(2)
@@ -79,7 +90,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * findNamespaces()
+     * shouldListNamespace()
      */
     @Test
     @Order(3)
@@ -90,9 +101,8 @@ public class AbstractJsonClientNamespacesTest {
         Assertions.assertTrue(ns.contains(TEST_NAMESPACE_2));
     }
 
-
     /**
-     * findNamespaces()
+     * shouldDropNamespace()
      */
     @Test
     @Order(4)
@@ -110,7 +120,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * createNamespace1()
+     * shouldCreateCollection()
      */
     @Test
     @Order(5)
@@ -125,7 +135,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * createNamespace1()
+     * shouldCreateCollectionWithVector()
      */
     @Test
     @Order(6)
@@ -146,6 +156,9 @@ public class AbstractJsonClientNamespacesTest {
         Assertions.assertTrue(nsClient.existCollection("tmp_vector"));
     }
 
+    /**
+     * shouldCreateCollectionVectorize
+     */
     @Test
     @Order(7)
     @Disabled
@@ -168,7 +181,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * createNamespace1()
+     * shouldDropCollection()
      */
     @Test
     @Order(8)
@@ -182,6 +195,9 @@ public class AbstractJsonClientNamespacesTest {
         Assertions.assertFalse(nsClient.existCollection("tmp_vector"));
     }
 
+    /**
+     * shouldInsertOne()
+     */
     @Test
     @Order(9)
     @DisplayName("09.Insert One")
@@ -208,6 +224,9 @@ public class AbstractJsonClientNamespacesTest {
         col.insertOne(new JsonDocument("pf1844").put("attribute", "test"));
     }
 
+    /**
+     * shouldInsertOneVector
+     */
     @Test
     @Order(10)
     @DisplayName("10.Insert One Vector")
@@ -240,7 +259,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * createNamespace1()
+     * shouldInsertMany()
      */
     @Test
     @Order(11)
@@ -281,7 +300,7 @@ public class AbstractJsonClientNamespacesTest {
     }
 
     /**
-     * createNamespace1()
+     * shouldCountDocuments()
      */
     @Test
     @Order(12)
@@ -300,15 +319,21 @@ public class AbstractJsonClientNamespacesTest {
     }
 
 
-
     // ---- Tests POJO --
 
-    @Getter @AllArgsConstructor @NoArgsConstructor
+    /**
+     * Pojo
+     */
+    @Getter @AllArgsConstructor
     protected static class Product {
+        /** name. */
         @JsonProperty("product_name")
         private String name;
+        /** price. */
         @JsonProperty("product_price")
         private Double price;
+        /** Default constructor. */
+        public Product() {}
     }
 
 }

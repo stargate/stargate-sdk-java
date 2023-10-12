@@ -41,7 +41,13 @@ public abstract class AbstractDocClientDocumentsTest implements TestDocClientCon
     // -----------------------------------------
     //           Operation on Namespaces
     // -----------------------------------------
-    
+
+    /**
+     * Default constructor.
+     */
+    public AbstractDocClientDocumentsTest() {
+    }
+
     /**
      * Test.
      * 

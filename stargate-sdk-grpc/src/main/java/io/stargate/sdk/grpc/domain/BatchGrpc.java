@@ -26,6 +26,12 @@ public class BatchGrpc {
     private QueryOuterClass.Consistency consistencyLevel = QueryOuterClass.Consistency.LOCAL_QUORUM;
 
     /**
+     * Default constructor.
+     */
+    public BatchGrpc() {
+    }
+
+    /**
      * Update keyspace.
      *
      * @param keyspace

@@ -84,9 +84,6 @@ public class CreateIndex implements Serializable {
     
     /**
      * Internal builder
-     *
-     * @author Cedrick LUNVEN (@clunven)
-     *
      */
     public static class CreateIndexBuilder {
         
@@ -107,7 +104,13 @@ public class CreateIndex implements Serializable {
         
         /** list of options. */
         Map<String, String> options = null;
-        
+
+        /**
+         * Default constructor.
+         */
+        public CreateIndexBuilder() {
+        }
+
         /**
          * Catalog to build.
          * 

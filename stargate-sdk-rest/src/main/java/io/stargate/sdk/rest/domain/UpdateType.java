@@ -24,6 +24,12 @@ public class UpdateType implements Serializable {
     private List<TypeFieldUpdate> renameFields = new ArrayList<>();
 
     /**
+     * Default constructor.
+     */
+    public UpdateType() {
+    }
+
+    /**
      * Getter accessor for attribute 'name'.
      *
      * @return

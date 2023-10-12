@@ -26,6 +26,12 @@ public abstract class AbstractJsonRecord {
     protected float[] vector;
 
     /**
+     * Default constructor.
+     */
+    public AbstractJsonRecord() {
+    }
+
+    /**
      * Gets id
      *
      * @return value of id

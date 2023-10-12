@@ -13,6 +13,7 @@ import io.stargate.sdk.json.domain.odm.Result;
 import lombok.NonNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -46,7 +47,7 @@ public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
      * @param current
      *      current bean to update
      * @param vector
-     *      vector to privide
+     *      vector to provide
      * @return
      *      generated identifier
      */
@@ -75,6 +76,8 @@ public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
     /**
      * Generate a new document with a new id.
      *
+     * @param vector
+     *      embeddings
      * @param current
      *      current object to create
      * @return
@@ -86,10 +89,13 @@ public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
 
     /**
      * Create a new document with the id, if I already exist an error will occur.
+     *
      * @param id
      *      identifier
      * @param current
      *      current bean
+     * @param vector
+     *      embeddings
      * @return
      *      if the document has been updated
      */
@@ -112,38 +118,145 @@ public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
     // --------------------------
 
     /**
-     * Find by Id.
+     * Find by vector
      *
-     * @param embeddings
-     *      embeddings
+     * @param vector
+     *      vector
      * @return
      *      object if presents
      */
-    public Optional<Result<BEAN>> findByVector(@NonNull float[] embeddings) {
-        return collectionClient.findOneByVector(embeddings, docClass);
+    public Optional<Result<BEAN>> findByVector(@NonNull float[] vector) {
+        return collectionClient.findOneByVector(vector, docClass);
     }
 
+    /**
+     * Delete by vector
+     *
+     * @param vector
+     *      vector
+     * @return
+     *      if object deleted
+     */
     public boolean deleteByVector(float[] vector) {
         return collectionClient.deleteByVector(vector) > 0;
     }
 
-    public Page<Result<BEAN>> similaritySearch(float[] embeddings) {
-        return similaritySearch(embeddings, null, null);
+    // ------------------------------
+    // ---  Similarity Search    ----
+    // ------------------------------
+
+    /**
+     * Search similarity from the vector (page by 20)
+     *
+     * @param vector
+     *      vector
+     * @return
+     *      page of results
+     */
+    public Page<Result<BEAN>> similaritySearch(float[] vector) {
+        return similaritySearch(vector, null, null, null);
     }
 
-    public Page<Result<BEAN>> similaritySearch(float[] embeddings, Integer limit) {
-        return similaritySearch(embeddings, null, limit);
+    /**
+     * Search similarity from the vector (page by 20)
+     *
+     * @param vector
+     *      vector
+     * @param metadataFilter
+     *      metadata filtering
+     * @return
+     *      page of results
+     */
+    public Page<Result<BEAN>> similaritySearch(float[] vector, Filter metadataFilter) {
+        return similaritySearch(vector, metadataFilter, null, null);
     }
 
-    public Page<Result<BEAN>> similaritySearch(float[] embeddings, Filter filter, Integer limit) {
-        SelectQueryBuilder builder = SelectQuery.builder().orderByAnn(embeddings);
+    /**
+     * Search similarity from the vector for another page
+     *
+     * @param vector
+     *      vector
+     * @param pagingState
+     *      paging state for different page
+     * @return
+     *      page of results
+     */
+    public Page<Result<BEAN>> similaritySearch(float[] vector, String pagingState) {
+        return similaritySearch(vector, null, null, pagingState);
+    }
+
+    /**
+     * Search similarity from the vector (page by 20)
+     *
+     * @param vector
+     *      vector
+     * @param metadataFilter
+     *      metadata filtering
+     * @param pagingState
+     *      paging state for different page
+     * @return
+     *      page of results
+     */
+    public Page<Result<BEAN>> similaritySearch(float[] vector, Filter metadataFilter, String pagingState) {
+        return similaritySearch(vector, metadataFilter, null, pagingState);
+    }
+
+    /**
+     * Search similarity from the vector and a limit, if a limit / no paging
+     *
+     * @param vector
+     *      vector
+     * @param limit
+     *      return count
+     * @return
+     *      page of results
+     */
+    public List<Result<BEAN>> similaritySearch(float[] vector, Integer limit) {
+        return similaritySearch(vector, null, limit, null).getResults();
+    }
+
+    /**
+     * Search similarity from the vector and a limit, if a limit / no paging
+     *
+     * @param vector
+     *      vector
+     * @param limit
+     *      return count
+     * @param metadataFilter
+     *      metadata filtering
+     * @return
+     *      page of results
+     */
+    public List<Result<BEAN>> similaritySearch(float[] vector, Filter metadataFilter, Integer limit) {
+        return similaritySearch(vector, metadataFilter, limit, null).getResults();
+    }
+
+    /**
+     * Query builder.
+     *
+     * @param vector
+     *      vector embeddings
+     * @param filter
+     *      metadata filter
+     * @param limit
+     *      limit
+     * @param pagingState
+     *      paging state
+     * @return
+     *      result page
+     */
+    private Page<Result<BEAN>> similaritySearch(float[] vector, Filter filter, Integer limit, String pagingState) {
+        SelectQueryBuilder builder = SelectQuery.builder().orderByAnn(vector);
         if (filter != null) {
             if (builder.filter == null) {
                 builder.filter = new HashMap<>();
             }
             builder.filter.putAll(filter.getFilter());
         }
-        builder.withIncludeSimilarity();
+        builder.includeSimilarity();
+        if (pagingState != null) {
+            builder.withPagingState(pagingState);
+        }
         if (limit!=null) {
             builder.limit(limit);
         }

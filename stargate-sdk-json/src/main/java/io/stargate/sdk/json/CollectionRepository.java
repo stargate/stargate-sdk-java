@@ -26,6 +26,9 @@ import java.util.stream.Stream;
  */
 public class CollectionRepository<BEAN> {
 
+    /**
+     * Raw collection client.
+     */
     protected final JsonCollectionClient collectionClient;
 
     /** Keep ref to the generic. */
@@ -104,6 +107,7 @@ public class CollectionRepository<BEAN> {
 
     /**
      * Create a new document a generating identifier.
+     *
      * @param current
      *      delete a document
      * @return
@@ -116,6 +120,8 @@ public class CollectionRepository<BEAN> {
     /**
      * Create a new document with the id, if I already exist an error will occur.
      *
+     * @param id
+     *      document identifier
      * @param current
      *      document to create
      * @return
@@ -155,6 +161,7 @@ public class CollectionRepository<BEAN> {
 
     /**
      * Create a new document with the id, if I already exist an error will occur.
+     *
      * @param id
      *      identifier
      * @param current
@@ -198,16 +205,24 @@ public class CollectionRepository<BEAN> {
         return id;
     }
 
-    public final String save(@NonNull JsonDocument current) {
-        String id = current.getId();
+    /**
+     * Save a json document.
+     *
+     * @param doc
+     *      json document
+     * @return
+     *      document identifier
+     */
+    public final String save(@NonNull JsonDocument doc) {
+        String id = doc.getId();
         if (id == null || !exists(id)) {
-            return collectionClient.insertOne(current.getId(), current.getData(), current.getVector());
+            return collectionClient.insertOne(doc.getId(), doc.getData(), doc.getVector());
         }
         // Already Exist
         collectionClient.findOneAndReplace(UpdateQuery.builder()
                 .where("_id")
                 .isEqualsTo(id)
-                .replaceBy(current)
+                .replaceBy(doc)
                 .build());
         return id;
     }
@@ -229,6 +244,14 @@ public class CollectionRepository<BEAN> {
         return documentList.stream().map(this::save).collect(Collectors.toList());
     }
 
+    /**
+     * Create a new document a generating identifier.
+     *
+     * @param documentList
+     *      object Mapping
+     * @return
+     *      an unique identifier for the document
+     */
     public final List<String> saveAllJsonDocuments(@NonNull List<JsonDocument> documentList) {
         if (documentList.isEmpty()) return new ArrayList<>();
         return documentList.stream().map(this::save).collect(Collectors.toList());
@@ -249,12 +272,18 @@ public class CollectionRepository<BEAN> {
                 .collect(Collectors.toList()));
     }
 
+    /**
+     * Low level insertion of multiple records
+     *
+     * @param documentList
+     *      list of documents
+     * @return
+     *      list of ids
+     */
     public final List<String> insertAllJsonDocuments(@NonNull List<JsonDocument> documentList) {
         if (documentList.isEmpty()) return new ArrayList<>();
         return collectionClient.insertMany(documentList);
     }
-
-
 
     // --------------------------
     // ---      Count        ----
@@ -273,6 +302,8 @@ public class CollectionRepository<BEAN> {
     /**
      * Count Document request.
      *
+     * @param jsonFilter
+     *      a filter for the count
      * @return
      *      number of document.
      */
@@ -321,6 +352,8 @@ public class CollectionRepository<BEAN> {
     /**
      * Find all item in the collection.
      *
+     * @param query
+     *      search with a query
      * @return
      *      retrieve all items
      */
@@ -344,16 +377,38 @@ public class CollectionRepository<BEAN> {
     // ---     Delete        ----
     // --------------------------
 
+    /**
+     * Delete a document from id or vector
+     * .
+     * @param document
+     *      document
+     * @return
+     *      if document has been deleted.
+     */
     public boolean delete(@NonNull Document<BEAN> document) {
         if (document.getId() != null) return deleteById(document.getId());
         if (document.getVector() != null) return collectionClient.deleteByVector(document.getVector()) > 0;
         throw new IllegalArgumentException("Cannot delete record without id or vector");
     }
 
+    /**
+     * Delete a document from id
+     * .
+     * @param id
+     *      document id
+     * @return
+     *      if document has been deleted.
+     */
     public boolean deleteById(String id) {
         return collectionClient.deleteById(id) > 0;
     }
 
+    /**
+     * Delete all documents
+     *
+     * @return
+     *     number of document deleted
+     */
     public int deleteAll() {
         return collectionClient.deleteAll();
     }
@@ -376,6 +431,14 @@ public class CollectionRepository<BEAN> {
                 .sum();
     }
 
+    /**
+     * Delete item through a query.
+     *
+     * @param deleteQuery
+     *      delete queru
+     * @return
+     *       number of records deleted
+     */
     public int deleteAll(DeleteQuery deleteQuery) {
         return collectionClient.deleteMany(deleteQuery);
     }

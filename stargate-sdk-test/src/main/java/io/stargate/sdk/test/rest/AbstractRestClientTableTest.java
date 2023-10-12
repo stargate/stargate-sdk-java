@@ -25,7 +25,13 @@ public abstract class AbstractRestClientTableTest implements TestRestClientConst
     
     /** Tested Store. */
     protected static KeyspaceClient ksClient;
-    
+
+    /**
+     * Default constructor.
+     */
+    public AbstractRestClientTableTest() {
+    }
+
     /**
      * Helper to delete table before a test.
      *

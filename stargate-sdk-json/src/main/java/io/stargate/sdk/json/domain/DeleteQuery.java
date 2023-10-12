@@ -32,6 +32,12 @@ public class DeleteQuery {
         return new DeleteQueryBuilder();
     }
 
+    /**
+     * Constructor with a builder.
+     *
+     * @param builder
+     *      builder
+     */
     public DeleteQuery(DeleteQueryBuilder builder) {
         // where
         this.filter = builder.filter;
@@ -41,7 +47,7 @@ public class DeleteQuery {
     }
 
     /**
-     * Common request avalaible as static function.
+     * Delete by id query generator
      *
      * @param id
      *      identifier
@@ -52,6 +58,14 @@ public class DeleteQuery {
         return DeleteQuery.builder().where("_id").isEqualsTo(id).build();
     }
 
+    /**
+     * Delete by vector query generator
+     *
+     * @param embeddings
+     *      embeddings
+     * @return
+     *      query
+     */
     public static DeleteQuery deleteByVector(@NonNull float[] embeddings) {
         return DeleteQuery.builder().orderByAnn(embeddings).build();
     }

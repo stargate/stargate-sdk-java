@@ -109,7 +109,13 @@ public class CreateTable implements Serializable {
         
         /** columns definitions. */
         private Map<String, ColumnDefinition> cols = new HashMap<>();
-        
+
+        /**
+         * Default constructor.
+         */
+        public CreateTableBuilder() {
+        }
+
         /**
          * Helper for name.
          *

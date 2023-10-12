@@ -28,6 +28,12 @@ public abstract class AbstractRestClientTypeTest implements TestRestClientConsta
     protected static KeyspaceClient ksClient;
 
     /**
+     * Default constructor.
+     */
+    public AbstractRestClientTypeTest() {
+    }
+
+    /**
      * Test.
      */
     @Test

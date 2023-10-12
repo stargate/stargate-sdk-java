@@ -26,6 +26,12 @@ import io.stargate.sdk.core.domain.RowMapper;
  */
 public class VideoRowMapper implements RowMapper<Video> {
 
+    /**
+     * Default constructor.
+     */
+    public VideoRowMapper() {
+    }
+
     /** {@inheritDoc} */
     @Override
     public Video map(ObjectMap objectMap) {

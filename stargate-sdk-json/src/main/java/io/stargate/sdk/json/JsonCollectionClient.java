@@ -191,6 +191,8 @@ public class JsonCollectionClient {
     /**
      * Count Document request.
      *
+     * @param jsonFilter
+     *      request to filter for count
      * @return
      *      number of document.
      */
@@ -225,6 +227,8 @@ public class JsonCollectionClient {
      *     class of the document
      * @return
      *      result if exists
+     * @param <T>
+     *       class to be marshalled
      */
     public <T> Optional<Result<T>> findOne(SelectQuery query, Class<T> clazz) {
         return findOne(query).map(r -> new Result<>(r, clazz));
@@ -235,8 +239,12 @@ public class JsonCollectionClient {
      *
      * @param query
      *      query documents and vector
+     * @param mapper
+     *      convert a json into expected pojo
      * @return
      *      result if exists
+     * @param <T>
+     *       class to be marshalled
      */
     public <T> Optional<Result<T>> findOne(SelectQuery query, ResultMapper<T> mapper) {
         return findOne(query).map(mapper::map);
@@ -246,14 +254,46 @@ public class JsonCollectionClient {
     // ---    Find By Id     ----
     // --------------------------
 
+    /**
+     * Find document from its id.
+     *
+     * @param id
+     *      document identifier
+     * @return
+     *      document
+     */
     public Optional<JsonResult> findById(String id) {
         return findOne(SelectQuery.findById(id));
     }
 
+    /**
+     * Find document from its id.
+     *
+     * @param id
+     *      document identifier
+     * @param clazz
+     *      class for target pojo
+     * @return
+     *      document
+     * @param <T>
+     *       class to be marshalled
+     */
     public <T> Optional<Result<T>> findById(@NonNull String id, Class<T> clazz) {
         return findById(id).map(r -> new Result<>(r, clazz));
     }
 
+    /**
+     * Find document from its id.
+     *
+     * @param id
+     *      document identifier
+     * @param mapper
+     *      convert a json into expected pojo
+     * @return
+     *      document
+     * @param <T>
+     *       class to be marshalled
+     */
     public <T> Optional<Result<T>> findById(@NonNull String id, ResultMapper<T> mapper) {
         return findById(id).map(mapper::map);
     }
@@ -262,14 +302,47 @@ public class JsonCollectionClient {
     // --- Find By Vector    ----
     // --------------------------
 
+
+    /**
+     * Find document from its vector.
+     *
+     * @param vector
+     *      document vector
+     * @return
+     *      document
+     */
     public Optional<JsonResult> findOneByVector(float[] vector) {
         return findOne(SelectQuery.findByVector(vector));
     }
 
+    /**
+     * Find document from its vector.
+     *
+     * @param vector
+     *      document vector
+     * @param clazz
+     *      class for target pojo
+     * @return
+     *      document
+     * @param <T>
+     *       class to be marshalled
+     */
     public <T> Optional<Result<T>> findOneByVector(float[] vector, Class<T> clazz) {
         return findOneByVector(vector).map(r -> new Result<>(r, clazz));
     }
 
+    /**
+     * Find document from its vector.
+     *
+     * @param vector
+     *      document vector
+     * @param mapper
+     *      convert a json into expected pojo
+     * @return
+     *      document
+     * @param <T>
+     *       class to be marshalled
+     */
     public <T> Optional<Result<T>> findOneByVector(float[] vector, ResultMapper<T> mapper) {
         return findOneByVector(vector).map(mapper::map);
     }
@@ -289,7 +362,8 @@ public class JsonCollectionClient {
     }
 
     /**
-     * Get all items in a collection.
+     * Search records with a filter
+     *
      * @param pageQuery
      *      filter
      * @return
@@ -314,10 +388,34 @@ public class JsonCollectionClient {
         return documents.stream();
     }
 
+    /**
+     * Search records with a filter
+     *
+     * @param pageQuery
+     *      filter
+     * @param clazz
+     *      class for target pojo
+     * @return
+     *      all items
+     * @param <T>
+     *       class to be marshalled
+     */
     public  <T> Stream<Result<T>> query(SelectQuery pageQuery, Class<T> clazz) {
         return query(pageQuery).map(r -> new Result<>(r, clazz));
     }
 
+    /**
+     * Search records with a filter
+     *
+     * @param pageQuery
+     *      filter
+     * @param mapper
+     *      convert a json into expected pojo
+     * @return
+     *      all items
+     * @param <T>
+     *       class to be marshalled
+     */
     public  <T> Stream<Result<T>> query(SelectQuery pageQuery, ResultMapper<T> mapper) {
         return query(pageQuery).map(mapper::map);
     }
@@ -336,6 +434,16 @@ public class JsonCollectionClient {
         return findAll().map(r -> new Result<>(r, clazz));
     }
 
+    /**
+     * Find All with Object Mapping.
+     *
+     * @param mapper
+     *      convert a json into expected pojo
+     * @return
+     *      stream of results
+     * @param <T>
+     *       class to be marshalled
+     */
     public <T> Stream<Result<T>> findAll(ResultMapper<T> mapper) {
         return findAll().map(mapper::map);
     }
@@ -355,6 +463,19 @@ public class JsonCollectionClient {
         return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
     }
 
+
+    /**
+     * Find documents matching the query.
+     *
+     * @param query
+     *      current query
+     * @param clazz
+     *      class for target pojo
+     * @return
+     *      page of results
+     * @param <T>
+     *     class to be marshalled
+     */
     public <T> Page<Result<T>> queryForPage(SelectQuery query, Class<T> clazz) {
         Page<JsonResult> pageJson = queryForPage(query);
         return new Page<>(
@@ -366,6 +487,18 @@ public class JsonCollectionClient {
                         .collect(Collectors.toList()));
     }
 
+    /**
+     * Find documents matching the query.
+     *
+     * @param query
+     *      current query
+     * @param mapper
+     *      mapper to convert into target pojo
+     * @return
+     *      page of results
+     * @param <T>
+     *     class to be marshalled
+     */
     private <T> Page<Result<T>> queryForPage(SelectQuery query, ResultMapper<T> mapper) {
         Page<JsonResult> pageJson = queryForPage(query);
         return new Page<>(
@@ -380,15 +513,39 @@ public class JsonCollectionClient {
     // ---     Delete One    ----
     // --------------------------
 
+    /**
+     * Delete single record from a request.
+     *
+     * @param deleteQuery
+     *      delete query
+     * @return
+     *      number of deleted records
+     */
     public int deleteOne(DeleteQuery deleteQuery) {
         log.debug("Delete in {}/{}", green(namespace), green(collection));
         return execute("deleteOne", deleteQuery).getStatusKeyAsInt("deletedCount");
     }
 
+    /**
+     * Delete single record from its id.
+     *
+     * @param id
+     *      id
+     * @return
+     *      number of deleted records
+     */
     public int deleteById(String id) {
         return deleteOne(DeleteQuery.deleteById(id));
     }
 
+    /**
+     * Delete single record from its vector.
+     *
+     * @param vector
+     *      vector
+     * @return
+     *      number of deleted records
+     */
     public int deleteByVector(float[] vector) {
         return deleteOne(DeleteQuery.deleteByVector(vector));
     }
@@ -397,11 +554,26 @@ public class JsonCollectionClient {
     // ---     Delete Many   ----
     // --------------------------
 
+    /**
+     * Delete multiple records from a request.
+     *
+     * @param deleteQuery
+     *      delete query
+     * @return
+     *      number of deleted records
+     */
     public int deleteMany(DeleteQuery deleteQuery) {
         log.debug("Delete in {}/{}", green(namespace), green(collection));
         return execute("deleteMany", deleteQuery).getStatusKeyAsInt("deletedCount");
     }
 
+
+    /**
+     * Clear the collection.
+     *
+     * @return
+     *      number of items deleted
+     */
     public int deleteAll() {
         return deleteMany(null);
     }
@@ -410,18 +582,52 @@ public class JsonCollectionClient {
     // ---  Update           ----
     // --------------------------
 
+    /**
+     * Find ana update a record based on a query,
+     *
+     * @param query
+     *      query to find the record
+     * @return
+     *      result of the update
+     */
     public JsonResultUpdate findOneAndUpdate(UpdateQuery query) {
         return updateQuery("findOneAndUpdate", query);
     }
 
+    /**
+     * Find ana replace a record based on a query,
+     *
+     * @param query
+     *      query to find the record
+     * @return
+     *      result of the update
+     */
     public JsonResultUpdate findOneAndReplace(UpdateQuery query) {
         return updateQuery("findOneAndReplace", query);
     }
 
+    /**
+     * Find ana delete a record based on a query.
+     *
+     * @param query
+     *      query to find the record
+     * @return
+     *      result of the update
+     */
     public JsonResultUpdate findOneAndDelete(UpdateQuery query) {
         return updateQuery("findOneAndDelete", query);
     }
 
+    /**
+     * Utility o build the delete query.
+     *
+     * @param operation
+     *      operation to used
+     * @param query
+     *      uquery to use
+     * @return
+     *      returned object by the Api
+     */
     private JsonResultUpdate updateQuery(String operation, UpdateQuery query) {
         log.debug("{} in {}/{}", operation, green(namespace), green(collection));
         JsonApiResponse response = execute(operation, query);
@@ -435,6 +641,15 @@ public class JsonCollectionClient {
         return jru;
     }
 
+
+    /**
+     * Utility to parse the status in the response.
+     *
+     * @param status
+     *      map status in the api response
+     * @return
+     *      object marshalled
+     */
     private UpdateStatus buildUpdateStatus(Map<String, Object> status) {
         UpdateStatus updateStatus = new UpdateStatus();
         status.computeIfPresent("upsertedId", (k, v) -> {
@@ -460,6 +675,14 @@ public class JsonCollectionClient {
     // ---  UpdateOne        ----
     // --------------------------
 
+    /**
+     * Update a single record.
+     *
+     * @param query
+     *      query to find the record
+     * @return
+     *      update status
+     */
     public UpdateStatus updateOne(UpdateQuery query) {
         log.debug("updateOne in {}/{}", green(namespace), green(collection));
         return updateQuery("updateOne", query).getUpdateStatus();
@@ -469,6 +692,14 @@ public class JsonCollectionClient {
     // ---  UpdateMany       ----
     // --------------------------
 
+    /**
+     * Update many records.
+     *
+     * @param query
+     *      query to find the record
+     * @return
+     *      update status
+     */
     public UpdateStatus updateMany(UpdateQuery query) {
         log.debug("updateMany in {}/{}", green(namespace), green(collection));
         return updateQuery("updateMany", query).getUpdateStatus();

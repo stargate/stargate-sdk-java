@@ -16,12 +16,31 @@ import java.util.Map;
  */
 public class DeleteQueryBuilder {
 
+    /**
+     * Default constructor.
+     */
+    public DeleteQueryBuilder() {
+    }
+
     // -----------------------------------
     // -- Sort: 'order by'             ---
     // -----------------------------------
 
+    /**
+     * Sort field.
+     */
     public Map<String, Object> sort;
 
+    /**
+     * Builder pattern.
+     *
+     * @param key
+     *      add a key
+     * @param value
+     *      add value
+     * @return
+     *      self reference
+     */
     public DeleteQueryBuilder orderBy(String key, Object value) {
         if (null == sort) {
             sort = new HashMap<>();
@@ -30,10 +49,26 @@ public class DeleteQueryBuilder {
         return this;
     }
 
+    /**
+     * Builder pattern.
+     *
+     * @param vector
+     *      vector for sor
+     * @return
+     *      self reference
+     */
     public DeleteQueryBuilder orderByAnn(float[] vector) {
         return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
     }
 
+    /**
+     * Builder pattern.
+     *
+     * @param textFragment
+     *      text to add for vectorize
+     * @return
+     *      self reference
+     */
     public DeleteQueryBuilder orderByAnn(String textFragment) {
         return orderBy(FilterKeyword.VECTORIZE.getKeyword(), textFragment);
     }
@@ -49,6 +84,7 @@ public class DeleteQueryBuilder {
 
     /**
      * Full filter as a json string.
+     *
      * @param jsonFilter
      *      filter
      * @return
