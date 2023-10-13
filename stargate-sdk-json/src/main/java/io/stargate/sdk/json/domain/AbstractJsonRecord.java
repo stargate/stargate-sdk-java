@@ -49,6 +49,24 @@ public abstract class AbstractJsonRecord {
         return vector;
     }
 
+    /**
+     * Set value for id
+     *
+     * @param id new value for id
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    /**
+     * Set value for vector
+     *
+     * @param vector new value for vector
+     */
+    public void setVector(float[] vector) {
+        this.vector = vector;
+    }
+
     /** {@inheritDoc} */
     @Override
     public String toString() {

@@ -67,7 +67,16 @@ public class SelectQueryFilterBuilder {
      *      self reference
      */
     public SelectQueryBuilder isEqualsTo(Object value) {
-        builder.filter.put(fieldName, value);
+        if (fieldName.equals(FilterKeyword.VECTOR.getKeyword())) {
+            if (value instanceof float[]) {
+                // As a vector it will be an ann
+                builder.orderByAnn((float[])value);
+            } else {
+                throw new IllegalArgumentException("Vector must be an array of float");
+            }
+        } else {
+            builder.filter.put(fieldName, value);
+        }
         return builder;
     }
 

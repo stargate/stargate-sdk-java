@@ -67,7 +67,16 @@ public class UpdateQueryFilterBuilder {
      *      self reference
      */
     public UpdateQueryBuilder isEqualsTo(Object value) {
-        builder.filter.put(fieldName, value);
+        if (FilterKeyword.VECTOR.getKeyword().equals(fieldName)) {
+            if (value instanceof float[]) {
+                // As a vector it will be an ann
+                builder.orderByAnn((float[])value);
+            } else {
+                throw new IllegalArgumentException("Vector must be an array of float");
+            }
+        } else {
+            builder.filter.put(fieldName, value);
+        }
         return builder;
     }
 

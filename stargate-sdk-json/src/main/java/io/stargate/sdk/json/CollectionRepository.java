@@ -4,6 +4,7 @@ import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.json.domain.DeleteQuery;
 import io.stargate.sdk.json.domain.Filter;
 import io.stargate.sdk.json.domain.JsonDocument;
+import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
@@ -94,18 +95,6 @@ public class CollectionRepository<BEAN> {
     }
 
     /**
-     * Insert with a Json Document.
-     *
-     * @param jsonDocument
-     *      current bean
-     * @return
-     *      new id
-     */
-    public final String insert(@NonNull JsonDocument jsonDocument) {
-        return collectionClient.insertOne(jsonDocument);
-    }
-
-    /**
      * Create a new document a generating identifier.
      *
      * @param current
@@ -141,6 +130,18 @@ public class CollectionRepository<BEAN> {
      */
     public final String insert(@NonNull Document<BEAN> bean) {
         return collectionClient.insertOne(bean.toJsonDocument());
+    }
+
+    /**
+     * Insert with a Json Document.
+     *
+     * @param jsonDocument
+     *      current bean
+     * @return
+     *      new id
+     */
+    public final String insert(@NonNull JsonDocument jsonDocument) {
+        return collectionClient.insertOne(jsonDocument);
     }
 
     // --------------------------
@@ -252,7 +253,7 @@ public class CollectionRepository<BEAN> {
      * @return
      *      an unique identifier for the document
      */
-    public final List<String> saveAllJsonDocuments(@NonNull List<JsonDocument> documentList) {
+    public final List<String> saveAllJson(@NonNull List<JsonDocument> documentList) {
         if (documentList.isEmpty()) return new ArrayList<>();
         return documentList.stream().map(this::save).collect(Collectors.toList());
     }
@@ -280,7 +281,7 @@ public class CollectionRepository<BEAN> {
      * @return
      *      list of ids
      */
-    public final List<String> insertAllJsonDocuments(@NonNull List<JsonDocument> documentList) {
+    public final List<String> insertAllJson(@NonNull List<JsonDocument> documentList) {
         if (documentList.isEmpty()) return new ArrayList<>();
         return collectionClient.insertMany(documentList);
     }
@@ -328,6 +329,18 @@ public class CollectionRepository<BEAN> {
     }
 
     /**
+     * Find one with a query
+     *
+     * @param query
+     *      query to retrieve documents and vector
+     * @return
+     *      object if presents
+     */
+    public Optional<JsonResult> findOneJson(@NonNull SelectQuery query) {
+        return findOne(query).map(Result::toJsonResult);
+    }
+
+    /**
      * Find by Id.
      *
      * @param id
@@ -337,6 +350,18 @@ public class CollectionRepository<BEAN> {
      */
     public Optional<Result<BEAN>> findById(@NonNull String id) {
         return collectionClient.findById(id, docClass);
+    }
+
+    /**
+     * Find by id.
+     *
+     * @param id
+     *      document id
+     * @return
+     *      document
+     */
+    public Optional<JsonResult> findByIdJson(String id) {
+        return findById(id).map(Result::toJsonResult);
     }
 
     /**
@@ -352,6 +377,16 @@ public class CollectionRepository<BEAN> {
     /**
      * Find all item in the collection.
      *
+     * @return
+     *      retrieve all items
+     */
+    public Stream<JsonResult> findAllJson() {
+        return findAll().map(Result::toJsonResult);
+    }
+
+    /**
+     * Find all item in the collection.
+     *
      * @param query
      *      search with a query
      * @return
@@ -359,6 +394,18 @@ public class CollectionRepository<BEAN> {
      */
     public Stream<Result<BEAN>> findAll(SelectQuery query) {
         return collectionClient.query(query, docClass);
+    }
+
+    /**
+     * Find all item in the collection.
+     *
+     * @param query
+     *      search with a query
+     * @return
+     *      retrieve all items
+     */
+    public Stream<JsonResult> findAllJson(SelectQuery query) {
+        return findAll(query).map(Result::toJsonResult);
     }
 
     /**
@@ -373,9 +420,41 @@ public class CollectionRepository<BEAN> {
         return collectionClient.queryForPage(query, docClass);
     }
 
+    /**
+     * Find a page in the collection.
+     *
+     * @param query
+     *      current query
+     * @return
+     *      page of records
+     */
+    public Page<JsonResult> findPageJson(@NonNull SelectQuery query) {
+        Page<Result<BEAN>> page1 = findPage(query);
+        return new Page<>(
+                page1.getPageSize(),
+                page1.getPageState().orElse(null),
+                page1.getResults().stream()
+                        .map(Result::toJsonResult)
+                        .collect(Collectors.toList()));
+    }
+
     // --------------------------
     // ---     Delete        ----
     // --------------------------
+
+    /**
+     * Delete a document from id or vector
+     * .
+     * @param document
+     *      document
+     * @return
+     *      if document has been deleted.
+     */
+    public boolean delete(@NonNull JsonDocument document) {
+        if (document.getId() != null) return deleteById(document.getId());
+        if (document.getVector() != null) return collectionClient.deleteByVector(document.getVector()) > 0;
+        throw new IllegalArgumentException("Cannot delete record without id or vector");
+    }
 
     /**
      * Delete a document from id or vector
@@ -411,6 +490,24 @@ public class CollectionRepository<BEAN> {
      */
     public int deleteAll() {
         return collectionClient.deleteAll();
+    }
+
+    /**
+     * Use parallelism and async to delete all records.
+     *
+     * @param documents
+     *      list of records
+     * @return
+     *      number of records deleted
+     */
+    public int deleteAllJson(List<JsonDocument> documents) {
+        List<CompletableFuture<Integer>> futures = documents.stream()
+                .map(record -> CompletableFuture.supplyAsync(() -> delete(record) ? 1 : 0))
+                .collect(Collectors.toList());
+        return futures.stream()
+                .map(CompletableFuture::join) // This will wait for the result of each future
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 
     /**

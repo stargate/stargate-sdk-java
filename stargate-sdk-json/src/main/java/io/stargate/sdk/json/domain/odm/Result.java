@@ -1,5 +1,6 @@
 package io.stargate.sdk.json.domain.odm;
 
+import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
@@ -54,4 +55,21 @@ public class Result<T> extends Document<T> {
     public static <R> Result<R> of(JsonResult result, Class<R> clazz) {
         return new Result<>(result, clazz);
     }
+
+    /**
+     * Mapping with internal layer.
+     *
+     * @return
+     *      json record
+     */
+    public JsonResult toJsonResult() {
+        JsonDocument doc  = new JsonDocument(id, data, vector);
+        JsonResult result = new JsonResult();
+        result.setId(doc.getId());
+        result.setVector(doc.getVector());
+        result.setData(doc.getData());
+        result.setSimilarity(similarity);
+        return result;
+    }
+
 }
