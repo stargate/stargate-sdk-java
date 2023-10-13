@@ -44,7 +44,7 @@ public class JsonVectorStore extends VectorStore<ObjectMap> {
      * @return
      *      document
      */
-    Optional<JsonResult> findByVectorJson(@NonNull float[] vector) {
+    public Optional<JsonResult> findByVectorJson(@NonNull float[] vector) {
         return findByVector(vector).map(Result::toJsonResult);
     }
 
