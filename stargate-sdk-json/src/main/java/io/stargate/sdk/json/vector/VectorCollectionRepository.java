@@ -1,7 +1,7 @@
 package io.stargate.sdk.json.vector;
 
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.json.CollectionRepository;
+import io.stargate.sdk.json.JsonCollectionRepository;
 import io.stargate.sdk.json.JsonCollectionClient;
 import io.stargate.sdk.json.domain.Filter;
 import io.stargate.sdk.json.domain.JsonDocument;
@@ -22,7 +22,7 @@ import java.util.Optional;
  * @param <BEAN>
  *     curren vector object
  */
-public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
+public class VectorCollectionRepository<BEAN> extends JsonCollectionRepository<BEAN> {
 
     /**
      * Default constructor.
@@ -32,7 +32,7 @@ public class VectorStore<BEAN> extends CollectionRepository<BEAN> {
      * @param clazz
      *      working bean class
      */
-    public VectorStore(JsonCollectionClient col, Class<BEAN> clazz) {
+    public VectorCollectionRepository(JsonCollectionClient col, Class<BEAN> clazz) {
        super(col, clazz);
     }
 

@@ -11,7 +11,7 @@ import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.odm.Result;
-import io.stargate.sdk.json.vector.VectorStore;
+import io.stargate.sdk.json.vector.VectorCollectionRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -51,7 +51,7 @@ class VectorClientProductTest {
 
     static JsonCollectionClient myCollection;
 
-    static VectorStore<Product> vectorStore;
+    static VectorCollectionRepository<Product> vectorStore;
 
     @BeforeAll
     public static void setup() {

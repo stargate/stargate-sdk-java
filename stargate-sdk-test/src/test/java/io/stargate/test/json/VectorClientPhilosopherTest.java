@@ -12,8 +12,8 @@ import io.stargate.sdk.json.JsonApiClient;
 import io.stargate.sdk.json.JsonNamespaceClient;
 import io.stargate.sdk.json.domain.Filter;
 import io.stargate.sdk.json.domain.odm.Document;
+import io.stargate.sdk.json.vector.VectorCollectionRepository;
 import io.stargate.sdk.json.vector.SimilarityMetric;
-import io.stargate.sdk.json.vector.VectorStore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -64,7 +64,7 @@ public class VectorClientPhilosopherTest {
         return openaiVectorizer.embed(inputText).content().vector();
     }
 
-    public static VectorStore<Quote> vectorStore;
+    public static VectorCollectionRepository<Quote> vectorStore;
 
     @Test
     @Order(1)

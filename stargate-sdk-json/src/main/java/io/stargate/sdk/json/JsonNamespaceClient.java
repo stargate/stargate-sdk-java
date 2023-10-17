@@ -5,10 +5,10 @@ import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.JsonApiResponse;
-import io.stargate.sdk.json.vector.JsonVectorStore;
+import io.stargate.sdk.json.vector.VectorCollectionRepositoryJson;
 import io.stargate.sdk.json.vector.SimilarityMetric;
 import io.stargate.sdk.json.exception.CollectionNotFoundException;
-import io.stargate.sdk.json.vector.VectorStore;
+import io.stargate.sdk.json.vector.VectorCollectionRepository;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -198,7 +198,7 @@ public class JsonNamespaceClient {
      * @return
      *      collection repository
      */
-    public CollectionRepository<ObjectMap> repository(String collectionName) {
+    public JsonCollectionRepository<ObjectMap> repository(String collectionName) {
         return repository(collectionName, ObjectMap.class);
     }
 
@@ -214,9 +214,9 @@ public class JsonNamespaceClient {
      * @param <T>
      *      type parameter
      */
-    public <T> CollectionRepository<T> repository(String collectionName, Class<T> clazz) {
+    public <T> JsonCollectionRepository<T> repository(String collectionName, Class<T> clazz) {
         if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
-        return new CollectionRepository<>(collection(collectionName), clazz);
+        return new JsonCollectionRepository<>(collection(collectionName), clazz);
     }
 
     /**
@@ -231,9 +231,9 @@ public class JsonNamespaceClient {
      * @param <T>
      *      type parameter
      */
-    public <T> VectorStore<T> vectorStore(String collectionName, Class<T> recordClass) {
+    public <T> VectorCollectionRepository<T> vectorStore(String collectionName, Class<T> recordClass) {
         if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
-        return new VectorStore<>(collection(collectionName), recordClass);
+        return new VectorCollectionRepository<>(collection(collectionName), recordClass);
     }
 
     /**
@@ -244,8 +244,8 @@ public class JsonNamespaceClient {
      * @return
      *      vector store.
      */
-    public JsonVectorStore vectorStore(String collectionName) {
-        return new JsonVectorStore(collection(collectionName));
+    public VectorCollectionRepositoryJson vectorStore(String collectionName) {
+        return new VectorCollectionRepositoryJson(collection(collectionName));
     }
 
 }

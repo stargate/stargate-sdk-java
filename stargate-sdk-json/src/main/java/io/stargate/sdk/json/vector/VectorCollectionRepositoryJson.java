@@ -4,29 +4,25 @@ import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.json.JsonCollectionClient;
 import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResult;
-import io.stargate.sdk.json.domain.SelectQuery;
-import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import lombok.NonNull;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Generic Store.
  */
-public class JsonVectorStore extends VectorStore<ObjectMap> {
+public class VectorCollectionRepositoryJson extends VectorCollectionRepository<ObjectMap> {
 
     /**
      * Default constructor.
      *
      * @param col   collection client parent
      */
-    public JsonVectorStore(JsonCollectionClient col) {
+    public VectorCollectionRepositoryJson(JsonCollectionClient col) {
         super(col, ObjectMap.class);
     }
 

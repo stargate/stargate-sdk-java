@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * @param <BEAN>
  *     current bean
  */
-public class CollectionRepository<BEAN> {
+public class JsonCollectionRepository<BEAN> {
 
     /**
      * Raw collection client.
@@ -43,7 +43,7 @@ public class CollectionRepository<BEAN> {
      * @param clazz
      *      working bean class
      */
-    public CollectionRepository(JsonCollectionClient col, Class<BEAN> clazz) {
+    public JsonCollectionRepository(JsonCollectionClient col, Class<BEAN> clazz) {
         this.collectionClient = col;
         this.docClass  = clazz;
     }
