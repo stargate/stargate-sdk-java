@@ -1,16 +1,16 @@
 package io.stargate.sdk.test.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.stargate.sdk.json.JsonApiClient;
-import io.stargate.sdk.json.JsonCollectionClient;
-import io.stargate.sdk.json.JsonNamespaceClient;
+import io.stargate.sdk.json.ApiClient;
+import io.stargate.sdk.json.CollectionClient;
+import io.stargate.sdk.json.NamespaceClient;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.Filter;
 import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
+import io.stargate.sdk.json.domain.odm.Document;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.stargate.sdk.json.vector.SimilarityMetric.cosine;
+import static io.stargate.sdk.json.domain.SimilarityMetric.cosine;
 
 /**
  * This class test the data api for Keyspaces
@@ -44,9 +44,9 @@ public class AbstractJsonClientNamespacesTest {
     public static final String TEST_COLLECTION_VECTORIZE = "vectorize1";
 
     /** Tested Store. */
-    protected static JsonApiClient jsonApiClient;
+    protected static ApiClient jsonApiClient;
     /** Tested Namespace. */
-    protected static JsonNamespaceClient nsClient;
+    protected static NamespaceClient nsClient;
 
     /**
      * Default constructor.
@@ -62,11 +62,11 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("01.Create a simple namespace")
     public void shouldCreateNameSpace() {
         // Given
-        Assertions.assertFalse(jsonApiClient.existNamespace(TEST_NAMESPACE_1));
+        Assertions.assertFalse(jsonApiClient.isNamespaceExists(TEST_NAMESPACE_1));
         // When
         jsonApiClient.createNamespace(TEST_NAMESPACE_1);
         // Then
-        Assertions.assertTrue(jsonApiClient.existNamespace(TEST_NAMESPACE_1));
+        Assertions.assertTrue(jsonApiClient.isNamespaceExists(TEST_NAMESPACE_1));
         nsClient = jsonApiClient.namespace(TEST_NAMESPACE_1);
     }
 
@@ -78,7 +78,7 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("02.Create a namespace with replication")
     public void shouldCreateNameSpaceWithReplication() {
         // Given
-        Assertions.assertFalse(jsonApiClient.existNamespace(TEST_NAMESPACE_2));
+        Assertions.assertFalse(jsonApiClient.isNamespaceExists(TEST_NAMESPACE_2));
         // When
         jsonApiClient.createNamespace(NamespaceDefinition.builder()
                 .name(TEST_NAMESPACE_2)
@@ -86,7 +86,7 @@ public class AbstractJsonClientNamespacesTest {
                 .withOption("replication_factor", 1)
                 .build());
         // Then
-        Assertions.assertTrue(jsonApiClient.existNamespace(TEST_NAMESPACE_2));
+        Assertions.assertTrue(jsonApiClient.isNamespaceExists(TEST_NAMESPACE_2));
     }
 
     /**
@@ -96,7 +96,7 @@ public class AbstractJsonClientNamespacesTest {
     @Order(3)
     @DisplayName("03.Get all Namespaces")
     public void shouldListNamespace() {
-        Set<String> ns = jsonApiClient.findNamespaces().collect(Collectors.toSet());
+        Set<String> ns = jsonApiClient.findAllNamespaces().collect(Collectors.toSet());
         Assertions.assertTrue(ns.contains(TEST_NAMESPACE_1));
         Assertions.assertTrue(ns.contains(TEST_NAMESPACE_2));
     }
@@ -109,12 +109,12 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("04.Drop namespace")
     public void shouldDropNamespace() {
         Assertions.assertTrue(jsonApiClient
-                .findNamespaces()
+                .findAllNamespaces()
                 .collect(Collectors.toSet())
                 .contains(TEST_NAMESPACE_2));
         jsonApiClient.dropNamespace(TEST_NAMESPACE_2);
         Assertions.assertFalse(jsonApiClient
-                .findNamespaces()
+                .findAllNamespaces()
                 .collect(Collectors.toSet())
                 .contains(TEST_NAMESPACE_2));
     }
@@ -127,11 +127,11 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("05.Create simple collection")
     public void shouldCreateCollection() {
         // Given
-        Assertions.assertFalse(nsClient.existCollection(TEST_COLLECTION));
+        Assertions.assertFalse(nsClient.isCollectionExists(TEST_COLLECTION));
         // When
         nsClient.createCollection(TEST_COLLECTION);
         // Then
-        Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION));
+        Assertions.assertTrue(nsClient.isCollectionExists(TEST_COLLECTION));
     }
 
     /**
@@ -142,7 +142,7 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("06.Create collection with Vector")
     public void shouldCreateCollectionWithVector() {
         // Given
-        Assertions.assertFalse(nsClient.existCollection(TEST_COLLECTION_VECTOR));
+        Assertions.assertFalse(nsClient.isCollectionExists(TEST_COLLECTION_VECTOR));
         // when
         jsonApiClient.namespace(TEST_NAMESPACE_1)
                 .createCollection(CollectionDefinition.builder()
@@ -150,10 +150,13 @@ public class AbstractJsonClientNamespacesTest {
                         .vector(14, cosine)
                         .build());
         jsonApiClient.namespace(TEST_NAMESPACE_1)
-                .createCollection("tmp_vector", 14, cosine);
+                .createCollection(CollectionDefinition.builder()
+                        .name("tmp_vector")
+                        .vector(14, cosine)
+                        .build());
         // Then
-        Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION_VECTOR));
-        Assertions.assertTrue(nsClient.existCollection("tmp_vector"));
+        Assertions.assertTrue(nsClient.isCollectionExists(TEST_COLLECTION_VECTOR));
+        Assertions.assertTrue(nsClient.isCollectionExists("tmp_vector"));
     }
 
     /**
@@ -165,7 +168,7 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("07.Create collection with Vectorize")
     public void shouldCreateCollectionVectorize() {
       // Given
-      Assertions.assertFalse(nsClient.existCollection(TEST_COLLECTION_VECTORIZE));
+      Assertions.assertFalse(nsClient.isCollectionExists(TEST_COLLECTION_VECTORIZE));
       // When
       nsClient.createCollection(CollectionDefinition.builder()
               .name(TEST_COLLECTION_VECTORIZE)
@@ -173,11 +176,13 @@ public class AbstractJsonClientNamespacesTest {
               .vectorize("openai", "gpt3.5-turbo")
               .build());
        // Then
-       Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION_VECTORIZE));
-
-       nsClient.createCollection("tmp_vectorize", 14,
-                cosine, "openai", "gpt3.5-turbo");
-
+       Assertions.assertTrue(nsClient.isCollectionExists(TEST_COLLECTION_VECTORIZE));
+       nsClient.createCollection(CollectionDefinition.builder()
+                .name("tmp_vectorize")
+                .vector(14, cosine)
+                .vectorize("openai", "gpt3.5-turbo")
+                .build());
+        //Assertions.assertTrue(nsClient.isCollectionExists("tmp_vectorize"));
     }
 
     /**
@@ -188,11 +193,11 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("08.Drop a collection")
     public void shouldDropCollection() {
         // Given
-        Assertions.assertTrue(nsClient.existCollection("tmp_vector"));
+        Assertions.assertTrue(nsClient.isCollectionExists("tmp_vector"));
         // When
         nsClient.deleteCollection("tmp_vector");
         // Then
-        Assertions.assertFalse(nsClient.existCollection("tmp_vector"));
+        Assertions.assertFalse(nsClient.isCollectionExists("tmp_vector"));
     }
 
     /**
@@ -202,23 +207,25 @@ public class AbstractJsonClientNamespacesTest {
     @Order(9)
     @DisplayName("09.Insert One")
     public void shouldInsertOne() {
-        JsonNamespaceClient ns = jsonApiClient.namespace(TEST_NAMESPACE_1);
+        NamespaceClient ns = jsonApiClient.namespace(TEST_NAMESPACE_1);
         ns.createCollection(TEST_COLLECTION);
 
         // Insert with a Json record => KV access
-        JsonCollectionClient col = ns.collection(TEST_COLLECTION);
+        CollectionClient col = ns.collection(TEST_COLLECTION);
 
         // Insert a random object (id is generated) with or without id (will be generated)
-        Assertions.assertNotNull(col.insertOne(new Product("something Good", 9.99)));
-        Assertions.assertEquals("id1", col.insertOne("id1", new Product("something Good", 10.99)));
+        Assertions.assertNotNull(col.insertOne(
+                new Document<Product>()
+                        .data(new Product("something Good", 9.99))));
+        Assertions.assertEquals("id1", col.insertOne(
+                new Document<>("id1", new Product("something Good", 10.99))));
 
         // Insert a Json String, will do the needed magic
-        col.insertOne("{\"key\": \"value\"}");
-        Assertions.assertEquals("id2", col.insertOne("id2", "{\"key\": \"value\"}"));
+        Assertions.assertEquals("id2", col
+                .insertOne(new Document<>("id2", "{\"key\": \"value\"}")));
 
         // Insert a Map, also do the magic
-        col.insertOne(Map.of("anotherKey", 12));
-        col.insertOne("id3", "{\"key\": \"value\"}");
+        col.insertOne(new Document<>("id3", "{\"key\": \"value\"}"));
 
         // fine-grained json
         col.insertOne(new JsonDocument("pf1844").put("attribute", "test"));
@@ -231,25 +238,20 @@ public class AbstractJsonClientNamespacesTest {
     @Order(10)
     @DisplayName("10.Insert One Vector")
     public void shouldInsertOneVector() {
-        JsonNamespaceClient ns = jsonApiClient.namespace(TEST_NAMESPACE_1);
-        ns.createCollection(TEST_COLLECTION_VECTOR, 14, cosine);
-
-        // Insert with a Json record => KV access
-        JsonCollectionClient colVector = ns.collection(TEST_COLLECTION_VECTOR);
-
-        // work with no vector mapper
-        colVector.insertOne(Map.of("anotherKey", 12));
+        CollectionClient colVector = jsonApiClient
+                .namespace(TEST_NAMESPACE_1)
+                .createCollection(TEST_COLLECTION_VECTOR, 14);
 
         // Add vector with an id
-        colVector.insertOne(
+        colVector.insertOne(new Document<>(
                 "product1",
                 new Product("something Good", 9.99),
-                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
+                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
 
         // Add vector without an id
-        colVector.insertOne(
+        colVector.insertOne(new Document<>(
                 new Product("id will be generated for you", 10.99),
-                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
+                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
 
         // Insert a full-fledged object
         colVector.insertOne(new JsonDocument()
@@ -266,11 +268,13 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("11.Inserting many")
     public void shouldInsertMany() {
         Assertions.assertTrue(jsonApiClient
-                .namespace(TEST_NAMESPACE_1).findCollections()
+                .namespace(TEST_NAMESPACE_1)
+                .findCollections()
+                .map(CollectionDefinition::getName)
                 .collect(Collectors.toSet())
                 .contains(TEST_COLLECTION_VECTOR));
 
-        JsonCollectionClient myCollection = jsonApiClient
+        CollectionClient myCollection = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
@@ -307,8 +311,8 @@ public class AbstractJsonClientNamespacesTest {
     @DisplayName("12.Count")
     public void shouldCountDocuments() {
         // Given
-        Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION_VECTOR));
-        Assertions.assertTrue(nsClient.existCollection(TEST_COLLECTION));
+        Assertions.assertTrue(nsClient.isCollectionExists(TEST_COLLECTION_VECTOR));
+        Assertions.assertTrue(nsClient.isCollectionExists(TEST_COLLECTION));
         // WHen
         Assertions.assertEquals(10, nsClient.collection(TEST_COLLECTION_VECTOR).countDocuments());
         Assertions.assertEquals(7, nsClient.collection(TEST_COLLECTION).countDocuments());

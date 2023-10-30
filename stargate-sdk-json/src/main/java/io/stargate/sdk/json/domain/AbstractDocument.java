@@ -1,17 +1,12 @@
 package io.stargate.sdk.json.domain;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stargate.sdk.utils.JsonUtils;
-
-import java.util.List;
 
 /**
  * Super class for all Json Record.
  */
-public abstract class AbstractJsonRecord {
+public abstract class AbstractDocument {
 
     /**
      * Unique identifier.
@@ -28,7 +23,7 @@ public abstract class AbstractJsonRecord {
     /**
      * Default constructor.
      */
-    public AbstractJsonRecord() {
+    public AbstractDocument() {
     }
 
     /**

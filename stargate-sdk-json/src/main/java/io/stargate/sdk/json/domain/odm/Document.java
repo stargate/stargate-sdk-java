@@ -73,6 +73,18 @@ public class Document<T> {
     /**
      * Default document.
      *
+     * @param bean
+     *      current payload
+     * @param vector
+     *      vector embeddings
+     */
+    public Document(T bean, float[] vector) {
+        this(null, bean, vector);
+    }
+
+    /**
+     * Default document.
+     *
      * @param id
      *      identifier
      * @param bean
@@ -84,6 +96,45 @@ public class Document<T> {
         this.id     = id;
         this.data   = bean;
         this.vector = vector;
+    }
+
+    /**
+     * Fluent getter for document.
+     *
+     * @param id
+     *      id
+     * @return
+     *      self reference
+     */
+    public Document<T> id(String id) {
+        this.id = id;
+        return this;
+    }
+
+    /**
+     * Fluent getter for document.
+     *
+     * @param vector
+     *      vector
+     * @return
+     *      self reference
+     */
+    public Document<T> vector(float[] vector) {
+        this.vector = vector;
+        return this;
+    }
+
+    /**
+     * Fluent getter for document.
+     *
+     * @param data
+     *      data
+     * @return
+     *      self reference
+     */
+    public Document<T> data(T data) {
+        this.data = data;
+        return this;
     }
 
     /**

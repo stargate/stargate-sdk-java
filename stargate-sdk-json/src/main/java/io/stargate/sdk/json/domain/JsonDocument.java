@@ -31,7 +31,7 @@ import java.util.Map;
  * Json Api Payload.
  */
 @Getter @Setter
-public class JsonDocument extends AbstractJsonRecord {
+public class JsonDocument extends AbstractDocument {
 
     /**
      * Data for inputs.

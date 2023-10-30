@@ -1,6 +1,7 @@
 package io.stargate.sdk.json.domain;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -48,11 +49,51 @@ public class JsonApiResponse {
      *      list of values
      */
     @SuppressWarnings("unchecked")
-    public Stream<String> getStatusKeyAsStream(@NonNull String key) {
+    public Stream<String> getStatusKeyAsStringStream(@NonNull String key) {
         if (status.containsKey(key)) {
             return ((ArrayList<String>) status.get(key)).stream();
         }
         return Stream.empty();
+    }
+
+    /**
+     * Use when attribute in status is an object.
+     *
+     * @param key
+     *      target get
+     * @param targetClass
+     *      target class
+     * @return
+     *      object
+     * @param <T>
+     *      type in used
+     */
+    public <T> T getStatusKeyAsObject(@NonNull String key, Class<T> targetClass) {
+        if (status.containsKey(key)) {
+            return JsonUtils.convertValue(status.get(key), targetClass);
+        }
+        return null;
+    }
+
+    /**
+     * Use when attribute in status is a list.
+     *
+     * @param key
+     *      target get
+     * @param targetClass
+     *      target class
+     * @return
+     *      object
+     * @param <T>
+     *      type in used
+     */
+    public <T> List<T> getStatusKeyAsList(@NonNull String key, Class<T> targetClass) {
+        if (status.containsKey(key)) {
+            return JsonUtils.getObjectMapper().convertValue(status.get(key),
+                   JsonUtils.getObjectMapper().getTypeFactory()
+                           .constructCollectionType(List.class, targetClass));
+        }
+        return null;
     }
 
     /**
@@ -64,7 +105,7 @@ public class JsonApiResponse {
      *      list of values
      */
     public List<String> getStatusKeyAsList(@NonNull String key) {
-        return getStatusKeyAsStream(key).collect(Collectors.toList());
+        return getStatusKeyAsStringStream(key).collect(Collectors.toList());
     }
 
     /**

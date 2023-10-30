@@ -5,7 +5,7 @@ import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.json.domain.JsonApiError;
 import io.stargate.sdk.json.domain.JsonApiResponse;
-import io.stargate.sdk.json.exception.JsonApiException;
+import io.stargate.sdk.json.exception.ApiException;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +43,15 @@ public class JsonApiClientUtils {
             @NonNull LoadBalancedHttpClient stargateHttpClient,
             @NonNull Function<ServiceHttp, String> rootResource,
             @NonNull String operation, Object body) {
-        String stringBody = "{\"" + operation + "\":" + (body == null ? "{}" : JsonUtils.marshall(body)) + "}";
+        String stringBody = "{\"" + operation + "\":";
+        if (body == null) {
+            stringBody += "{}";
+        } else if (body instanceof String) {
+            stringBody += (String) body;
+        } else {
+            stringBody += JsonUtils.marshall(body);
+        }
+        stringBody += "}";
         log.debug(operation + "[request]=" + yellow("{}"), stringBody);
         ApiResponseHttp httpRes = stargateHttpClient.POST(rootResource, stringBody);
         log.debug(operation + "[response]=" + yellow("{}"), httpRes.getBody());
@@ -100,14 +108,14 @@ public class JsonApiClientUtils {
                     log.error("-  errorCode: {}", error.getErrorCode());
                 }
             }
-            throw new JsonApiException(
+            throw new ApiException(
                     response.getErrors().get(0).getMessage(),
                     response.getErrors().get(0).getExceptionClass());
         }
         if (response.getStatus() != null &&
             response.getStatus().containsKey("ok") &&
             !response.getStatus().get("ok").equals(1)) {
-            throw new JsonApiException("Operation failed: " + response.getStatus());
+            throw new ApiException("Operation failed: " + response.getStatus());
         }
     }
 }

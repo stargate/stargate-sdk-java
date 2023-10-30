@@ -1,19 +1,17 @@
 package io.stargate.sdk.json;
 
-import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.JsonApiResponse;
-import io.stargate.sdk.json.vector.VectorCollectionRepositoryJson;
-import io.stargate.sdk.json.vector.SimilarityMetric;
+import io.stargate.sdk.json.domain.SimilarityMetric;
 import io.stargate.sdk.json.exception.CollectionNotFoundException;
-import io.stargate.sdk.json.vector.VectorCollectionRepository;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -24,7 +22,7 @@ import static io.stargate.sdk.utils.AnsiUtils.green;
  * Work with namespace and collections.
  */
 @Getter  @Slf4j
-public class JsonNamespaceClient {
+public class NamespaceClient {
 
     /** Get Topology of the nodes. */
     protected final LoadBalancedHttpClient stargateHttpClient;
@@ -36,7 +34,7 @@ public class JsonNamespaceClient {
      * /v1/{namespace}
      */
     public final Function<ServiceHttp, String> namespaceResource = (node) ->
-            JsonApiClient.rootResource.apply(node) + "/" + namespace;
+            ApiClient.rootResource.apply(node) + "/" + namespace;
 
     /**
      * Full constructor.
@@ -44,7 +42,7 @@ public class JsonNamespaceClient {
      * @param httpClient client http
      * @param namespace namespace identifier
      */
-    public JsonNamespaceClient(LoadBalancedHttpClient httpClient, String namespace) {
+    public NamespaceClient(LoadBalancedHttpClient httpClient, String namespace) {
         this.namespace          = namespace;
         this.stargateHttpClient = httpClient;
         Assert.notNull(namespace, "namespace");
@@ -62,8 +60,8 @@ public class JsonNamespaceClient {
      * @return
      *      if collection exists
      */
-    public boolean existCollection(String collection) {
-        return findCollections().anyMatch(collection::equals);
+    public boolean isCollectionExists(String collection) {
+        return findCollections().map(CollectionDefinition::getName).anyMatch(collection::equals);
     }
 
     /**
@@ -72,8 +70,10 @@ public class JsonNamespaceClient {
      * @return
      *       a list of Collections
      */
-    public Stream<String> findCollections() {
-        return execute("findCollections", null).getStatusKeyAsStream("collections");
+    public Stream<CollectionDefinition> findCollections() {
+        return execute("findCollections", Map.of("options", Map.of("explain", true)))
+                .getStatusKeyAsList("collections", CollectionDefinition.class)
+                .stream();
     }
 
     /**
@@ -82,8 +82,22 @@ public class JsonNamespaceClient {
      * @param collection
      *      current Collection.
      */
-    public void createCollection(String collection) {
-        this.createCollection(CollectionDefinition.builder().name(collection).build());
+    public CollectionClient createCollection(String collection) {
+        return this.createCollection(CollectionDefinition.builder().name(collection).build());
+    }
+
+    /**
+     * Create a Collection providing a name.
+     *
+     * @param clazz
+     *      type to be returned
+     * @param <DOC>
+     *       type of document in used
+     * @param collection
+     *      current Collection.
+     */
+    public <DOC> CollectionRepository<DOC> createCollection(String collection,  Class<DOC> clazz) {
+        return this.createCollection(CollectionDefinition.builder().name(collection).build(), clazz);
     }
 
     /**
@@ -94,49 +108,30 @@ public class JsonNamespaceClient {
      * @param dimension
      *      dimension of the vector
      */
-    public void createCollection(String collection, int dimension) {
-        this.createCollection(CollectionDefinition.builder()
+    public CollectionClient createCollection(String collection, int dimension) {
+        return this.createCollection(CollectionDefinition.builder()
                 .name(collection)
-                .vector(dimension,
-                        SimilarityMetric.cosine).build());
-    }
-
-    /**
-     * Create a Collection for vector purpose
-     *
-     * @param collection name
-     *      current Collection.
-     * @param dimension
-     *      dimension of the vector
-     * @param metric
-     *      similarity metric
-     */
-    public void createCollection(String collection, int dimension, SimilarityMetric metric) {
-        this.createCollection(CollectionDefinition.builder()
-                .name(collection)
-                .vector(dimension, metric).build());
-    }
-
-    /**
-     * Create a Collection for vector purpose
-     *
-     * @param collection name
-     *      current Collection.
-     * @param dimension
-     *      dimension of the vector
-     * @param metric
-     *      similarity metric
-     * @param llm
-     *      llm service
-     * @param model
-     *      model to be used
-     */
-    public void createCollection(String collection, int dimension, SimilarityMetric metric, String llm, String model) {
-        this.createCollection(CollectionDefinition.builder()
-                .name(collection)
-                .vector(dimension, metric)
-                .vectorize(llm, model)
+                .vector(dimension, SimilarityMetric.cosine)
                 .build());
+    }
+
+    /**
+     * Create a Collection for vector purpose
+     *
+     * @param collection name
+     *      current Collection.
+     * @param dimension
+     *      dimension of the vector
+     * @param clazz
+     *      type to be returned
+     * @param <DOC>
+     *       type of document in used
+     */
+    public <DOC> CollectionRepository<DOC> createCollection(String collection, int dimension,  Class<DOC> clazz) {
+        return this.createCollection(CollectionDefinition.builder()
+                .name(collection)
+                .vector(dimension, SimilarityMetric.cosine)
+                .build(), clazz);
     }
 
     /**
@@ -145,9 +140,24 @@ public class JsonNamespaceClient {
      * @param req
      *      current Collection.
      */
-    public void createCollection(CollectionDefinition req) {
+    public CollectionClient createCollection(CollectionDefinition req) {
         execute("createCollection", req);
         log.info("Collection  '" + green("{}") + "' has been created", req.getName());
+        return collection(req.getName());
+    }
+
+    /**
+     * Create a Collection providing a name.
+     *
+     * @param <DOC>
+     *      document type
+     * @param req
+     *      current Collection.
+     */
+    public <DOC> CollectionRepository<DOC> createCollection(CollectionDefinition req, Class<DOC> clazz) {
+        execute("createCollection", req);
+        log.info("Collection  '" + green("{}") + "' has been created", req.getName());
+        return collectionRepository(req.getName(), clazz);
     }
 
     /**
@@ -168,10 +178,27 @@ public class JsonNamespaceClient {
      *      operation to run
      * @param payload
      *      payload returned
+     * @return
+     *      api response
      */
     private JsonApiResponse execute(String operation, Object payload) {
         return executeOperation(stargateHttpClient, namespaceResource, operation, payload);
     }
+
+    /**
+     * Find a Collection from its name.
+     *
+     * @param collectionName
+     *      collection name
+     * @return
+     *      collection definition if exists
+     */
+    public Optional<CollectionDefinition> findCollectionByName(String collectionName) {
+        return findCollections()
+                .filter(collection -> collection.getName().equals(collectionName))
+                .findFirst();
+    }
+
 
     // ---------------------------------
     // ----    Sub Resources        ----
@@ -185,21 +212,11 @@ public class JsonNamespaceClient {
      * @return JsonDocumentsClient
      *      client to work with documents
      */
-    public JsonCollectionClient collection(String collectionName) {
-        if (findCollections().noneMatch(collectionName::equals)) throw new CollectionNotFoundException(collectionName);
-        return new JsonCollectionClient(stargateHttpClient, namespace, collectionName);
-    }
-
-    /**
-     * Build repository for a collection.
-     *
-     * @param collectionName
-     *      collection name
-     * @return
-     *      collection repository
-     */
-    public JsonCollectionRepository<ObjectMap> repository(String collectionName) {
-        return repository(collectionName, ObjectMap.class);
+    public CollectionClient collection(String collectionName) {
+        if (findCollections()
+                .map(CollectionDefinition::getName)
+                .noneMatch(collectionName::equals)) throw new CollectionNotFoundException(collectionName);
+        return new CollectionClient(stargateHttpClient, namespace, collectionName);
     }
 
     /**
@@ -214,38 +231,9 @@ public class JsonNamespaceClient {
      * @param <T>
      *      type parameter
      */
-    public <T> JsonCollectionRepository<T> repository(String collectionName, Class<T> clazz) {
-        if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
-        return new JsonCollectionRepository<>(collection(collectionName), clazz);
-    }
-
-    /**
-     * Vector store with object mapping and native function.
-     *
-     * @param collectionName
-     *      collection name
-     * @param recordClass
-     *      record class
-     * @return
-     *      vector store
-     * @param <T>
-     *      type parameter
-     */
-    public <T> VectorCollectionRepository<T> vectorStore(String collectionName, Class<T> recordClass) {
-        if (!existCollection(collectionName)) throw new CollectionNotFoundException(collectionName);
-        return new VectorCollectionRepository<>(collection(collectionName), recordClass);
-    }
-
-    /**
-     * Default vector store working with key/value.
-     *
-     * @param collectionName
-     *      collection name
-     * @return
-     *      vector store.
-     */
-    public VectorCollectionRepositoryJson vectorStore(String collectionName) {
-        return new VectorCollectionRepositoryJson(collection(collectionName));
+    public <T> CollectionRepository<T> collectionRepository(String collectionName, Class<T> clazz) {
+        if (!isCollectionExists(collectionName)) throw new CollectionNotFoundException(collectionName);
+        return new CollectionRepository<>(collection(collectionName), clazz);
     }
 
 }

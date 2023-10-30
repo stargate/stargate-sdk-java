@@ -26,7 +26,7 @@ import static io.stargate.sdk.utils.AnsiUtils.green;
  */
 @Slf4j
 @Getter
-public class JsonApiClient {
+public class ApiClient {
 
     /** default endpoint. */
     public static final String DEFAULT_ENDPOINT = "http://localhost:8181";
@@ -54,7 +54,7 @@ public class JsonApiClient {
     /**
      * Default Constructor
      */
-    public JsonApiClient() {
+    public ApiClient() {
         this(DEFAULT_ENDPOINT);
     }
 
@@ -64,7 +64,7 @@ public class JsonApiClient {
      * @param endpoint
      *      service endpoint
      */
-    public JsonApiClient(String endpoint) {
+    public ApiClient(String endpoint) {
         Assert.hasLength(endpoint, "stargate endpoint");
         // Single instance running
         ServiceHttp rest = new ServiceHttp(DEFAULT_SERVICE_ID, endpoint, endpoint + PATH_HEALTH_CHECK);
@@ -85,7 +85,7 @@ public class JsonApiClient {
      * @param serviceDeployment
      *      http client topology aware
      */
-    public JsonApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
+    public ApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
         Assert.notNull(serviceDeployment, "service deployment topology");
         this.stargateHttpClient = new LoadBalancedHttpClient(serviceDeployment);
         log.info("+ API JSON     :[" + green("{}") + "]", "ENABLED");
@@ -103,8 +103,8 @@ public class JsonApiClient {
      * @return
      *      if namespace exists
      */
-    public boolean existNamespace(String namespace) {
-        return findNamespaces().anyMatch(namespace::equals);
+    public boolean isNamespaceExists(String namespace) {
+        return findAllNamespaces().anyMatch(namespace::equals);
     }
 
     /**
@@ -114,9 +114,9 @@ public class JsonApiClient {
      *       a list of namespaces
      */
     @SuppressWarnings("unchecked")
-    public Stream<String> findNamespaces() {
+    public Stream<String> findAllNamespaces() {
         return execute("findNamespaces", null)
-                .getStatusKeyAsStream("namespaces");
+                .getStatusKeyAsStringStream("namespaces");
     }
 
     /**
@@ -127,9 +127,9 @@ public class JsonApiClient {
      * @return
      *      client for namespace
      */
-    public JsonNamespaceClient createNamespace(String namespace) {
+    public NamespaceClient createNamespace(String namespace) {
         this.createNamespace(NamespaceDefinition.builder().name(namespace).build());
-        return new JsonNamespaceClient(stargateHttpClient, namespace);
+        return new NamespaceClient(stargateHttpClient, namespace);
     }
 
    /**
@@ -175,9 +175,9 @@ public class JsonApiClient {
      * @param namespace String
      * @return NamespaceClient
      */
-    public JsonNamespaceClient namespace(String namespace) {
-        if (findNamespaces().noneMatch(namespace::equals)) throw new NamespaceNotFoundException(namespace);
-        return new JsonNamespaceClient(stargateHttpClient, namespace);
+    public NamespaceClient namespace(String namespace) {
+        if (findAllNamespaces().noneMatch(namespace::equals)) throw new NamespaceNotFoundException(namespace);
+        return new NamespaceClient(stargateHttpClient, namespace);
     }
 
 }

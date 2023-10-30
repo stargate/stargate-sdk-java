@@ -1,6 +1,5 @@
 package io.stargate.sdk.json.domain;
 
-import io.stargate.sdk.json.vector.SimilarityMetric;
 import lombok.Data;
 
 /**
@@ -61,11 +60,11 @@ public class CollectionDefinition {
             /**
              * Size of the vector.
              */
-            private int size;
+            private int dimension;
             /**
              * Similarity metric.
              */
-            private SimilarityMetric function;
+            private SimilarityMetric metric;
             /**
              * Default constructor.
              */
@@ -154,7 +153,7 @@ public class CollectionDefinition {
             if (options.vector == null) {
                 options.vector = new Options.Vector();
             }
-            options.vector.size = size;
+            options.vector.dimension = size;
             return this;
         }
 
@@ -205,7 +204,7 @@ public class CollectionDefinition {
             if (options.vector == null) {
                 options.vector = new Options.Vector();
             }
-            options.vector.function = function;
+            options.vector.metric = function;
             return this;
         }
 

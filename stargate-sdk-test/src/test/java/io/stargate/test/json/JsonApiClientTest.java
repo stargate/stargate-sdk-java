@@ -1,13 +1,14 @@
 package io.stargate.test.json;
 
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.json.JsonApiClient;
-import io.stargate.sdk.json.JsonCollectionClient;
+import io.stargate.sdk.json.ApiClient;
+import io.stargate.sdk.json.CollectionClient;
 import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
 import io.stargate.sdk.json.domain.UpdateQuery;
 import io.stargate.sdk.json.domain.UpdateQueryBuilder;
+import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.test.json.AbstractJsonClientNamespacesTest;
 import io.stargate.sdk.utils.JsonUtils;
@@ -26,14 +27,14 @@ import java.util.stream.Stream;
 public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     @BeforeAll
     public static void initStargateRestApiClient() {
-        jsonApiClient = new JsonApiClient();
+        jsonApiClient = new ApiClient();
         jsonApiClient.dropNamespace(TEST_NAMESPACE_1);
         jsonApiClient.dropNamespace(TEST_NAMESPACE_2);
     }
 
     @Test
     public void testFindOneById() {
-        JsonCollectionClient colClient = jsonApiClient
+        CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
         Optional<JsonResult> opt = colClient.findById("pf1843");
@@ -43,7 +44,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
 
     @Test
     public void testFindOneByProperty() {
-        JsonCollectionClient colClient = jsonApiClient
+        CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
         Optional<JsonResult> opt = colClient.findOne(SelectQuery.builder()
@@ -57,7 +58,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
 
     @Test
     public void testFindOneVector() {
-        JsonCollectionClient colClient = jsonApiClient
+        CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
         Optional<JsonResult> opt = colClient.findOneByVector(new float[] {1.0f,1.0f,1.0f,1.0f,1.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f});
@@ -70,7 +71,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     @Test
     public void  testFindMany() {
 
-        JsonCollectionClient colClient = jsonApiClient
+        CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
@@ -91,19 +92,19 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     @Test
     @Disabled
     public void testInsert100() {
-        JsonCollectionClient col1 = jsonApiClient
+        CollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
 
         for(int i=0; i<100; i++) {
-            col1.insertOne(new Product("product"+i, 9.99));
+            col1.insertOne(new Document<>(new Product("product"+i, 9.99)));
         }
     }
 
     @Test
     @Disabled
     public void testFindWithPaging() {
-        JsonCollectionClient col1 = jsonApiClient
+        CollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
         Page<JsonResult> resultSet = col1.queryForPage(SelectQuery.builder().build());
@@ -116,7 +117,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     @Test
     @Disabled
     public void testFindAll() {
-        JsonCollectionClient col1 = jsonApiClient
+        CollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
         System.out.println(col1.countDocuments());
@@ -127,7 +128,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     @Test
     @Disabled
     public void testDeleteOne() {
-        JsonCollectionClient vector1 = jsonApiClient
+        CollectionClient vector1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
         System.out.println(vector1.deleteById("pf1843"));
@@ -137,7 +138,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
     public void findOneAndUpdateTest() {
         jsonApiClient.createNamespace(TEST_NAMESPACE_1);
         jsonApiClient.namespace(TEST_NAMESPACE_1).createCollection(TEST_COLLECTION);
-        JsonCollectionClient col1 = jsonApiClient
+        CollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
 

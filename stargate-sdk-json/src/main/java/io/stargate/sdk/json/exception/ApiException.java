@@ -3,7 +3,7 @@ package io.stargate.sdk.json.exception;
 /**
  * An error ocured with the JSON API
  */
-public class JsonApiException extends RuntimeException {
+public class ApiException extends RuntimeException {
 
     /** Serial. */
     private static final long serialVersionUID = 1L;
@@ -14,7 +14,7 @@ public class JsonApiException extends RuntimeException {
      * @param message
      *      error message
      */
-    public JsonApiException(String message) {
+    public ApiException(String message) {
         super(message);
     }
 
@@ -26,7 +26,7 @@ public class JsonApiException extends RuntimeException {
      * @param exceptionClass
      *      error exception
      */
-    public JsonApiException(String message, String exceptionClass) {
+    public ApiException(String message, String exceptionClass) {
         super(exceptionClass + ":" + message);
     }
 
@@ -40,7 +40,7 @@ public class JsonApiException extends RuntimeException {
      * @param cause
      *      error cause
      */
-    public JsonApiException(String message,  String exceptionClass, Throwable cause) {
+    public ApiException(String message, String exceptionClass, Throwable cause) {
         super(exceptionClass + ":" + message, cause);
     }
 

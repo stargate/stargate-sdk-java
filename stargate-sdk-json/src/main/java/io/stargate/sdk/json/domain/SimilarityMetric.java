@@ -1,4 +1,4 @@
-package io.stargate.sdk.json.vector;
+package io.stargate.sdk.json.domain;
 
 /**
  * Similarity metric.

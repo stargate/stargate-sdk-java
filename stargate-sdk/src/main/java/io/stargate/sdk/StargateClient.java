@@ -27,7 +27,7 @@ import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.grpc.StargateGrpcApiClient;
 import io.stargate.sdk.http.RetryHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.json.JsonApiClient;
+import io.stargate.sdk.json.ApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Utils;
@@ -83,7 +83,7 @@ public class StargateClient implements Closeable {
     /**
      * Wrapping JSON Api Client
      */
-    protected JsonApiClient apiJsonClient;
+    protected ApiClient apiJsonClient;
 
     // ------------------------------------------------
     // ---------------- Initializing   ----------------
@@ -122,7 +122,7 @@ public class StargateClient implements Closeable {
             this.apiDataClient      = new StargateRestApiClient();
             this.apiDocumentClient  = new StargateDocumentApiClient();
             this.apiGraphQLClient   = new StargateGraphQLApiClient();
-            this.apiJsonClient      = new JsonApiClient();
+            this.apiJsonClient      = new ApiClient();
             if (config.isEnabledGrpc()) {
                 this.apiGrpcClient = new StargateGrpcApiClient();
             }
@@ -141,7 +141,7 @@ public class StargateClient implements Closeable {
             this.apiDataClient = new StargateRestApiClient(restDeploy);
             this.apiDocumentClient = new StargateDocumentApiClient(docDeploy);
             this.apiGraphQLClient = new StargateGraphQLApiClient(gqlDeploy);
-            this.apiJsonClient = new JsonApiClient(jsonDeploy);
+            this.apiJsonClient = new ApiClient(jsonDeploy);
 
             // grpc service if needed
             if (config.isEnabledGrpc()) {
@@ -329,7 +329,7 @@ public class StargateClient implements Closeable {
      * @return
      *      Api graphQL client
      */
-    public JsonApiClient apiJson() {
+    public ApiClient apiJson() {
         if (apiJsonClient == null) {
             throw new IllegalStateException("Json Api is not available please provide a service deployment for Json");
         }

@@ -8,12 +8,12 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiModelName;
 import dev.langchain4j.model.output.Response;
-import io.stargate.sdk.json.JsonApiClient;
-import io.stargate.sdk.json.JsonNamespaceClient;
+import io.stargate.sdk.json.ApiClient;
+import io.stargate.sdk.json.CollectionRepository;
+import io.stargate.sdk.json.NamespaceClient;
 import io.stargate.sdk.json.domain.Filter;
+import io.stargate.sdk.json.domain.SimilarityMetric;
 import io.stargate.sdk.json.domain.odm.Document;
-import io.stargate.sdk.json.vector.VectorCollectionRepository;
-import io.stargate.sdk.json.vector.SimilarityMetric;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -64,7 +64,7 @@ public class VectorClientPhilosopherTest {
         return openaiVectorizer.embed(inputText).content().vector();
     }
 
-    public static VectorCollectionRepository<Quote> vectorStore;
+    public static CollectionRepository<Quote> vectorStore;
 
     @Test
     @Order(1)
@@ -72,8 +72,8 @@ public class VectorClientPhilosopherTest {
     public void init() {
 
         // Initialization
-        JsonApiClient jsonApiClient = new JsonApiClient();
-        JsonNamespaceClient nsClient = jsonApiClient.createNamespace("vector_openai");
+        ApiClient jsonApiClient = new ApiClient();
+        NamespaceClient nsClient = jsonApiClient.createNamespace("vector_openai");
         nsClient.deleteCollection("philosophers");
         nsClient.createCollection("philosophers", 1536, SimilarityMetric.cosine);
 
@@ -81,12 +81,12 @@ public class VectorClientPhilosopherTest {
        jsonApiClient.namespace("vector_openai").collection("philosophers");
 
        // Crud Repository on a Collection
-       jsonApiClient.namespace("vector_openai").repository("philosophers", Quote.class);
+       jsonApiClient.namespace("vector_openai").collectionRepository("philosophers", Quote.class);
 
        // Vector = crud repository + vector native
        vectorStore = jsonApiClient
                 .namespace("vector_openai")
-                .vectorStore("philosophers", Quote.class);
+                .collectionRepository("philosophers", Quote.class);
     }
 
 
@@ -98,9 +98,9 @@ public class VectorClientPhilosopherTest {
         AtomicInteger rowId = new AtomicInteger();
         loadQuotesFromCsv("/philosopher-quotes.csv").forEach(quote -> {
             System.out.println("Inserting " + rowId.get() + ") " + quote.getQuote());
-            vectorStore.insert(
+            vectorStore.insert(new Document<Quote>(
                     String.valueOf(rowId.incrementAndGet()),
-                    quote, vectorize(quote.getQuote()));
+                    quote, vectorize(quote.getQuote())));
         });
     }
 
@@ -109,12 +109,12 @@ public class VectorClientPhilosopherTest {
     @DisplayName("03. Should Similarity Search")
     public void shouldSimilaritySearch() {
 
-        vectorStore = new JsonApiClient()
+        vectorStore = new ApiClient()
                 .namespace("vector_openai")
-                .vectorStore("philosophers", Quote.class);
+                .collectionRepository("philosophers", Quote.class);
 
         float[] embeddings = vectorize("We struggle all our life for nothing");
-        vectorStore.similaritySearch(embeddings, 3)
+        vectorStore.similaritySearch(embeddings, null,3)
                 .stream()
                 .map(Document::getData)
                 .map(Quote::getQuote)
@@ -126,9 +126,9 @@ public class VectorClientPhilosopherTest {
     @DisplayName("04. Should filter with meta data")
     public void shouldMetaDataFiltering() {
 
-        new JsonApiClient()
+        new ApiClient()
                 .namespace("vector_openai")
-                .vectorStore("philosophers", Quote.class)
+                .collectionRepository("philosophers", Quote.class)
                 .similaritySearch(
                         vectorize("We struggle all our life for nothing"),
                         new Filter().where("philosopher").isEqualsTo("plato"),
@@ -140,9 +140,9 @@ public class VectorClientPhilosopherTest {
     @Order(5)
     @DisplayName("05. Should filter with meta data tags")
     public void shouldMetaDataFilteringWithTags() {
-        vectorStore = new JsonApiClient()
+        vectorStore = new ApiClient()
                 .namespace("vector_openai")
-                .vectorStore("philosophers", Quote.class);
+                .collectionRepository("philosophers", Quote.class);
         vectorStore.count(new Filter().where("tags").isAnArrayContaining("love"));
     }
 
@@ -160,9 +160,9 @@ public class VectorClientPhilosopherTest {
     @Order(6)
     @DisplayName("06. Should Generate new quotes")
     public void should_generate_new_quotes() {
-        vectorStore = new JsonApiClient()
+        vectorStore = new ApiClient()
                 .namespace("vector_openai")
-                .vectorStore("philosophers", Quote.class);
+                .collectionRepository("philosophers", Quote.class);
 
         // === Params ==
         String topic  = "politics and virtue";

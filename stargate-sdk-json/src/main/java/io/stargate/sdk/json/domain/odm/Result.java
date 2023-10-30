@@ -9,10 +9,10 @@ import lombok.Getter;
 /**
  * Result class with ODM.
  *
- * @param <T>
+ * @param <DOC>
  *     pojo in use for ODM
  */
-public class Result<T> extends Document<T> {
+public class Result<DOC> extends Document<DOC> {
 
     /**
      * Using an object, can be null
@@ -33,7 +33,7 @@ public class Result<T> extends Document<T> {
      * @param clazz
      *      class to convert into
      */
-    public Result(JsonResult result, Class<T> clazz) {
+    public Result(JsonResult result, Class<DOC> clazz) {
         this.id         = result.getId();
         this.data       = JsonUtils.convertValue(result.getData(), clazz);
         this.vector     = result.getVector();

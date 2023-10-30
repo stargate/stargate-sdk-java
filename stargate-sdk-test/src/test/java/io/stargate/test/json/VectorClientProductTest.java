@@ -2,16 +2,17 @@ package io.stargate.test.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.json.JsonApiClient;
-import io.stargate.sdk.json.JsonCollectionClient;
+import io.stargate.sdk.json.ApiClient;
+import io.stargate.sdk.json.CollectionClient;
+import io.stargate.sdk.json.CollectionRepository;
 import io.stargate.sdk.json.domain.CollectionDefinition;
 import io.stargate.sdk.json.domain.Filter;
 import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.NamespaceDefinition;
 import io.stargate.sdk.json.domain.SelectQuery;
+import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
-import io.stargate.sdk.json.vector.VectorCollectionRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.stargate.sdk.json.vector.SimilarityMetric.cosine;
+import static io.stargate.sdk.json.domain.SimilarityMetric.cosine;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class VectorClientProductTest {
@@ -47,16 +48,16 @@ class VectorClientProductTest {
     static final String COLLECTION = "sample_collection";
     static final String COLLECTION_VECTOR = "pet_supply_vectors";
 
-    static JsonApiClient jsonApi;
+    static ApiClient jsonApi;
 
-    static JsonCollectionClient myCollection;
+    static CollectionClient myCollection;
 
-    static VectorCollectionRepository<Product> vectorStore;
+    static CollectionRepository<Product> vectorStore;
 
     @BeforeAll
     public static void setup() {
         // If default (localhost:8181) no parameter needed
-        jsonApi = new JsonApiClient();
+        jsonApi = new ApiClient();
         jsonApi.dropNamespace(NAMESPACE);
     }
 
@@ -72,7 +73,7 @@ class VectorClientProductTest {
                 .simpleStrategy(1)
                 //.networkTopologyStrategy(Collections.singletonMap("dc1", 1))
                 .build());
-        Assertions.assertTrue(jsonApi.findNamespaces()
+        Assertions.assertTrue(jsonApi.findAllNamespaces()
                 .collect(Collectors.toList())
                 .contains(NAMESPACE));
 
@@ -83,19 +84,21 @@ class VectorClientProductTest {
                 .name(COLLECTION_VECTOR)
                 .vector(14, cosine)
                 .build());
-        List<String> collections = jsonApi.namespace(NAMESPACE).findCollections()
+        List<String> collections = jsonApi.namespace(NAMESPACE)
+                .findCollections()
+                .map(CollectionDefinition::getName)
                 .collect(Collectors.toList());
         Assertions.assertTrue(collections.contains(COLLECTION));
         Assertions.assertTrue(collections.contains(COLLECTION_VECTOR));
 
         // Vector Store Experience
         myCollection = jsonApi.namespace(NAMESPACE).collection(COLLECTION_VECTOR);
-        vectorStore  = jsonApi.namespace(NAMESPACE).vectorStore(COLLECTION_VECTOR, Product.class);
+        vectorStore  = jsonApi.namespace(NAMESPACE).collectionRepository(COLLECTION_VECTOR, Product.class);
 
         float[] sampleVector = new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
-        String vectorId1 = vectorStore.insert("1",
+        String vectorId1 = vectorStore.insert(new Document<>("1",
                 new Product("HealthyFresh - Beef raw dog food", 12.99),
-                sampleVector);
+                sampleVector));
 
         Assertions.assertTrue(vectorStore.findById(vectorId1).isPresent());
         Assertions.assertTrue(vectorStore.findByVector(sampleVector).isPresent());
@@ -152,7 +155,7 @@ class VectorClientProductTest {
     @Order(4)
     @DisplayName("04. Similarity Search")
     public void shouldSimilaritySearch() {
-        JsonCollectionClient myCollection = jsonApi
+        CollectionClient myCollection = jsonApi
                 .namespace(NAMESPACE)
                 .collection(COLLECTION_VECTOR);
 
