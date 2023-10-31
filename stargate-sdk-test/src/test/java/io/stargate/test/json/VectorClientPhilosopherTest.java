@@ -12,7 +12,6 @@ import io.stargate.sdk.json.ApiClient;
 import io.stargate.sdk.json.CollectionRepository;
 import io.stargate.sdk.json.NamespaceClient;
 import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.SimilarityMetric;
 import io.stargate.sdk.json.domain.odm.Document;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -75,7 +74,7 @@ public class VectorClientPhilosopherTest {
         ApiClient jsonApiClient = new ApiClient();
         NamespaceClient nsClient = jsonApiClient.createNamespace("vector_openai");
         nsClient.deleteCollection("philosophers");
-        nsClient.createCollection("philosophers", 1536, SimilarityMetric.cosine);
+        nsClient.createCollection("philosophers", 1536);
 
        // Low level client
        jsonApiClient.namespace("vector_openai").collection("philosophers");

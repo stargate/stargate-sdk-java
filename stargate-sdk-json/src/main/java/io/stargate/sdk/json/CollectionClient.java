@@ -19,7 +19,6 @@ import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.json.domain.odm.ResultMapper;
 import io.stargate.sdk.utils.Assert;
-import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -760,6 +759,8 @@ public class CollectionClient {
      *
      * @param vector
      *      vector embeddings
+     * @param limit
+     *      limit for output
      * @return
      *      result page
      */
@@ -774,6 +775,8 @@ public class CollectionClient {
      *      vector embeddings
      * @param filter
      *      metadata filter
+     * @param limit
+     *      limit for output
      * @return
      *      result page
      */

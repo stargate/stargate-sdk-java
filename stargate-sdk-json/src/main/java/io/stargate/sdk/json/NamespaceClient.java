@@ -81,6 +81,7 @@ public class NamespaceClient {
      *
      * @param collection
      *      current Collection.
+     * @return collection client.
      */
     public CollectionClient createCollection(String collection) {
         return this.createCollection(CollectionDefinition.builder().name(collection).build());
@@ -95,6 +96,8 @@ public class NamespaceClient {
      *       type of document in used
      * @param collection
      *      current Collection.
+     * @return
+     *      collection repository
      */
     public <DOC> CollectionRepository<DOC> createCollection(String collection,  Class<DOC> clazz) {
         return this.createCollection(CollectionDefinition.builder().name(collection).build(), clazz);
@@ -103,10 +106,11 @@ public class NamespaceClient {
     /**
      * Create a Collection for vector purpose
      *
-     * @param collection name
+     * @param collection
      *      current Collection.
      * @param dimension
      *      dimension of the vector
+     * @return collection client.
      */
     public CollectionClient createCollection(String collection, int dimension) {
         return this.createCollection(CollectionDefinition.builder()
@@ -126,6 +130,7 @@ public class NamespaceClient {
      *      type to be returned
      * @param <DOC>
      *       type of document in used
+     * @return collection client.
      */
     public <DOC> CollectionRepository<DOC> createCollection(String collection, int dimension,  Class<DOC> clazz) {
         return this.createCollection(CollectionDefinition.builder()
@@ -139,6 +144,7 @@ public class NamespaceClient {
      *
      * @param req
      *      current Collection.
+     * @return collection client.
      */
     public CollectionClient createCollection(CollectionDefinition req) {
         execute("createCollection", req);
@@ -153,6 +159,9 @@ public class NamespaceClient {
      *      document type
      * @param req
      *      current Collection.
+     * @param clazz
+     *      type of clas in used
+     * @return collection client.
      */
     public <DOC> CollectionRepository<DOC> createCollection(CollectionDefinition req, Class<DOC> clazz) {
         execute("createCollection", req);
