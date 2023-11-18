@@ -56,6 +56,9 @@ public class JsonApiClientUtils {
         ApiResponseHttp httpRes = stargateHttpClient.POST(rootResource, stringBody);
         log.debug(operation + "[response]=" + yellow("{}"), httpRes.getBody());
         JsonApiResponse jsonRes = JsonUtils.unmarshallBean(httpRes.getBody(), JsonApiResponse.class);
+        if (jsonRes.getData() != null) {
+            log.debug(operation + "[response]=" + yellow("{}"), jsonRes.getData().getDocuments());
+        }
         JsonApiClientUtils.validate(jsonRes);
         return jsonRes;
     }
