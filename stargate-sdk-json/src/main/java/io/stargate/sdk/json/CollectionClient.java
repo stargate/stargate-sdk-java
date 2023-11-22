@@ -781,7 +781,7 @@ public class CollectionClient {
      *      result page
      */
     public List<JsonResult> similaritySearch(float[] vector, Filter filter, Integer limit) {
-        return similaritySearch(vector, null, limit, null).getResults();
+        return similaritySearch(vector, filter, limit, null).getResults();
     }
 
     /**
