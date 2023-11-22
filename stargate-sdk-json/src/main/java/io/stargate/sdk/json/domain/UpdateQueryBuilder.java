@@ -162,6 +162,20 @@ public class UpdateQueryBuilder {
     }
 
     /**
+     * Full update as a json string.
+     *
+     * @param jsonUpdate
+     *      content of the update as json
+     * @return
+     *      reference to self
+     */
+    @SuppressWarnings("unchecked")
+    public UpdateQueryBuilder withJsonUpdate(String jsonUpdate) {
+        this.update = JsonUtils.unmarshallBean(jsonUpdate, Map.class);
+        return this;
+    }
+
+    /**
      * Work with arguments.
      *
      * @param fieldName
