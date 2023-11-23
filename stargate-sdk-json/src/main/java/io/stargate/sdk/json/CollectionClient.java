@@ -19,6 +19,7 @@ import io.stargate.sdk.json.domain.UpdateStatus;
 import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.json.domain.odm.ResultMapper;
+import io.stargate.sdk.json.exception.ApiException;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
 import lombok.NonNull;
@@ -126,13 +127,17 @@ public class CollectionClient {
         }
         try {
             insertOne(jsonDocument);
-        } catch(AlreadyExistException e) {
-            // Already Exist
-            findOneAndReplace(UpdateQuery.builder()
-                    .where("_id")
-                    .isEqualsTo(jsonDocument.getId())
-                    .replaceBy(jsonDocument)
-                    .build());
+        } catch(ApiException e) {
+            if ("DOCUMENT_ALREADY_EXISTS".equalsIgnoreCase(e.getErrorCode())) {
+                // Already Exist
+                findOneAndReplace(UpdateQuery.builder()
+                        .where("_id")
+                        .isEqualsTo(jsonDocument.getId())
+                        .replaceBy(jsonDocument)
+                        .build());
+            } else {
+                throw e;
+            }
         }
         return jsonDocument.getId();
     }

@@ -50,4 +50,12 @@ public class ApiException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    /**
+     * Gets errorCode
+     *
+     * @return value of errorCode
+     */
+    public String getErrorCode() {
+        return errorCode;
+    }
 }

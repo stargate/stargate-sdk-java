@@ -56,7 +56,7 @@ public class JsonApiClientUtils {
         ApiResponseHttp httpRes = stargateHttpClient.POST(rootResource, stringBody);
         log.debug(operation + "[response]=" + yellow("{}"), httpRes.getBody());
         JsonApiResponse jsonRes = JsonUtils.unmarshallBean(httpRes.getBody(), JsonApiResponse.class);
-        if (jsonRes.getData() != null) {
+        if (jsonRes.getData() != null && jsonRes.getData().getDocuments() != null) {
             log.debug(operation + "[response]=" + yellow("{}"), jsonRes.getData().getDocuments());
         }
         JsonApiClientUtils.validate(jsonRes);
@@ -102,13 +102,15 @@ public class JsonApiClientUtils {
      */
     public static void validate(@NonNull JsonApiResponse response) {
         if (response.getErrors() !=null && !response.getErrors().isEmpty()) {
-            log.error("{} errors detected.", response.getErrors().size());
-            for (JsonApiError error : response.getErrors()) {
-                log.error("[ERROR]");
-                log.error("- message: {}", error.getMessage());
-                log.error("- exceptionClass: {}", error.getExceptionClass());
-                if (error.getErrorCode() !=null) {
-                    log.error("-  errorCode: {}", error.getErrorCode());
+            if (log.isDebugEnabled()) {
+                log.debug("{} errors detected.", response.getErrors().size());
+                for (JsonApiError error : response.getErrors()) {
+                    log.debug("[ERROR]");
+                    log.debug("- message: {}", error.getMessage());
+                    log.debug("- exceptionClass: {}", error.getExceptionClass());
+                    if (error.getErrorCode() != null) {
+                        log.debug("- errorCode: {}", error.getErrorCode());
+                    }
                 }
             }
             throw new ApiException(

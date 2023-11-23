@@ -51,9 +51,15 @@
                     <schemaPaths>
                         <path>src/main/resources/graphql</path>
                     </schemaPaths>
+                    <outputDir>target/generated-sources</outputDir>
+                    <generateDataTypes>true</generateDataTypes>
                     <generateBoxedTypes>true</generateBoxedTypes>
-                    <generateClient>true</generateClient>
+                    <subPackageNameClient>client</subPackageNameClient>
+                    <subPackageNameDatafetchers>datafetchers</subPackageNameDatafetchers>
+                    <subPackageNameTypes>types</subPackageNameTypes>
+                    <generateClientApi>true</generateClientApi>
                     <writeToFiles>true</writeToFiles>
+                    <generateDocs>true</generateDocs>
                 </configuration>
             </plugin>
             <plugin>
