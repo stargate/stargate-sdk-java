@@ -2,6 +2,7 @@ package io.stargate.sdk.json;
 
 import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.Page;
+import io.stargate.sdk.exception.AlreadyExistException;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.json.domain.DeleteQuery;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -99,17 +101,40 @@ public class CollectionClient {
      *
      * @param jsonDocument
      *      json Document
-     * @param <DOC>
-     *      object T in use.
      * @return
      *      identifier for the document
      */
-    public <DOC> String insertOne(JsonDocument jsonDocument) {
+    public String insertOne(JsonDocument jsonDocument) {
         log.debug("insert into {}/{}", green(namespace), green(collection));
         return execute("insertOne", Map.of("document", jsonDocument))
                 .getStatusKeyAsStringStream("insertedIds")
                 .findAny()
                 .orElse(null);
+    }
+
+    /**
+     * Upsert a document in the collection.
+     *
+     * @param jsonDocument
+     *      current document
+     * @return
+     *      document id
+     */
+    public String upsert(@NonNull JsonDocument jsonDocument) {
+        if (jsonDocument.getId() == null) {
+            jsonDocument.setId(UUID.randomUUID().toString());
+        }
+        try {
+            insertOne(jsonDocument);
+        } catch(AlreadyExistException e) {
+            // Already Exist
+            findOneAndReplace(UpdateQuery.builder()
+                    .where("_id")
+                    .isEqualsTo(jsonDocument.getId())
+                    .replaceBy(jsonDocument)
+                    .build());
+        }
+        return jsonDocument.getId();
     }
 
     // --------------------------
