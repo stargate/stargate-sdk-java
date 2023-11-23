@@ -113,7 +113,9 @@ public class JsonApiClientUtils {
             }
             throw new ApiException(
                     response.getErrors().get(0).getMessage(),
-                    response.getErrors().get(0).getExceptionClass());
+                    response.getErrors().get(0).getExceptionClass(),
+                    null,
+                    response.getErrors().get(0).getErrorCode());
         }
         if (response.getStatus() != null &&
             response.getStatus().containsKey("ok") &&
