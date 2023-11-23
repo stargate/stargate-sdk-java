@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -470,7 +472,10 @@ public class RetryHttpClient implements ApiConstants {
         req.addHeader(HEADER_AUTHORIZATION, "Bearer " + token);
         req.setConfig(requestConfig);
         if (null != body) {
-            req.setEntity(new StringEntity(body, ContentType.TEXT_PLAIN));
+            // If you don't set a Charset the client will use ISO-8859-1
+            // preventing the use of UNICODE characters, and also the server assumes UTF-8
+            // that lead to decoding issues.
+            req.setEntity(new StringEntity(body, ContentType.TEXT_PLAIN.withCharset(StandardCharsets.UTF_8)));
         }
         return req;
     }
