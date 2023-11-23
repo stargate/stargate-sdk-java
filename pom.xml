@@ -22,7 +22,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java-driver.version>4.17.0</java-driver.version>
 		<logback.version>1.4.11</logback.version>
-		<jackson.version>2.15.2</jackson.version>
+		<jackson.version>2.16.0</jackson.version>
 		<httpclient.version>5.2.1</httpclient.version>
 		<lombok.version>1.18.30</lombok.version>
 		<stargate-grpc.version>2.0.22</stargate-grpc.version>
