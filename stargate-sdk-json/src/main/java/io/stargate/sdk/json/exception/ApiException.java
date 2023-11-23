@@ -7,6 +7,7 @@ public class ApiException extends RuntimeException {
 
     /** Serial. */
     private static final long serialVersionUID = 1L;
+    private String errorCode;
 
     /**
      * Default exception.
@@ -42,6 +43,11 @@ public class ApiException extends RuntimeException {
      */
     public ApiException(String message, String exceptionClass, Throwable cause) {
         super(exceptionClass + ":" + message, cause);
+    }
+
+    public ApiException(String message, String exceptionClass, Throwable cause, String errorCode) {
+        super(exceptionClass + ":" + message, cause);
+        this.errorCode = errorCode;
     }
 
 }
