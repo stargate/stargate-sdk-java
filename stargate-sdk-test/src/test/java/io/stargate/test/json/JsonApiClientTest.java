@@ -75,13 +75,13 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
-        Page<JsonResult> page = colClient.queryForPage(SelectQuery.builder()
+        Page<JsonResult> page = colClient.findPage(SelectQuery.builder()
                 // Projection
                 //.selectVector()
                 //.selectSimilarity()
                 // ann search
                 //.orderByAnn(1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
-                .limit(2)
+                .withLimit(2)
                 .build());
         System.out.println("Result Size=" + page.getPageSize());
         for(JsonResult result : page.getResults()) {
@@ -107,7 +107,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
         CollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
-        Page<JsonResult> resultSet = col1.queryForPage(SelectQuery.builder().build());
+        Page<JsonResult> resultSet = col1.findPage(SelectQuery.builder().build());
         System.out.println("Page 1: state=" + resultSet.getPageState());
         for(JsonResult result : resultSet.getResults()) {
             System.out.println(result.toString());
@@ -121,7 +121,7 @@ public class JsonApiClientTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
         System.out.println(col1.countDocuments());
-        Stream<JsonResult> resultSet = col1.query(SelectQuery.builder().build());
+        Stream<JsonResult> resultSet = col1.find(SelectQuery.builder().build());
         System.out.println(resultSet.count());
     }
 

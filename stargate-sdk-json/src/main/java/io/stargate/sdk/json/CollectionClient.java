@@ -2,7 +2,6 @@ package io.stargate.sdk.json;
 
 import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.exception.AlreadyExistException;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.json.domain.DeleteQuery;
@@ -357,34 +356,177 @@ public class CollectionClient {
     /**
      * Search records with a filter
      *
-     * @param pageQuery
+     * @param query
      *      filter
      * @return
      *      all items
      */
-    public Stream<JsonResult> query(SelectQuery pageQuery) {
+    public Stream<JsonResult> find(SelectQuery query) {
         List<JsonResult> documents = new ArrayList<>();
         String pageState = null;
         AtomicInteger pageCount = new AtomicInteger(0);
         do {
-            log.debug("Fetching page "  + pageCount.incrementAndGet());
-            Page<JsonResult> pageX = queryForPage(pageQuery);
+            log.debug("Fetching page " + pageCount.incrementAndGet());
+            Page<JsonResult> pageX = findPage(query);
             if (pageX.getPageState().isPresent())  {
                 pageState = pageX.getPageState().get();
             } else {
                 pageState = null;
             }
+            // We have enough documents
+            if (query.getLimit().isPresent() &&
+                    documents.size() + pageX.getResults().size() > query.getLimit().get()) {
+
+                documents.addAll(pageX.getResults().subList(0, query.getLimit().get() - documents.size()));
+                break;
+            }
             documents.addAll(pageX.getResults());
             // Reusing query for next page
-            pageQuery.setPageState(pageState);
+            query.setPageState(pageState);
         } while(pageState != null);
         return documents.stream();
     }
 
     /**
+     * Find documents matching the query.
+     *
+     * @param query
+     *      current query
+     * @return
+     *      page of results
+     */
+    public Page<JsonResult> findPage(SelectQuery query) {
+        log.debug("Query in {}/{}", green(namespace), green(collection));
+        JsonApiData apiData = execute("find", query).getData();
+        int pageSize = (query != null && query.getLimit().isPresent()) ? query.getLimit().get() : SelectQuery.PAGING_SIZE_MAX;
+        return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
+    }
+
+    // ------------------------------
+    // ---  Similarity Search    ----
+    // ------------------------------
+
+    /**
+     * Query builder.
+     *
+     * @param vector
+     *      vector embeddings
+     * @param limit
+     *      limit for output
+     * @return
+     *      result page
+     */
+    public Stream<JsonResult> findVector(float[] vector, Integer limit) {
+        return findVector(vector, null, limit);
+    }
+
+    /**
+     * Query builder.
+     *
+     * @param vector
+     *      vector embeddings
+     * @param filter
+     *      metadata filter
+     * @param limit
+     *      limit for output
+     * @return
+     *      result page
+     */
+    public Stream<JsonResult> findVector(float[] vector, Filter filter, Integer limit) {
+        return find(SelectQuery.builder()
+                .withFilter(filter)
+                .orderByAnn(vector)
+                .withLimit(limit)
+                .includeSimilarity()
+                .build());
+    }
+
+
+    /**
+     * find Page.
+     *
+     * @param query
+     *      return query Page
+     * @return
+     *      page page of results
+     */
+    public Page<JsonResult> findVectorPage(SelectQuery query) {
+        return findPage(query);
+    }
+
+    /**
+     * Query builder.
+     *
+     * @param vector
+     *      vector embeddings
+     * @param filter
+     *      metadata filter
+     * @param limit
+     *      limit
+     * @param pagingState
+     *      paging state
+     * @return
+     *      result page
+     */
+    public Page<JsonResult> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState) {
+        return findVectorPage(SelectQuery.builder()
+                .withFilter(filter)
+                .orderByAnn(vector)
+                .withLimit(limit)
+                .withPagingState(pagingState)
+                .includeSimilarity()
+                .build());
+    }
+
+
+    /**
+     * Search similarity from the vector (page by 20)
+     *
+     * @param vector
+     *      vector embeddings
+     * @param filter
+     *      metadata filter
+     * @param limit
+     *      limit
+     * @param pagingState
+     *      paging state
+     * @param clazz
+     *      current class.
+     * @param <DOC>
+     *       type of document
+     * @return
+     *      page of results
+     */
+    public <DOC> Page<Result<DOC>> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState, Class<DOC> clazz) {
+        return mapPageJsonResultAsPageResult(findVectorPage(vector, filter, limit, pagingState), clazz);
+    }
+
+    /**
+     * Search similarity from the vector (page by 20)
+     *
+     * @param vector
+     *      vector embeddings
+     * @param filter
+     *      metadata filter
+     * @param limit
+     *      limit
+     * @param pagingState
+     *      paging state
+     * @param mapper
+     *      result mapper
+     * @param <DOC>
+     *       type of document
+     * @return
+     *      page of results
+     */
+    public <DOC> Page<Result<DOC>> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState, ResultMapper<DOC> mapper) {
+        return mapPageJsonResultAsPageResult(findVectorPage(vector, filter, limit, pagingState), mapper);
+    }
+
+    /**
      * Search records with a filter
      *
-     * @param pageQuery
+     * @param query
      *      filter
      * @param clazz
      *      class for target pojo
@@ -393,8 +535,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public  <DOC> Stream<Result<DOC>> query(SelectQuery pageQuery, Class<DOC> clazz) {
-        return query(pageQuery).map(r -> new Result<>(r, clazz));
+    public  <DOC> Stream<Result<DOC>> find(SelectQuery query, Class<DOC> clazz) {
+        return find(query).map(r -> new Result<>(r, clazz));
     }
 
     /**
@@ -409,8 +551,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public  <DOC> Stream<Result<DOC>> query(SelectQuery pageQuery, ResultMapper<DOC> mapper) {
-        return query(pageQuery).map(mapper::map);
+    public  <DOC> Stream<Result<DOC>> find(SelectQuery pageQuery, ResultMapper<DOC> mapper) {
+        return find(pageQuery).map(mapper::map);
     }
 
     /**
@@ -420,7 +562,7 @@ public class CollectionClient {
      *      all items
      */
     public Stream<JsonResult> findAll() {
-        return query(SelectQuery.builder().build());
+        return find(SelectQuery.builder().build());
     }
 
     /**
@@ -456,21 +598,6 @@ public class CollectionClient {
      *
      * @param query
      *      current query
-     * @return
-     *      page of results
-     */
-    public Page<JsonResult> queryForPage(SelectQuery query) {
-        log.debug("Query in {}/{}", green(namespace), green(collection));
-        JsonApiData apiData = execute("find", query).getData();
-        int pageSize = (query != null) ? query.getPageSize() : SelectQuery.DEFAULT_PAGE_SIZE;
-        return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
-    }
-
-    /**
-     * Find documents matching the query.
-     *
-     * @param query
-     *      current query
      * @param clazz
      *      class for target pojo
      * @return
@@ -478,8 +605,8 @@ public class CollectionClient {
      * @param <T>
      *     class to be marshalled
      */
-    public <T> Page<Result<T>> queryForPage(SelectQuery query, Class<T> clazz) {
-        return mapPageJsonResultAsPageResult(queryForPage(query), clazz);
+    public <T> Page<Result<T>> findPage(SelectQuery query, Class<T> clazz) {
+        return mapPageJsonResultAsPageResult(findPage(query), clazz);
     }
 
     /**
@@ -494,8 +621,8 @@ public class CollectionClient {
      * @param <DOC>
      *     class to be marshalled
      */
-    public <DOC> Page<Result<DOC>> queryForPage(SelectQuery query, ResultMapper<DOC> mapper) {
-        return mapPageJsonResultAsPageResult(queryForPage(query), mapper);
+    public <DOC> Page<Result<DOC>> findPage(SelectQuery query, ResultMapper<DOC> mapper) {
+        return mapPageJsonResultAsPageResult(findPage(query), mapper);
     }
 
     /**
@@ -746,130 +873,6 @@ public class CollectionClient {
      */
     private JsonApiResponse execute(String operation, Object payload) {
         return executeOperation(stargateHttpClient, collectionResource, operation, payload);
-    }
-
-    // ------------------------------
-    // ---  Similarity Search    ----
-    // ------------------------------
-
-    /**
-     * Query builder.
-     *
-     * @param vector
-     *      vector embeddings
-     * @param filter
-     *      metadata filter
-     * @param limit
-     *      limit
-     * @param pagingState
-     *      paging state
-     * @return
-     *      result page
-     */
-    public Page<JsonResult> similaritySearch(float[] vector, Filter filter, Integer limit, String pagingState) {
-        SelectQueryBuilder builder = SelectQuery.builder().orderByAnn(vector);
-        if (filter != null) {
-            if (builder.filter == null) {
-                builder.filter = new HashMap<>();
-            }
-            builder.filter.putAll(filter.getFilter());
-        }
-        builder.includeSimilarity();
-        if (pagingState != null) {
-            builder.withPagingState(pagingState);
-        }
-        if (limit!=null) {
-            builder.limit(limit);
-        }
-        return queryForPage(builder.build());
-    }
-
-    /**
-     * Query builder.
-     *
-     * @param vector
-     *      vector embeddings
-     * @param limit
-     *      limit for output
-     * @return
-     *      result page
-     */
-    public List<JsonResult> similaritySearch(float[] vector, Integer limit) {
-        return similaritySearch(vector, null, limit, null).getResults();
-    }
-
-    /**
-     * Query builder.
-     *
-     * @param vector
-     *      vector embeddings
-     * @param filter
-     *      metadata filter
-     * @param limit
-     *      limit for output
-     * @return
-     *      result page
-     */
-    public List<JsonResult> similaritySearch(float[] vector, Filter filter, Integer limit) {
-        return similaritySearch(vector, filter, limit, null).getResults();
-    }
-
-    /**
-     * Search similarity from the vector (page by 20)
-     *
-     * @param vector
-     *      vector embeddings
-     * @param filter
-     *      metadata filter
-     * @param limit
-     *      limit
-     * @param pagingState
-     *      paging state
-     * @param clazz
-     *      current class.
-     * @param <DOC>
-     *       type of document
-     * @return
-     *      page of results
-     */
-    public <DOC> Page<Result<DOC>> similaritySearch(float[] vector, Filter filter, Integer limit, String pagingState, Class<DOC> clazz) {
-        return mapPageJsonResultAsPageResult(similaritySearch(vector, filter, limit, pagingState), clazz);
-    }
-
-    /**
-     * Search similarity from the vector (page by 20)
-     *
-     * @param vector
-     *      vector embeddings
-     * @param filter
-     *      metadata filter
-     * @param limit
-     *      limit
-     * @param pagingState
-     *      paging state
-     * @param mapper
-     *      result mapper
-     * @param <DOC>
-     *       type of document
-     * @return
-     *      page of results
-     */
-    public <DOC> Page<Result<DOC>> similaritySearch(float[] vector, Filter filter, Integer limit, String pagingState, ResultMapper<DOC> mapper) {
-        return mapPageJsonResultAsPageResult(similaritySearch(vector, filter, limit, pagingState), mapper);
-    }
-
-    /**
-     * Mapping method to have Json.
-     *
-     * @param res
-     *      current result
-     * @return
-     *      list of document
-     */
-    private List<JsonResult> mapAsListJsonResult(List<Result<ObjectMap>> res) {
-        return res.stream()
-                .map(Result::toJsonResult)
-                .collect(Collectors.toList());
     }
 
 }

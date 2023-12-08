@@ -214,7 +214,7 @@ public class CollectionRepository<DOC> {
      *      retrieve all items
      */
     public Stream<Result<DOC>> search(SelectQuery query) {
-        return collectionClient.query(query, docClass);
+        return collectionClient.find(query, docClass);
     }
 
     /**
@@ -226,7 +226,7 @@ public class CollectionRepository<DOC> {
      *      page of records
      */
     public Page<Result<DOC>> searchPage(SelectQuery query) {
-        return collectionClient.queryForPage(query, docClass);
+        return collectionClient.findPage(query, docClass);
     }
 
     // --------------------------
@@ -342,10 +342,9 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of results
      */
-    public Page<Result<DOC>> similaritySearchPage(float[] vector, Filter metadataFilter) {
-        return collectionClient.similaritySearch(vector, metadataFilter, null, null, docClass);
+    public Page<Result<DOC>> findVector(float[] vector, Filter metadataFilter) {
+        return collectionClient.findVectorPage(vector, metadataFilter, null, null, docClass);
     }
-
 
     /**
      * Search similarity from the vector and a limit, if a limit / no paging
@@ -357,8 +356,8 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of results
      */
-    public List<Result<DOC>> similaritySearch(float[] vector, Integer limit) {
-        return collectionClient.similaritySearch(vector, null, limit, null, docClass).getResults();
+    public List<Result<DOC>> findVector(float[] vector, Integer limit) {
+        return collectionClient.findVectorPage(vector, null, limit, null, docClass).getResults();
     }
     /**
      * Search similarity from the vector and a limit, if a limit / no paging
@@ -372,8 +371,8 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of results
      */
-    public List<Result<DOC>> similaritySearch(float[] vector, Filter metadataFilter, Integer limit) {
-        return collectionClient.similaritySearch(vector, metadataFilter, limit, null, docClass).getResults();
+    public List<Result<DOC>> findVector(float[] vector, Filter metadataFilter, Integer limit) {
+        return collectionClient.findVectorPage(vector, metadataFilter, limit, null, docClass).getResults();
     }
 
     /**

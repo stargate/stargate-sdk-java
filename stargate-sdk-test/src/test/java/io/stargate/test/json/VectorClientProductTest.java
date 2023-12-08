@@ -159,7 +159,7 @@ class VectorClientProductTest {
                 .namespace(NAMESPACE)
                 .collection(COLLECTION_VECTOR);
 
-        Page<JsonResult> page = myCollection.queryForPage(SelectQuery.builder()
+        Page<JsonResult> page = myCollection.findPage(SelectQuery.builder()
                 .selectVector()
                 .selectSimilarity()
                 .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
@@ -186,7 +186,7 @@ class VectorClientProductTest {
     @DisplayName("05. Meta Data Filtering")
     public void shouldMetaDataFiltering() {
 
-            Page<JsonResult> page =  myCollection.queryForPage(SelectQuery.builder()
+            Page<JsonResult> page =  myCollection.findPage(SelectQuery.builder()
                     .selectVector()
                     .selectSimilarity()
                     .where("product_price").isEqualsTo(9.99)

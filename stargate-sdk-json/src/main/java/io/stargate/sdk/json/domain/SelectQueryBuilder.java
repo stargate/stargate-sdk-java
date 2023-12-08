@@ -3,6 +3,7 @@ package io.stargate.sdk.json.domain;
 import io.stargate.sdk.http.domain.FilterKeyword;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
+import lombok.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,26 +48,6 @@ public class SelectQueryBuilder {
         return this;
     }
 
-    /**
-     * Add vector in the projection.
-     *
-     * @return
-     *      self reference
-     */
-    public SelectQueryBuilder selectVector() {
-        return select(FilterKeyword.VECTOR.getKeyword());
-    }
-
-    /**
-     * Add similarity in the projection.
-     *
-     * @return
-     *      self reference
-     */
-    public SelectQueryBuilder selectSimilarity() {
-        return select(FilterKeyword.SIMILARITY.getKeyword());
-    }
-
     // -----------------------------------
     // -- Sort: 'order by'             ---
     // -----------------------------------
@@ -103,6 +84,7 @@ public class SelectQueryBuilder {
      *      self reference
      */
     public SelectQueryBuilder orderByAnn(float[] vector) {
+        if (vector == null) return this;
         return orderBy(FilterKeyword.VECTOR.getKeyword(), vector);
     }
 
@@ -114,7 +96,7 @@ public class SelectQueryBuilder {
      * @return
      *      self reference
      */
-    public SelectQueryBuilder orderByAnn(String textFragment) {
+    public SelectQueryBuilder orderByAnn(@NonNull String textFragment) {
         return orderBy(FilterKeyword.VECTORIZE.getKeyword(), textFragment);
     }
 
@@ -135,10 +117,8 @@ public class SelectQueryBuilder {
      * @return
      *      number of items
      */
-    public SelectQueryBuilder limit(int limit) {
-        if (limit > 20) {
-            throw new IllegalArgumentException("Limit must be less than 20");
-        }
+    public SelectQueryBuilder withLimit(Integer limit) {
+        if (limit == null || limit > 20) return this;
         return withOption("limit", limit);
     }
 
@@ -150,7 +130,8 @@ public class SelectQueryBuilder {
      * @return
      *      number of items
      */
-    public SelectQueryBuilder withSkip(int skip) {
+    public SelectQueryBuilder withSkip(Integer skip) {
+        if (skip == null) return this;
         return withOption("skip", skip);
     }
 
@@ -163,6 +144,7 @@ public class SelectQueryBuilder {
      *      current builder
      */
     public SelectQueryBuilder withPagingState(String pagingState) {
+        if (pagingState == null) return this;
         return withOption("pagingState", pagingState);
     }
 
@@ -186,7 +168,7 @@ public class SelectQueryBuilder {
      * @return
      *      reference to self
      */
-    protected SelectQueryBuilder withOption(String key, Object value)  {
+    protected SelectQueryBuilder withOption(@NonNull String key, @NonNull Object value)  {
         if (null == options) options = new HashMap<>();
         options.put(key, value);
         return this;
@@ -210,12 +192,11 @@ public class SelectQueryBuilder {
      */
     @SuppressWarnings("unchecked")
     public SelectQueryBuilder withFilter(Filter pFilter) {
-        if (pFilter != null) {
-            if (filter == null) {
-                filter = new HashMap<>();
-            }
-            filter.putAll(pFilter.filter);
+        if (pFilter == null) return this;
+        if (filter == null) {
+            filter = new HashMap<>();
         }
+        filter.putAll(pFilter.filter);
         return this;
     }
 
@@ -228,6 +209,7 @@ public class SelectQueryBuilder {
      */
     @SuppressWarnings("unchecked")
     public SelectQueryBuilder withJsonFilter(String jsonFilter) {
+        if (jsonFilter == null) return this;
         this.filter = JsonUtils.unmarshallBean(jsonFilter, Map.class);
         return this;
     }

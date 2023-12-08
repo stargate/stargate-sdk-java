@@ -7,6 +7,7 @@ import lombok.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Json Api Query Payload Wrapper.
@@ -14,11 +15,6 @@ import java.util.Map;
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SelectQuery {
-
-    /**
-     * Default page size.
-     */
-    public static final int DEFAULT_PAGE_SIZE = 21;
 
     /**
      * Max page size.
@@ -100,9 +96,7 @@ public class SelectQuery {
      */
     public static SelectQuery findByVector(float[] vector) {
         if (vector == null) throw new IllegalArgumentException("vector cannot be null");
-        return SelectQuery.builder().selectVector()
-                .selectSimilarity()
-                .orderByAnn(vector).build();
+        return SelectQuery.builder().orderByAnn(vector).build();
     }
 
     /**
@@ -112,12 +106,11 @@ public class SelectQuery {
      *      page size
      */
     @JsonIgnore
-    public int getPageSize() {
-        int pageSize = SelectQuery.DEFAULT_PAGE_SIZE;
+    public Optional<Integer> getLimit() {
         if (options != null && options.containsKey("limit")) {
-            pageSize = (int) options.get("limit");
+            return Optional.ofNullable((Integer) options.get("limit"));
         }
-        return pageSize;
+        return Optional.empty();
     }
 
     /**

@@ -6,13 +6,13 @@ This SDK *(Software Development Kit)* makes it easy to call Stargate services us
 
 ## Table of Contents
 
-[**1. Introducing Stargate**](#1---introducing-stargate)
+[**1. Introducing Stargate**](#1-introducing-stargate)
 - [1.1 - Overview](#11-overview)
 - [1.2 - APIs descriptions](#12-api-descriptions)
 
 [**2. Stargate SDK**](#2-stargate-sdk)
 - [2.1 - Prerequisites](#21-prerequisites)
-- [2.2 - Start Stargate](#2-start-stargate)
+- [2.2 - Start Stargate](#22-start-stargate)
 - [2.3 - QuickStart](#23-quickstart)
 - [2.4 - Working with Rest API](#24-working-with-rest-api)
 - [2.5 - Working with Document API](#25-working-with-document-api)
@@ -72,7 +72,7 @@ mvn -version
 
 > [🏠 Back to Table of Contents](#clipboard-table-of-content)
 
-## 2.2 Start Stargate
+### 2.2 Start Stargate
 
 - ✅ Use the script `start.sh` at root of the repository or start stargate with the following docker-compose command:
 
@@ -599,7 +599,559 @@ apiClient.keyspace("ks1").type("videos").delete();
 
 ## 2.5. Working with Document API
 
+Stargate and Astra bring great innovation by allowing Apache Cassandra™ to store JSON documents like a document-oriented noSQL database. The same data model is in use for each document collection leveraging a [document shredding](https://stargate.io/2020/10/19/the-stargate-cassandra-documents-api.html) stratefy.
+
+#### ApiDocumentClient Initialization
+
+> Main client object initializations (`AstraClient` and `StargateClient`) have been detailed on the [Home](https://github.com/datastax/astra-sdk-java/wiki) page. Moving forward the sample code will reuse those classes but do not initialize them.
+
+[`ApiDocumentClient`](https://github.com/datastax/astra-sdk-java/blob/main/stargate-sdk/src/main/java/com/datastax/stargate/sdk/doc/ApiDocumentClient.java) is the core class when it comes to work with documents.
+
+```java
+// Option1. Retrieved from astraClient
+ApiDocumentClient apiDocClient1 = astraClient.apiStargateDocument();
+ApiDocumentClient apiDocClient2 = astraClient.getStargateClient().apiDocument()
+
+// Option 2. Retrieved from StargateClient
+ApiDocumentClient astraClient3 = stargateClient.apiDocument();
+
+// Option 3. Built from the endpoint and credentials
+ApiDocumentClient astraClient4    = new ApiDocumentClient("http://api_endpoint", "apiToken");
+ApiDocumentClient astraClient5 = new ApiDocumentClient("http://api_endpoint", 
+  new TokenProviderDefault("username", "password", "http://auth_endpoint");
+```
+
+For the rest of the document `apiDocClient`  will refer to `ApiDocumentClient` but the initialization code will not be duplicated.
+
+#### Working with Namespaces
+
+Namespace if the term used to talk about keyspaces when dealing with the document API.
+
+> [DocumentApiIntegrationTest](https://github.com/datastax/astra-sdk-java/blob/main/astra-sdk/src/test/java/com/datastax/astra/sdk/stargate/DocumentApiIntegrationTest.java) is the unit test class for this API where you can find more sample usage of the SDK.
+
+- ✅.   List `Namespaces` Names
+
+```java
+Stream<String> namespaces = apiDocClient.namespaceNames();
+```
+
+- ✅. List `Namespaces` objects
+
+>[Reference Api documentation](https://docs.datastax.com/en/astra/docs/_attachments/docv2.html#operation/getAllNamespaces)
+
+```java
+Stream<Namespace> namespaces = apiDocClient.namespaces();
+```
+
+The Namespace class provides the replication factor and or the datacenter list for a namespace.
+
+```java
+public class Namespace {
+    protected String name;
+    protected Integer replicas;
+    protected List<DataCenter> datacenters;
+}
+```
+
+- ✅. Find `Namespace` by its name
+
+>[Reference Api documentation](https://docs.datastax.com/en/astra/docs/_attachments/docv2.html#operation/getNamespace)
+
+The parameter *ns1* is here the unique identifier for the namespace
+
+```java
+Optional<Namespace> ns1 = apiDocClient.namespace("ns1").find();
+```
+
+- ✅. Test if  `Namespace` exists
+
+The parameter *ns1* is here the unique identifier for the namespace
+
+```java
+apiDocClient.namespace("ns1").exist();
+```
+
+- ✅. Create `Namespace`
+
+> 🚨 *As of Today, in Astra, Namespaces and Keyspaces creations are only available at the DevOps API level or through the user interface.*
+
+```java
+// Create a namespace with a single DC dc-1
+DataCenter dc1 = new DataCenter("dc-1", 1);
+apiDocClient.namespace("ns1").create(dc1);
+
+// Create a namespace providing only the replication factor
+apiDocClient.namespace("ns1").createSimple(3);
+```
+
+-  ✅. Delete a namespace
+
+> 🚨 *As of Today, in Astra, Namespaces and Keyspaces deletions are only available at the DevOps API level or through the user interface.*
+
+The parameter *ns1* is here the unique identifier for the namespace.
+
+```java
+apiDocClient.namespace("ns1").delete();
+```
+
+**ℹ️ Fluent API**
+
+You can assign `apiDocClient.namespace("ns1")` to a `NamespaceClient` variable as shown below to simplify your code.
+
+```java
+NamespaceClient ns1Client = astraClient.apiStargateDocument().namespace("ns1");
+        
+// Create if not exist
+if (!ns1Client.exist())  ns1Client.createSimple(3);
+        
+// Show datacenters 
+ns1Client.find().get()
+    .getDatacenters()
+    .stream()
+    .map(DataCenter::getName)
+    .forEach(System.out::println); 
+        
+// Delete 
+ns1Client.delete();
+```
+
+#### Working with Collections
+
+>[Reference Api documentation](https://docs.datastax.com/en/astra/docs/_attachments/docv2.html#tag/Documents)
+
+Thanks to fluent API code is simplified by assigning `ns1Client` as `NamespaceClient` for `ns1`.
+
+```java
+NamespaceClient ns1Client = astraClient.apiStargateDocument().namespace("ns1");
+```
+
+-  ✅. List `Collections` in namespace
+
+```java
+Stream<String> colNames   = ns1Client.collectionNames();
+```
+
+- ✅. Test if `Collection` exists
+
+The parameter *col1* is here the unique identifier for the collection in the current namespace.
+
+```java
+boolean colExist =  = ns1Client.collection("col1").exist();
+```
+
+- ✅. Retrieve a `Collection` from its name
+
+The parameter *col1* is here the unique identifier for the collection in the current namespace.
+
+```java
+Optional<CollectionDefinition> = ns1Client.collection("col1").find();
+```
+
+-  ✅. Create an empty `Collection`
+
+The parameter *col1* is here the unique identifier for the collection in the current namespace.
+
+```java
+ns1Client.collection("col1").create();
+```
+
+-  ✅. Delete a collection
+
+The parameter *col1* is here the unique identifier for the collection in the current namespace.
+
+```java
+ns1Client.collection("col1").delete();
+```
+
+**ℹ️ Fluent API**
+
+Code can be simplified by assigning `col1Client` as `CollectionClient` for collection `col1` in namespace `ns1`.
+
+```java
+CollectionClient col1Client = astraClient.apiStargateDocument().namespace("ns1").collection("col1");
+```
+
+#### Working with Documents
+
+- 📘. About `Document`
+
+With Stargate document API, documents are retrieved with a Json payload and an unique identifier (UUID).
+
+```json
+{
+  "data": {
+    "9e14db1c-0a05-47d2-9f27-df881f7f37ab": { "p1": "v1", "p2": "v2"},
+    "9e14db1c-0a05-47d2-9f27-df881f7f37ac": { "p1": "v11", "p2": "v21"},
+    "9e14db1c-0a05-47d2-9f27-df881f7f37ad": { "p1": "v12", "p2": "v22"}
+  }
+}
+```
+
+[`Document`](https://github.com/datastax/astra-sdk-java/blob/main/stargate-sdk/src/main/java/com/datastax/stargate/sdk/doc/Document.java) states as a wrapper to give access to both `documentId` *(unique identifier)* and `document` *(payload)*.
+
+```java
+public class Document<T> {
+  private String documentId;
+  private T document;
+  // Constructor, Getters, Setters
+}
+```
+
+- 📘. Paging
+
+Due the verbose nature of the document API the maximum number of items one could retrieve from an Api call is 20 at maximum. As such, every request is paged. If the number of records is greater than the page size a field called `pagingState`is provided in the response.
+
+```json
+{
+  "pagingState": "jhfekwfkwejefejwhkjewhehwrjhewjkrhewjrhewklrhewklrhewj"
+  "data": {
+    "9e14db1c-0a05-47d2-9f27-df881f7f37ab": { "p1": "v1", "p2": "v2"},
+    "9e14db1c-0a05-47d2-9f27-df881f7f37ac": { "p1": "v11", "p2": "v21"},
+    "9e14db1c-0a05-47d2-9f27-df881f7f37ad": { "p1": "v12", "p2": "v22"}
+  }
+}
+```
+
+This value `pagingState` has to be populated in the `Query` input object in order to request the next page.
+
+```java
+// Query initialization
+PageableQuery query = PageableQuery.builder().build();
+
+// No pagingState provided = page 1
+Page<Document<String>> page1 = cp.findPage(query);
+
+// Updating the query with pagingState of page1
+query.setPageState(page1.getPageState().get());
+
+// Fetching page2
+Page<Document<String>> page2 = cp.findPage(query);
+```
+
+> 🚨The following chapters propose `findAll` methods. Under the hood pages are fetched one after the other until exhausting the dataset. It could be slow - use it with caution.
+
+#### 📘. Object Mapping
+
+Document payloads can be deserialized as beans or left unchanged as Json. To build the expected beans you can either leverage on `Jackson` or implement your custom `DocumentMapper`.
+
+```java
+// Query initialization
+PageableQuery query = PageableQuery.builder().build();
+
+// Retrieve data as JSON, no mapper
+Page<Document<String>> pageOfJsonRecords = cp.findPage(query);
+
+// Retrieve data with default JACKSON Mapper
+Page<Document<Person>> pageOfPersonRecords1 = cp.findPage(query, Person.class);
+
+// Retrieve data with a CUSTOM Mapper
+Page<Document<Person>> pageOfPersonRecords2 = cp.findPage(query, new DocumentMapper<Person>() {
+  public Person map(String record) {
+     return new Person();
+  }
+});
+```       
+
+- ✅. Search Documents in a collection (with Paging)
+
+The document Api allows to search on **any fields** in the document providing a where clause.
+
+In the API where clause looks like:
+```json
+{"age": {"$gte":30}, "lastname": {"$eq":"PersonAstra2"}}
+``` 
+
+This SDK provides dedicated queries and builders to help create the queries. They are of 2 kinds  [`Query`](https://github.com/datastax/astra-sdk-java/blob/main/stargate-sdk/src/main/java/com/datastax/stargate/sdk/doc/domain/Query.java) and [`PageableQuery`](https://github.com/datastax/astra-sdk-java/blob/main/stargate-sdk/src/main/java/com/datastax/stargate/sdk/doc/domain/PageableQuery.java).
+
+Using the fluent API, the client collection is defined as `col1Client`
+
+```java
+CollectionClient col1Client = astraClient.apiStargateDocument().namespace("ns1").collection("col1");
+```
+
+Build a `Query` and find page with no mapper
+
+```java
+// Build pageable query
+PageableQuery query = PageableQuery.builder()
+  .selectAll()   // can be select("field1", "field2", ...)
+  .where("firstName").isEqualsTo("John")
+  .and("lastName").isEqualsTo("Connor")
+  .pageSize(3)
+  //.pageState() if not page 1
+  .build();
+
+// Retrieve `Page<Document<String>>` if no marshaller,  Json String are retrieved
+Page<Document<String>> page1 = col1Client.findPage(query);
+
+// Use pagingState in page1 to retrieve page2
+if (page1.getPageState().isPresent()) {
+  query.setPageState(page1.getPageState().get());
+  Page<Document<String>> page2 = col1Client.findPage(query);
+}
+```
+
+- Retrieve `Page<Document<T>>` using default Jackson Mapper
+
+```java
+Page<Document<Person>> page1 = col1Client.findPage(query, Person.class);
+
+// Use pagingState in page1 to retrieve page2
+if (page1.getPageState().isPresent()) {
+  query.setPageState(page1.getPageState().get());
+  Page<Document<Person>> page2 = col1Client.findPage(query, Person.class);
+}
+```
+
+- Retrieve your `Page<Document<T>>` using a custom mapper
+
+```java
+public static class PersonMapper implements DocumentMapper<Person> {
+  @Override
+  public Person map(String record) {
+    Person p = new Person();
+    // custom logic
+    return p;
+  }    
+}
+
+Page<Document<Person>> page1 = col1Client.findPage(query, new PersonMapper());
+```
+
+- ✅. Search Documents in a collection (without Paging)
+
+- Build `Query`
+
+```java
+Query query = Query.builder()
+  .select("field1", "field2", ...) // to get .selectAll()
+  .where("firstName").isEqualsTo("John")
+  .and("lastName").isEqualsTo("Connor")
+  .build();
+```
+
+- Retrieve `Stream<Document<String>>`, if you do not provide any marshaller you get a Json String.
+
+```java
+Stream<Document<String>> result = col1Client.findAll(query);
+```
+
+- Retrieve your `Stream<Document<T>>`  using default Jackson Mapper
+
+```java
+Stream<Document<Person>> res1 = col1Client.findAll(query, Person.class);
+```
+
+- Retrieve your `Stream<Document<T>>` using your custom mapping
+
+```java
+public static class PersonMapper implements DocumentMapper<Person> {
+  @Override
+  public Person map(String record) {
+    Person p = new Person();
+    // custom logic
+    return p;
+  }    
+}
+
+Stream<Document<Person>> page1 = col1Client.findAll(query, new PersonMapper());
+```
+
+- Retrieving all collection documents is possible, it is the default query.
+
+```java
+// Get all documents
+Stream<Document<String>> allDocs1 = col1Client.findAll();
+
+// Equivalent to 
+Stream<Document<String>> allDocs2 = ccol1Clientp.findAll(Query.builder().build());
+
+// Also available
+Stream<Document<Person>> allDocs3 = col1Client.findAll(Person.class);
+Stream<Document<Person>> allDocs4 = col1Client.findAll(new DocumentMapper());
+```
+
+- ✅. Get a `Document` by its identifier
+
+```java
+// doc1 is the document Id in the collection
+boolean docExist = col1Client.document("doc1").exist();
+
+// Find if it exists (no mapper)
+Optional<String> p = col1Client.document("doc1").find();
+// Find if it exists (default mapper)
+Optional<Person> p = col1Client.document("doc1").find(Person.class);
+// Find if it exists (custom mapper)
+Optional<Person> p = col1Client.document("doc1").find(new DocumentMapper<Person>() { ...});
+```
+
+- ✅. Create a new document (without providing identifier)
+
+The method `createNewDocument` in `CollectionClient` will create a document generating the unique identifier as a UUID. (this is how the underlying api works).
+
+```java
+// Define an object
+Person john = new Person("John", "Doe", 20, new Address("Paris", 75000));
+
+// As no id has been provided, the API will create a UUID and returned it to you 
+String docId = col1Client.createNewDocument(john);
+```
+
+- ✅. Create/update document by providing identifier
+
+```java
+// Define an object
+Person john2 = new Person("John", "Doe", 20, new Address("Paris", 75000));
+
+// Now the id is provided (myId) and we can upsert
+String docId = col1Client.document("myId").upsert(john2, Person.class);
+```
+
+- ✅.  Delete a document from its identifier
+
+```java
+col1Client.document("myId").delete();
+```
+✅.  Count documents in a collection
+
+> 🚨 This operation can be slow as it leverage on `findAll` minimizing the payloads
+
+```java
+int docNum = col1Client.count();
+```
+
+- ✅. Find part of a document
+
+The document API allows to work with nested structure in a document. `{document-path}` (subpath) is required at the URL level
+
+```
+http://{doc-api-endpoint}/namespaces/{namespace-id}/collections/{collection-id}/{document-id}/{document-path}
+```
+
+Given a Json DOCUMENT with UUID `e8c5021b-2c91-4015-aec6-14a16e449818` :
+
+```json
+{ 
+  "age": 25,
+  "firstname": "PersonAstra5",
+  "lastname": "PersonAstra1",
+  "address": {
+    "city": "Paris",
+    "zipCode": 75000
+   },
+}
+```
+
+You can retrieve the zipCode with:
+`http://{doc-api-endpoint}/namespaces/ns1/collections/person/e8c5021b-2c91-4015-aec6-14a16e449818/address/zipCode`
+
+The SDK provides some utility methods to work with :
+
+```java
+// Retrieve an object and marshall
+Optional<Address> address = col1Client
+   .document("e8c5021b-2c91-4015-aec6-14a16e449818")
+   .findSubDocument("address", Address.class);
+        
+// Retrieve a scalar deeper in the tree
+Optional<Integer> zipcode = col1Client
+  .document("e8c5021b-2c91-4015-aec6-14a16e449818")
+  .findSubDocument("address/zipCode", Integer.class);
+```
+
+-  ✅.  Update a sub document
+
+```java
+// Update an existing attribute of the JSON
+col1Client.document("e8c5021b-2c91-4015-aec6-14a16e449818")
+               .updateSubDocument("address", new Address("city2", 8000));
+
+// Create a new attribute in the document
+col1Client.document("e8c5021b-2c91-4015-aec6-14a16e449818")
+               .updateSubDocument("secondAddress", new Address("city2", 8000));
+```
+
+-  ✅. Delete part of a documents
+
+```java
+col1Client.document("e8c5021b-2c91-4015-aec6-14a16e449818")
+               .deleteSubDocument("secondAddress");
+```
+
+#### Document Repository
+
+- 📘.  `StargateDocumentRepository` overview
+
+If you have work with [Spring Data](https://docs.spring.io/spring-data/data-commons/docs/1.6.1.RELEASE/reference/html/repositories.html) or [Active Record](https://guides.rubyonrails.org/active_record_basics.html) before you might already know what the repository are. Those are classes that provides you CRUD (create, read, update, delete) operations without you having to code anything.
+
+Here this is not different, if you provide an object for a collection this is what is available for you
+
+```java
+public interface StargateDocumentRepository <DOC> {
+   
+   // Create
+   String insert(DOC p);
+   void insert(String docId, DOC doc);
+   
+   // Read unitary
+   boolean exists(String docId);
+   Optional<DOC> find(String docId);
+
+   // Read records
+   int count();
+   DocumentResultPage<DOC> findPage();
+   DocumentResultPage<DOC> findPage(SearchDocumentQuery query) ;
+   Stream<ApiDocument<DOC>> findAll();
+   Stream<ApiDocument<DOC>> findAll(SearchDocumentQuery query);
+
+  // Update
+  void save(String docId, DOC doc);
+
+  // Delete
+  void delete(String docId);
+}
+```
+
+- ✅.  Initialization of repository
+
+```java
+// Initialization (from namespaceClients)
+NamespaceClient ns1Client = astraClient.apiStargateDocument().namespace("ns1");
+StargateDocumentRepository<Person> personRepository1 = 
+  new StargateDocumentRepository<Person>(ns1Client, Person.class);
+```
+
+**Points to note:**
+* No collection name is provided here. By default the SDK will use the class name in lower case (here `person`)
+* If you want to override the collection name you can annotate your bean `Person` with `@Collection("my_collection_name")`
+
+```java
+// Initialization from CollectionClient, no ambiguity on collection name
+CollectionClient colPersonClient = astraClient.apiStargateDocument()
+ .namespace("ns1").collection("person");
+StargateDocumentRepository<Person> personRepository2 = 
+  new StargateDocumentRepository<Person>(colPersonClient, Person.class);
+```
+
+- ✅.  CRUD
+
+We assume that the repository has been initialized as describe above and name `personRepo`.
+
+```java
+if (!personRepo.exists("Cedrick")) {
+  personRepo.save("Cedrick", new Person("Cedrick", "Lunven", new Address()));
+}
+
+// Yeah
+personRepository.findAll()                     // Stream<ApiDocument<Person>>      
+                .map(ApiDocument::getDocument) // Stream<Person>      
+                .map(PersonRepo::getFirstname) // Stream<String>
+                .forEach(System.out::println);
+```
+
 ## 2.6. Working with GRPC API
+
+
 
 ## 2.7. Working with Graph QL
 
