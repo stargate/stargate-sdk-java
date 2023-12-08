@@ -306,6 +306,20 @@ public class UpdateQueryBuilder {
     }
 
     /**
+     * Builder pattern
+     *
+     * @param key
+     *      field name
+     * @param value
+     *      filed value
+     * @return
+     *      reference to self
+     */
+    public UpdateQueryBuilder updatePop(String key, Object value) {
+        return update("$pop", key, value);
+    }
+
+    /**
      * Builder pattern.
      *
      * @param key

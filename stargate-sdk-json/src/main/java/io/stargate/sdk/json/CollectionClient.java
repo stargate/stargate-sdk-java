@@ -483,6 +483,22 @@ public class CollectionClient {
     }
 
     /**
+     * Find documents matching the query.
+     *
+     * @param query
+     *      current query
+     * @param mapper
+     *      mapper to convert into target pojo
+     * @return
+     *      page of results
+     * @param <DOC>
+     *     class to be marshalled
+     */
+    public <DOC> Page<Result<DOC>> queryForPage(SelectQuery query, ResultMapper<DOC> mapper) {
+        return mapPageJsonResultAsPageResult(queryForPage(query), mapper);
+    }
+
+    /**
      * Map a page of JsonResult to Page of Result
      *
      * @param pageJson
@@ -523,22 +539,6 @@ public class CollectionClient {
                 pageJson.getResults().stream()
                         .map(mapper::map)
                         .collect(Collectors.toList()));
-    }
-
-    /**
-     * Find documents matching the query.
-     *
-     * @param query
-     *      current query
-     * @param mapper
-     *      mapper to convert into target pojo
-     * @return
-     *      page of results
-     * @param <DOC>
-     *     class to be marshalled
-     */
-    private <DOC> Page<Result<DOC>> queryForPage(SelectQuery query, ResultMapper<DOC> mapper) {
-       return mapPageJsonResultAsPageResult(queryForPage(query), mapper);
     }
 
     // --------------------------

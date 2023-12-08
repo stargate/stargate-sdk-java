@@ -203,6 +203,24 @@ public class SelectQueryBuilder {
 
     /**
      * Full filter as a json string.
+     * @param pFilter
+     *      filter
+     * @return
+     *      reference to self
+     */
+    @SuppressWarnings("unchecked")
+    public SelectQueryBuilder withFilter(Filter pFilter) {
+        if (pFilter != null) {
+            if (filter == null) {
+                filter = new HashMap<>();
+            }
+            filter.putAll(pFilter.filter);
+        }
+        return this;
+    }
+
+    /**
+     * Full filter as a json string.
      * @param jsonFilter
      *      filter
      * @return
