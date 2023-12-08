@@ -6,20 +6,21 @@ This SDK *(Software Development Kit)* makes it easy to call Stargate services us
 
 ## Table of Contents
 
-[**1. About Stargate**](#1-database-initialization)
-- [1.1 - Overview](#11---create-an-astra-account)
-- [1.2 - APIs descriptions](#11---create-an-astra-account)
+[**1. Introducing Stargate**](#1---introducing-stargate)
+- [1.1 - Overview](#11-overview)
+- [1.2 - APIs descriptions](#12-api-descriptions)
 
-[**2. Stargate SDK**](#1-database-initialization)
-- [2.1 - Prerequisites](#1-prerequisites)
+[**2. Stargate SDK**](#2-stargate-sdk)
+- [2.1 - Prerequisites](#21-prerequisites)
 - [2.2 - Start Stargate](#2-start-stargate)
-- [2.3 - QuickStart](#quickstart)
-- [2.4 - Working with Rest API](#quickstart)
-- [2.5 - Working with Document API](#quickstart)
-- [2.6 - Working with GRPC API](#quickstart)
-- [2.7 - Working with Graph API](#quickstart)
-- [2.8 - Working with Json API](#quickstart)
+- [2.3 - QuickStart](#23-quickstart)
+- [2.4 - Working with Rest API](#24-working-with-rest-api)
+- [2.5 - Working with Document API](#25-working-with-document-api)
+- [2.6 - Working with GRPC API](#26-working-with-grpc-api)
+- [2.7 - Working with Graph API](#27-working-with-graph-ql)
+- [2.8 - Working with Json API](#28-working-with-json-api)
 
+## 1. Introducing Stargate
 
 ### 1.1 Overview
 
@@ -101,7 +102,7 @@ Multiple ports have been declared are here what they are used for. The tools lis
 - `8090` is the Grpc port. A socket is open listening from Grpc calls.
 - `9042` is the default CQL port. A socker is open listening CQL calls coming from the native drivers.
 
-## 2.3. Quickstart
+### 2.3. Quickstart
 
 - ✅ Create the project `sdk-quickstart-stargate` with a maven archetype:
 
@@ -276,11 +277,7 @@ INFO com.datastax.stargate.sdk.StargateClient       : Closing CqlSession.
 
 **Congratulations:** you are ready to explore each Api leveraging the fluent api.
                                                                                                               |
-### 2.4. Working with CQL
-
-
-
-### 2.5. Working with Rest API
+### 2.4. Working with Rest API
 
 > Related Api Reference documentation and endpoints can be found [there](https://docs.datastax.com/en/astra/docs/_attachments/restv2.html)
 
