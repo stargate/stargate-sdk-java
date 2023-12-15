@@ -26,6 +26,25 @@ public class JsonApiError {
     /**
      * Default constructor.
      */
-    public JsonApiError() {
+    public JsonApiError() {}
+
+    /**
+     * Build error message.
+     *
+     * @return
+     *      error message
+     */
+    public String getErrorMessage() {
+        StringBuilder sb = new StringBuilder();
+        if (exceptionClass != null) {
+            sb.append(exceptionClass).append(":");
+        }
+        if (errorCode != null) {
+            sb.append(" (").append(errorCode).append(")");
+        }
+        if (message != null) {
+            sb.append(message);
+        }
+        return sb.toString();
     }
 }

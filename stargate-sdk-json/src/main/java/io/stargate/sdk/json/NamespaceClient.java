@@ -120,26 +120,6 @@ public class NamespaceClient {
     }
 
     /**
-     * Create a Collection for vector purpose
-     *
-     * @param collection name
-     *      current Collection.
-     * @param dimension
-     *      dimension of the vector
-     * @param clazz
-     *      type to be returned
-     * @param <DOC>
-     *       type of document in used
-     * @return collection client.
-     */
-    public <DOC> CollectionRepository<DOC> createCollection(String collection, int dimension,  Class<DOC> clazz) {
-        return this.createCollection(CollectionDefinition.builder()
-                .name(collection)
-                .vector(dimension, SimilarityMetric.cosine)
-                .build(), clazz);
-    }
-
-    /**
      * Create a Collection providing a name.
      *
      * @param req
@@ -149,7 +129,7 @@ public class NamespaceClient {
     public CollectionClient createCollection(CollectionDefinition req) {
         execute("createCollection", req);
         log.info("Collection  '" + green("{}") + "' has been created", req.getName());
-        return collection(req.getName());
+        return new CollectionClient(stargateHttpClient, namespace, req.getName());
     }
 
     /**

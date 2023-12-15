@@ -4,6 +4,7 @@ import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -17,13 +18,32 @@ public class Result<DOC> extends Document<DOC> {
     /**
      * Using an object, can be null
      */
-    @Getter
+    @Getter @Setter
     protected Float similarity;
 
     /**
      * Default constructor.
      */
     public Result() {}
+
+    /**
+     * Default constructor.
+     */
+    public Result(JsonResult result) {
+        this.id         = result.getId();
+        this.vector     = result.getVector();
+        this.similarity = result.getSimilarity();
+    }
+
+    /**
+     * Default constructor.
+     */
+    public Result(JsonResult result, DOC data) {
+        this.id         = result.getId();
+        this.vector     = result.getVector();
+        this.similarity = result.getSimilarity();
+        this.data       = data;
+    }
 
     /**
      * Constructor.
@@ -34,10 +54,7 @@ public class Result<DOC> extends Document<DOC> {
      *      class to convert into
      */
     public Result(JsonResult result, Class<DOC> clazz) {
-        this.id         = result.getId();
-        this.data       = JsonUtils.convertValue(result.getData(), clazz);
-        this.vector     = result.getVector();
-        this.similarity = result.getSimilarity();
+        this(result, JsonUtils.convertValue(result.getData(), clazz));
     }
 
     /**

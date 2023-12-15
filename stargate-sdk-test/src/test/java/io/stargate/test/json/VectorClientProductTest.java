@@ -160,17 +160,15 @@ class VectorClientProductTest {
                 .collection(COLLECTION_VECTOR);
 
         Page<JsonResult> page = myCollection.findPage(SelectQuery.builder()
-                .selectVector()
-                .selectSimilarity()
+                .includeSimilarity()
                 .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
-                .limit(2)
+                .withLimit(2)
                 .build());
 
-        Page<Result<Product>> pageProduct = myCollection.queryForPage(SelectQuery.builder()
-                .selectVector()
-                .selectSimilarity()
+        Page<Result<Product>> pageProduct = myCollection.findPage(SelectQuery.builder()
+                .includeSimilarity()
                 .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
-                .limit(2)
+                .withLimit(2)
                 .build(), Product.class);
 
         System.out.println("Result Size=" + page.getPageSize());
@@ -185,13 +183,11 @@ class VectorClientProductTest {
     @Order(5)
     @DisplayName("05. Meta Data Filtering")
     public void shouldMetaDataFiltering() {
-
             Page<JsonResult> page =  myCollection.findPage(SelectQuery.builder()
-                    .selectVector()
-                    .selectSimilarity()
+                    .includeSimilarity()
                     .where("product_price").isEqualsTo(9.99)
                     .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
-                    .limit(2)
+                    .withLimit(2)
                     .build());
 
             System.out.println("Result Size=" + page.getPageSize());

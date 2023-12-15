@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.Optional;
 /**
  * Json Api Query Payload Wrapper.
  */
-@Getter
+@Getter @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SelectQuery {
 

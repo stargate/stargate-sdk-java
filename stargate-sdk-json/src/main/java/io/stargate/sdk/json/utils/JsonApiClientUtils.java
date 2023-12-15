@@ -5,7 +5,10 @@ import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.json.domain.JsonApiError;
 import io.stargate.sdk.json.domain.JsonApiResponse;
-import io.stargate.sdk.json.exception.ApiException;
+import io.stargate.sdk.json.exception.ApiErrorCode;
+import io.stargate.sdk.json.exception.JsonApiException;
+import io.stargate.sdk.json.exception.DocumentAlreadyExistException;
+import io.stargate.sdk.json.exception.InvalidJsonApiArgumentException;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -113,16 +116,36 @@ public class JsonApiClientUtils {
                     }
                 }
             }
-            throw new ApiException(
-                    response.getErrors().get(0).getMessage(),
-                    response.getErrors().get(0).getExceptionClass(),
-                    null,
-                    response.getErrors().get(0).getErrorCode());
+            JsonApiError jsonApiError = response.getErrors().get(0);
+            try {
+                // Specializing error from the code
+                if (jsonApiError.getErrorCode() != null) {
+                    final ApiErrorCode errorCode = ApiErrorCode.valueOf(jsonApiError.getErrorCode());
+                    switch (errorCode) {
+                        case DOCUMENT_ALREADY_EXISTS:
+                            throw new DocumentAlreadyExistException(jsonApiError);
+                        case INVALID_COLLECTION_NAME:
+                        case INVALID_FILTER_EXPRESSION:
+                            throw new InvalidJsonApiArgumentException(jsonApiError);
+                    }
+                }
+                if (jsonApiError.getExceptionClass() != null) {
+                    if ("ConstraintViolationException".equals(jsonApiError.getExceptionClass())) {
+                        throw new InvalidJsonApiArgumentException(jsonApiError);
+                    }
+                }
+            } catch(Exception e) {
+                throw new JsonApiException(jsonApiError, e);
+            }
+            throw new JsonApiException(jsonApiError);
         }
         if (response.getStatus() != null &&
             response.getStatus().containsKey("ok") &&
             !response.getStatus().get("ok").equals(1)) {
-            throw new ApiException("Operation failed: " + response.getStatus());
+            JsonApiError error = new JsonApiError();
+            error.setErrorCode(JsonApiException.DEFAULT_ERROR_MESSAGE);
+            error.setMessage(response.getStatus().toString());
+            throw new JsonApiException(error);
         }
     }
 }

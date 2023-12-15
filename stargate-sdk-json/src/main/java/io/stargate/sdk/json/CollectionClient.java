@@ -1,6 +1,5 @@
 package io.stargate.sdk.json;
 
-import io.stargate.sdk.core.domain.ObjectMap;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
@@ -12,20 +11,19 @@ import io.stargate.sdk.json.domain.JsonDocument;
 import io.stargate.sdk.json.domain.JsonResult;
 import io.stargate.sdk.json.domain.JsonResultUpdate;
 import io.stargate.sdk.json.domain.SelectQuery;
-import io.stargate.sdk.json.domain.SelectQueryBuilder;
 import io.stargate.sdk.json.domain.UpdateQuery;
 import io.stargate.sdk.json.domain.UpdateStatus;
 import io.stargate.sdk.json.domain.odm.Document;
 import io.stargate.sdk.json.domain.odm.Result;
 import io.stargate.sdk.json.domain.odm.ResultMapper;
-import io.stargate.sdk.json.exception.ApiException;
+import io.stargate.sdk.json.exception.ApiErrorCode;
+import io.stargate.sdk.json.exception.JsonApiException;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -126,8 +124,12 @@ public class CollectionClient {
         }
         try {
             insertOne(jsonDocument);
-        } catch(ApiException e) {
-            if ("DOCUMENT_ALREADY_EXISTS".equalsIgnoreCase(e.getErrorCode())) {
+        } catch(JsonApiException e) {
+            if (ApiErrorCode.DOCUMENT_ALREADY_EXISTS
+                    .getMessage()
+                    .equalsIgnoreCase(e
+                            .getJsonApiError()
+                            .getErrorCode())) {
                 // Already Exist
                 findOneAndReplace(UpdateQuery.builder()
                         .where("_id")
@@ -211,6 +213,51 @@ public class CollectionClient {
     /**
      * Find one document matching the query.
      *
+     * @param rawJsonQuery
+     *      execute a direct json Query
+     * @return
+     *      result if exists
+     */
+    public Optional<JsonResult> findOne(String rawJsonQuery) {
+        log.debug("Query in {}/{}", green(namespace), green(collection));
+        return Optional.ofNullable(execute("findOne", rawJsonQuery).getData().getDocument());
+    }
+
+    /**
+     * Find one document matching the query.
+     *
+     * @param query
+     *      query documents and vector
+     * @param clazz
+     *     class of the document
+     * @return
+     *      result if exists
+     * @param <DOC>
+     *       class to be marshalled
+     */
+    public <DOC> Optional<Result<DOC>> findOne(String query, Class<DOC> clazz) {
+        return findOne(query).map(r -> new Result<>(r, clazz));
+    }
+
+    /**
+     * Find one document matching the query.
+     *
+     * @param query
+     *      query documents and vector
+     * @param mapper
+     *      convert a json into expected pojo
+     * @return
+     *      result if exists
+     * @param <DOC>
+     *       class to be marshalled
+     */
+    public <DOC> Optional<Result<DOC>> findOne(String query, ResultMapper<DOC> mapper) {
+        return findOne(query).map(mapper::map);
+    }
+
+    /**
+     * Find one document matching the query.
+     *
      * @param query
      *      query documents and vector
      * @return
@@ -220,6 +267,7 @@ public class CollectionClient {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         return Optional.ofNullable(execute("findOne", query).getData().getDocument());
     }
+
 
     /**
      * Find one document matching the query.
@@ -402,6 +450,20 @@ public class CollectionClient {
         return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
     }
 
+    /**
+     * Find one document matching the query.
+     *
+     * @param query
+     *      execute a direct json Query
+     * @return
+     *      result if exists
+     */
+    public Page<JsonResult> findPage(String query) {
+        log.debug("Query in {}/{}", green(namespace), green(collection));
+        JsonApiData apiData = execute("find", query).getData();
+        return new Page<>(20, apiData.getNextPageState(), apiData.getDocuments());
+    }
+
     // ------------------------------
     // ---  Similarity Search    ----
     // ------------------------------
@@ -477,7 +539,6 @@ public class CollectionClient {
                 .includeSimilarity()
                 .build());
     }
-
 
     /**
      * Search similarity from the vector (page by 20)
@@ -614,6 +675,22 @@ public class CollectionClient {
      *
      * @param query
      *      current query
+     * @param clazz
+     *      class for target pojo
+     * @return
+     *      page of results
+     * @param <T>
+     *     class to be marshalled
+     */
+    public <T> Page<Result<T>> findPage(String query, Class<T> clazz) {
+        return mapPageJsonResultAsPageResult(findPage(query), clazz);
+    }
+
+    /**
+     * Find documents matching the query.
+     *
+     * @param query
+     *      current query
      * @param mapper
      *      mapper to convert into target pojo
      * @return
@@ -622,6 +699,22 @@ public class CollectionClient {
      *     class to be marshalled
      */
     public <DOC> Page<Result<DOC>> findPage(SelectQuery query, ResultMapper<DOC> mapper) {
+        return mapPageJsonResultAsPageResult(findPage(query), mapper);
+    }
+
+    /**
+     * Find documents matching the query.
+     *
+     * @param query
+     *      current query
+     * @param mapper
+     *      mapper to convert into target pojo
+     * @return
+     *      page of results
+     * @param <DOC>
+     *     class to be marshalled
+     */
+    public <DOC> Page<Result<DOC>> findPage(String query, ResultMapper<DOC> mapper) {
         return mapPageJsonResultAsPageResult(findPage(query), mapper);
     }
 

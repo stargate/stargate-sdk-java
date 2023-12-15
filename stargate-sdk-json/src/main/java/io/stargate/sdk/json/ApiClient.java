@@ -88,7 +88,6 @@ public class ApiClient {
     public ApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
         Assert.notNull(serviceDeployment, "service deployment topology");
         this.stargateHttpClient = new LoadBalancedHttpClient(serviceDeployment);
-        log.info("+ API JSON     :[" + green("{}") + "]", "ENABLED");
     }
 
     // ------------------------------------------
@@ -113,7 +112,6 @@ public class ApiClient {
      * @return
      *       a list of namespaces
      */
-    @SuppressWarnings("unchecked")
     public Stream<String> findAllNamespaces() {
         return execute("findNamespaces", null)
                 .getStatusKeyAsStringStream("namespaces");
@@ -144,7 +142,7 @@ public class ApiClient {
     }
 
     /**
-     * Drop a namespace, no error if it does snot exists.
+     * Drop a namespace, no error if it does not exist.
      *
      * @param namespace
      *      current namespace
