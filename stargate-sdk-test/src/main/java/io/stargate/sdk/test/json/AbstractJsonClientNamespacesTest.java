@@ -1,14 +1,14 @@
 package io.stargate.sdk.test.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.stargate.sdk.json.ApiClient;
-import io.stargate.sdk.json.CollectionClient;
-import io.stargate.sdk.json.NamespaceClient;
-import io.stargate.sdk.json.domain.CollectionDefinition;
-import io.stargate.sdk.json.domain.Filter;
-import io.stargate.sdk.json.domain.JsonDocument;
-import io.stargate.sdk.json.domain.NamespaceDefinition;
-import io.stargate.sdk.json.domain.odm.Document;
+import io.stargate.sdk.data.DataApiClient;
+import io.stargate.sdk.data.CollectionClient;
+import io.stargate.sdk.data.NamespaceClient;
+import io.stargate.sdk.data.domain.CollectionDefinition;
+import io.stargate.sdk.data.domain.JsonDocument;
+import io.stargate.sdk.data.domain.NamespaceDefinition;
+import io.stargate.sdk.data.domain.odm.Document;
+import io.stargate.sdk.data.domain.query.Filter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.stargate.sdk.json.domain.SimilarityMetric.cosine;
+import static io.stargate.sdk.data.domain.SimilarityMetric.cosine;
 
 /**
  * This class test the data api for Keyspaces
@@ -44,7 +44,7 @@ public class AbstractJsonClientNamespacesTest {
     public static final String TEST_COLLECTION_VECTORIZE = "vectorize1";
 
     /** Tested Store. */
-    protected static ApiClient jsonApiClient;
+    protected static DataApiClient jsonApiClient;
     /** Tested Namespace. */
     protected static NamespaceClient nsClient;
 

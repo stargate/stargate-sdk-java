@@ -22,11 +22,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.stargate.sdk.core.domain.ObjectMap;
+import io.stargate.sdk.serialization.CustomEJsonCalendarDeserializer;
+import io.stargate.sdk.serialization.CustomEJsonCalendarSerializer;
+import io.stargate.sdk.serialization.CustomEJsonDateDeserializer;
+import io.stargate.sdk.serialization.CustomEJsonDateSerializer;
+import io.stargate.sdk.serialization.CustomEJsonInstantDeserializer;
+import io.stargate.sdk.serialization.CustomEJsonInstantSerializer;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
@@ -50,7 +60,43 @@ public class JsonUtils {
                 .setDateFormat(new SimpleDateFormat("dd/MM/yyyy"))
                 .setSerializationInclusion(Include.NON_NULL)
                 .setAnnotationIntrospector(new JacksonAnnotationIntrospector());
-    
+
+    /** Object mapper with customization fo data API. */
+    private static ObjectMapper dataApiObjectMapper;
+
+    /**
+     * Building the data api specific object mapper.
+     *
+     * @return
+     *      object mapper.
+     */
+    public static synchronized ObjectMapper getDataApiObjectMapper() {
+        if (dataApiObjectMapper == null) {
+            dataApiObjectMapper = new ObjectMapper()
+                    .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
+                    .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+                    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+                    .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                    .registerModule(new JavaTimeModule())
+                    .setDateFormat(new SimpleDateFormat("dd/MM/yyyy"))
+                    .setSerializationInclusion(Include.NON_NULL)
+                    .setAnnotationIntrospector(new JacksonAnnotationIntrospector());
+
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(Date.class, new CustomEJsonDateSerializer());
+            module.addSerializer(Calendar.class, new CustomEJsonCalendarSerializer());
+            module.addSerializer(Instant.class, new CustomEJsonInstantSerializer());
+            module.addDeserializer(Date.class, new CustomEJsonDateDeserializer());
+            module.addDeserializer(Calendar.class, new CustomEJsonCalendarDeserializer());
+            module.addDeserializer(Instant.class, new CustomEJsonInstantDeserializer());
+            dataApiObjectMapper.registerModule(module);
+        }
+        return dataApiObjectMapper;
+    }
+
+
     /**
      * Default constructor
      */
@@ -214,6 +260,26 @@ public class JsonUtils {
     }
 
     /**
+     * Transform object as a String.
+     *
+     * @param o
+     *      object to be serialized.
+     * @return
+     *      body as String
+     */
+    public static String marshallForDataApi(Object o) {
+        Objects.requireNonNull(o);
+        try {
+            if (o instanceof String) {
+                return (String) o;
+            }
+            return getDataApiObjectMapper().writeValueAsString(o);
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot marshall object " + o, e);
+        }
+    }
+
+    /**
      * Jackson deserialization.
      * @param bean
      *      current beam
@@ -226,6 +292,21 @@ public class JsonUtils {
      */
     public static <T> T convertValue(Object bean, Class<T> clazz) {
        return  getObjectMapper().convertValue(bean, clazz);
+    }
+
+    /**
+     * Jackson deserialization.
+     * @param bean
+     *      current beam
+     * @param clazz
+     *      target class
+     * @return
+     *      serialized
+     * @param <T>
+     *     current type
+     */
+    public static <T> T convertValueForDataApi(Object bean, Class<T> clazz) {
+        return  getDataApiObjectMapper().convertValue(bean, clazz);
     }
     
     /**
@@ -249,6 +330,28 @@ public class JsonUtils {
             throw new RuntimeException("Cannot unmarshall object " + body, e);
         }
     }
+
+    /**
+     * Load body as expected object.
+     *
+     * @param <T>
+     *      parameter
+     * @param body
+     *      response body as String
+     * @param ref
+     *      type Reference to map the result
+     * @return
+     *      expected object
+     */
+    public static <T> T unmarshallTypeForDataApi(String body, TypeReference<T> ref) {
+        try {
+            return getDataApiObjectMapper().readValue(body, ref);
+        } catch (JsonMappingException e) {
+            throw new RuntimeException("Cannot unmarshall object " + body, e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Cannot unmarshall object " + body, e);
+        }
+    }
     
     /**
      * Load body as expected object.
@@ -265,6 +368,28 @@ public class JsonUtils {
     public static <T> T unmarshallBean(String body, Class<T> ref) {
         try {
             return getObjectMapper().readValue(body, ref);
+        } catch (JsonMappingException e) {
+            throw new RuntimeException("Cannot unmarshall object " + body, e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Cannot unmarshall object " + body, e);
+        }
+    }
+
+    /**
+     * Load body as expected object.
+     *
+     * @param <T>
+     *      parameter
+     * @param body
+     *      response body as String
+     * @param ref
+     *      type Reference to map the result
+     * @return
+     *       expected objects
+     */
+    public static <T> T unmarshallBeanForDataApi(String body, Class<T> ref) {
+        try {
+            return getDataApiObjectMapper().readValue(body, ref);
         } catch (JsonMappingException e) {
             throw new RuntimeException("Cannot unmarshall object " + body, e);
         } catch (JsonProcessingException e) {

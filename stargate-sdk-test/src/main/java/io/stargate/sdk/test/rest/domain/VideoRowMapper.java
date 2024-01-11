@@ -38,7 +38,7 @@ public class VideoRowMapper implements RowMapper<Video> {
         Video video = new Video();
         video.setGenre(objectMap.getString("genre"));
         video.setTitle(objectMap.getString("title"));
-        video.setYear(objectMap.getInt("year"));
+        video.setYear(objectMap.getInteger("year"));
         return video;
     }
 

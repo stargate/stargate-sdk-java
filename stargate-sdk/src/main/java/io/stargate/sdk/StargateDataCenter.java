@@ -3,7 +3,7 @@ package io.stargate.sdk;
 import io.stargate.sdk.api.TokenProvider;
 import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.json.ApiClient;
+import io.stargate.sdk.data.DataApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 
 import java.util.ArrayList;
@@ -66,9 +66,9 @@ public class StargateDataCenter {
      */
     public StargateDataCenter withJson() {
         return addJsonService(new ServiceHttp(
-                ApiClient.DEFAULT_SERVICE_ID,
-                ApiClient.DEFAULT_ENDPOINT,
-                ApiClient.DEFAULT_ENDPOINT + ApiClient.PATH_HEALTH_CHECK)
+                DataApiClient.DEFAULT_SERVICE_ID,
+                DataApiClient.DEFAULT_ENDPOINT,
+                DataApiClient.DEFAULT_ENDPOINT + DataApiClient.PATH_HEALTH_CHECK)
         );
     }
 

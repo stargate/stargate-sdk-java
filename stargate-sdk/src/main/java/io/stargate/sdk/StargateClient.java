@@ -21,13 +21,13 @@ import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.config.TypedDriverOption;
 import io.stargate.sdk.audit.ServiceCallObserver;
+import io.stargate.sdk.data.DataApiClient;
 import io.stargate.sdk.doc.StargateDocumentApiClient;
 import io.stargate.sdk.gql.StargateGraphQLApiClient;
 import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.grpc.StargateGrpcApiClient;
 import io.stargate.sdk.http.RetryHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.json.ApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Utils;
@@ -35,7 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import static io.stargate.sdk.utils.AnsiUtils.green;
 
@@ -63,7 +67,7 @@ public class StargateClient implements Closeable {
     /** 
      * Wrapping Api REST DATA resources.
      */
-    protected StargateRestApiClient apiDataClient;
+    protected StargateRestApiClient apiRestClient;
     
     /**
      * Wrapping Api Document resources.
@@ -83,7 +87,7 @@ public class StargateClient implements Closeable {
     /**
      * Wrapping JSON Api Client
      */
-    protected ApiClient apiJsonClient;
+    protected DataApiClient apiDataClient;
 
     // ------------------------------------------------
     // ---------------- Initializing   ----------------
@@ -119,10 +123,10 @@ public class StargateClient implements Closeable {
         // ------------- HTTP API ------------------
 
         if (config.getStargateNodesDC().isEmpty()) {
-            this.apiDataClient      = new StargateRestApiClient();
+            this.apiRestClient      = new StargateRestApiClient();
             this.apiDocumentClient  = new StargateDocumentApiClient();
             this.apiGraphQLClient   = new StargateGraphQLApiClient();
-            this.apiJsonClient      = new ApiClient();
+            this.apiDataClient = new DataApiClient();
             if (config.isEnabledGrpc()) {
                 this.apiGrpcClient = new StargateGrpcApiClient();
             }
@@ -138,10 +142,10 @@ public class StargateClient implements Closeable {
                 gqlDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getGraphqlNodes()));
                 jsonDeploy.addDatacenter(new ServiceDatacenter<>(dc.getId(), dc.getTokenProvider(), dc.getJsonNodes()));
             });
-            this.apiDataClient = new StargateRestApiClient(restDeploy);
+            this.apiRestClient = new StargateRestApiClient(restDeploy);
             this.apiDocumentClient = new StargateDocumentApiClient(docDeploy);
             this.apiGraphQLClient = new StargateGraphQLApiClient(gqlDeploy);
-            this.apiJsonClient = new ApiClient(jsonDeploy);
+            this.apiDataClient = new DataApiClient(jsonDeploy);
 
             // grpc service if needed
             if (config.isEnabledGrpc()) {
@@ -329,11 +333,11 @@ public class StargateClient implements Closeable {
      * @return
      *      Api graphQL client
      */
-    public ApiClient apiJson() {
-        if (apiJsonClient == null) {
+    public DataApiClient apiData() {
+        if (apiDataClient == null) {
             throw new IllegalStateException("Json Api is not available please provide a service deployment for Json");
         }
-        return this.apiJsonClient;
+        return this.apiDataClient;
     }
     
     /**
@@ -356,10 +360,10 @@ public class StargateClient implements Closeable {
      *      Api REST DATA client
      */
     public StargateRestApiClient apiRest() {
-        if (apiDataClient == null) {
+        if (apiRestClient == null) {
             throw new IllegalStateException("REST Data Api is not available please provide a service deployment for Rest Data");
         }
-        return this.apiDataClient;
+        return this.apiRestClient;
     }
     
     /**

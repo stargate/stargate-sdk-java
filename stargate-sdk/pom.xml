@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>com.datastax.stargate</groupId>
 		<artifactId>stargate-sdk-parent</artifactId>
-		<version>2.2.1-SNAPSHOT</version>
+		<version>2.3.0-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
@@ -45,7 +45,7 @@
 
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
-			<artifactId>stargate-sdk-json</artifactId>
+			<artifactId>stargate-sdk-data</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

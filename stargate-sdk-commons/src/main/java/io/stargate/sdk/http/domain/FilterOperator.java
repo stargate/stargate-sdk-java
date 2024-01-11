@@ -57,6 +57,11 @@ public enum FilterOperator {
      * in. 
      */
     IN("$in"),
+
+    /**
+     * in.
+     */
+    NOT_IN("$nin"),
     
     /** 
      * Exist. 
