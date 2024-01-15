@@ -5,14 +5,15 @@ import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.DataApiClient;
 import io.stargate.sdk.data.CollectionClient;
 import io.stargate.sdk.data.CollectionRepository;
+import io.stargate.sdk.data.DocumentMutationResult;
 import io.stargate.sdk.data.domain.CollectionDefinition;
 import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.JsonDocument;
-import io.stargate.sdk.data.domain.JsonResult;
+import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.NamespaceDefinition;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.odm.Result;
+import io.stargate.sdk.data.domain.odm.DocumentResult;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -96,11 +97,11 @@ class VectorClientProductTest {
         vectorStore  = jsonApi.namespace(NAMESPACE).collectionRepository(COLLECTION_VECTOR, Product.class);
 
         float[] sampleVector = new float[] {1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
-        String vectorId1 = vectorStore.insert(new Document<>("1",
-                new Product("HealthyFresh - Beef raw dog food", 12.99),
+        DocumentMutationResult<Product> resVector = vectorStore.insert(new Document<Product>().id("1").data(
+                new Product("HealthyFresh - Beef raw dog food", 12.99)).vector(
                 sampleVector));
 
-        Assertions.assertTrue(vectorStore.findById(vectorId1).isPresent());
+        Assertions.assertTrue(vectorStore.findById(resVector.getDocument().getId()).isPresent());
         Assertions.assertTrue(vectorStore.findByVector(sampleVector).isPresent());
     }
 
@@ -121,17 +122,18 @@ class VectorClientProductTest {
                 new JsonDocument()
                         .id("pt0021")
                         .data("{ \"product_name\": \"Dog Tennis Ball Toy\" }")
-                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f}),
+                        .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f})));
+        myCollection.insertMany(List.of(
                 // Builder and bean
-                new JsonDocument()
+                new Document<Product>()
                         .id("pt0041")
                         .data(new Product("Dog Ring Chew Toy", 9.99))
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f, 0f, 0f}),
-                new JsonDocument()
+                new Document<Product>()
                         .id("pf7043")
                         .data(new Product("Pepper Sausage Bacon dog Treats", 9.99))
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f}),
-                new JsonDocument()
+                new Document<Product>()
                         .id("pf7044")
                         .data(new Product("Pepper Sausage Beef dog Treats", 9.99))
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f})));
@@ -159,13 +161,13 @@ class VectorClientProductTest {
                 .namespace(NAMESPACE)
                 .collection(COLLECTION_VECTOR);
 
-        Page<JsonResult> page = myCollection.findPage(SelectQuery.builder()
+        Page<JsonDocumentResult> page = myCollection.findPage(SelectQuery.builder()
                 .includeSimilarity()
                 .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
                 .withLimit(2)
                 .build());
 
-        Page<Result<Product>> pageProduct = myCollection.findPage(SelectQuery.builder()
+        Page<DocumentResult<Product>> pageProduct = myCollection.findPage(SelectQuery.builder()
                 .includeSimilarity()
                 .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
                 .withLimit(2)
@@ -173,7 +175,7 @@ class VectorClientProductTest {
 
         System.out.println("Result Size=" + page.getPageSize());
         System.out.println("Result Size=" + pageProduct.getPageSize());
-        for(JsonResult result : page.getResults()) {
+        for(JsonDocumentResult result : page.getResults()) {
             System.out.println(result.getId() + ") similarity=" + result.getSimilarity() + ", vector=" +
                     Arrays.toString(result.getVector()));
         }
@@ -183,7 +185,7 @@ class VectorClientProductTest {
     @Order(5)
     @DisplayName("05. Meta Data Filtering")
     public void shouldMetaDataFiltering() {
-            Page<JsonResult> page =  myCollection.findPage(SelectQuery.builder()
+            Page<JsonDocumentResult> page =  myCollection.findPage(SelectQuery.builder()
                     .includeSimilarity()
                     .where("product_price").isEqualsTo(9.99)
                     .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
@@ -191,7 +193,7 @@ class VectorClientProductTest {
                     .build());
 
             System.out.println("Result Size=" + page.getPageSize());
-            for(JsonResult result : page.getResults()) {
+            for(JsonDocumentResult result : page.getResults()) {
                 System.out.println(result.getId() + ") similarity=" + result.getSimilarity() + ", vector=" +
                         Arrays.toString(result.getVector()));
             }

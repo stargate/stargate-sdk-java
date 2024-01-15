@@ -1,10 +1,12 @@
 package io.stargate.sdk.data.domain.odm;
 
-import io.stargate.sdk.data.domain.JsonDocument;
-import io.stargate.sdk.data.domain.JsonResult;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Map;
 
 
 /**
@@ -13,7 +15,7 @@ import lombok.Setter;
  * @param <DOC>
  *     pojo in use for ODM
  */
-public class Result<DOC> extends Document<DOC> {
+public class DocumentResult<DOC> extends Document<DOC> {
 
     /**
      * Using an object, can be null
@@ -24,7 +26,7 @@ public class Result<DOC> extends Document<DOC> {
     /**
      * Default constructor.
      */
-    public Result() {}
+    public DocumentResult() {}
 
     /**
      * Default constructor.
@@ -32,16 +34,22 @@ public class Result<DOC> extends Document<DOC> {
      * @param result
      *     copy constructor
      */
-    public Result(JsonResult result) {
+    public DocumentResult(JsonDocumentResult result) {
         this.id         = result.getId();
         this.vector     = result.getVector();
         this.similarity = result.getSimilarity();
     }
 
     /**
-     * Default constructor.
+     * Default constructor
+     *
+     * @param result
+     *      json result
+     * @param data
+     *      payload
      */
-    public Result(JsonResult result, DOC data) {
+    @SuppressWarnings("unchecked")
+    public DocumentResult(JsonDocumentResult result, DOC data) {
         this.id         = result.getId();
         this.vector     = result.getVector();
         this.similarity = result.getSimilarity();
@@ -56,7 +64,7 @@ public class Result<DOC> extends Document<DOC> {
      * @param clazz
      *      class to convert into
      */
-    public Result(JsonResult result, Class<DOC> clazz) {
+    public DocumentResult(JsonDocumentResult result, Class<DOC> clazz) {
         this(result, JsonUtils.convertValueForDataApi(result.getData(), clazz));
     }
 
@@ -72,24 +80,8 @@ public class Result<DOC> extends Document<DOC> {
      * @param <R>
      *     pojo in use for ODM
      */
-    public static <R> Result<R> of(JsonResult result, Class<R> clazz) {
-        return new Result<>(result, clazz);
-    }
-
-    /**
-     * Mapping with internal layer.
-     *
-     * @return
-     *      json record
-     */
-    public JsonResult toJsonResult() {
-        JsonDocument doc  = new JsonDocument(id, data, vector);
-        JsonResult result = new JsonResult();
-        result.setId(doc.getId());
-        result.setVector(doc.getVector());
-        result.setData(doc.getData());
-        result.setSimilarity(similarity);
-        return result;
+    public static <R> DocumentResult<R> of(JsonDocumentResult result, Class<R> clazz) {
+        return new DocumentResult<>(result, clazz);
     }
 
 }

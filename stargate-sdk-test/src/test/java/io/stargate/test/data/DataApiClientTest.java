@@ -3,10 +3,10 @@ package io.stargate.test.data;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.CollectionClient;
 import io.stargate.sdk.data.DataApiClient;
-import io.stargate.sdk.data.domain.JsonResult;
+import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.JsonResultUpdate;
 import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.odm.Result;
+import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.query.UpdateQuery;
 import io.stargate.sdk.data.domain.query.UpdateQueryBuilder;
@@ -37,7 +37,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
         CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
-        Optional<JsonResult> opt = colClient.findById("pf1843");
+        Optional<JsonDocumentResult> opt = colClient.findById("pf1843");
         Assertions.assertTrue(opt.isPresent());
         System.out.println(opt.get());
     }
@@ -47,7 +47,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
         CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
-        Optional<JsonResult> opt = colClient.findOne(SelectQuery.builder()
+        Optional<JsonDocumentResult> opt = colClient.findOne(SelectQuery.builder()
                 .where("product_price").isEqualsTo(9.99)
                 .build());
         Assertions.assertTrue(opt.isPresent());
@@ -59,11 +59,11 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
         CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
-        Optional<JsonResult> opt = colClient.findOneByVector(new float[] {1.0f,1.0f,1.0f,1.0f,1.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f});
+        Optional<JsonDocumentResult> opt = colClient.findOneByVector(new float[] {1.0f,1.0f,1.0f,1.0f,1.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f});
         Assertions.assertTrue(opt.isPresent());
         System.out.println(opt.get());
 
-        Result<Product> vector = new Result<>(colClient.findById("pf1844").get(), Product.class);
+        DocumentResult<Product> vector = new DocumentResult<>(colClient.findById("pf1844").get(), Product.class);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
-        Page<JsonResult> page = colClient.findPage(SelectQuery.builder()
+        Page<JsonDocumentResult> page = colClient.findPage(SelectQuery.builder()
                 // Projection
                 //.selectVector()
                 //.selectSimilarity()
@@ -82,7 +82,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
                 .withLimit(2)
                 .build());
         System.out.println("Result Size=" + page.getPageSize());
-        for(JsonResult result : page.getResults()) {
+        for(JsonDocumentResult result : page.getResults()) {
             System.out.println(result.toString());
         }
     }
@@ -95,7 +95,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
                 .collection(TEST_COLLECTION);
 
         for(int i=0; i<100; i++) {
-            col1.insertOne(new Document<>(new Product("product"+i, 9.99)));
+            col1.insertOne(new Document<>().data(new Product("product"+i, 9.99)));
         }
     }
 
@@ -105,9 +105,9 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
         CollectionClient col1 = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
-        Page<JsonResult> resultSet = col1.findPage(SelectQuery.builder().build());
+        Page<JsonDocumentResult> resultSet = col1.findPage(SelectQuery.builder().build());
         System.out.println("Page 1: state=" + resultSet.getPageState());
-        for(JsonResult result : resultSet.getResults()) {
+        for(JsonDocumentResult result : resultSet.getResults()) {
             System.out.println(result.toString());
         }
     }
@@ -119,7 +119,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION);
         System.out.println(col1.countDocuments());
-        Stream<JsonResult> resultSet = col1.find(SelectQuery.builder().build());
+        Stream<JsonDocumentResult> resultSet = col1.find(SelectQuery.builder().build());
         System.out.println(resultSet.count());
     }
 

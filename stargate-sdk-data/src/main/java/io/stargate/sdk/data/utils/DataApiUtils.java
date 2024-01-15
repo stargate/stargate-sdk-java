@@ -1,5 +1,6 @@
 package io.stargate.sdk.data.utils;
 
+import io.stargate.sdk.data.domain.ApiData;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
@@ -13,8 +14,10 @@ import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.function.Function;
 
+import static io.stargate.sdk.utils.AnsiUtils.magenta;
 import static io.stargate.sdk.utils.AnsiUtils.yellow;
 
 /**
@@ -55,14 +58,24 @@ public class DataApiUtils {
             stringBody += JsonUtils.marshallForDataApi(body);
         }
         stringBody += "}";
-        log.debug(operation + "[request]=" + yellow("{}"), stringBody);
+        log.debug(magenta(operation) + "[request]=" + yellow("{}"), stringBody);
         ApiResponseHttp httpRes = stargateHttpClient.POST(rootResource, stringBody);
-        log.debug(operation + "[response]=" + yellow("{}"), httpRes.getBody());
+        log.debug(magenta(operation) + "[response]=" + yellow("{}"), httpRes.getBody());
         ApiResponse jsonRes = JsonUtils.unmarshallBeanForDataApi(httpRes.getBody(), ApiResponse.class);
-        if (jsonRes.getData() != null && jsonRes.getData().getDocuments() != null) {
-            log.debug(operation + "[response]=" + yellow("{}"), jsonRes.getData().getDocuments());
+        if (jsonRes.getData() != null) {
+            ApiData data = jsonRes.getData();
+            if (data.getDocument() != null) {
+                log.debug(magenta(operation) + "[apiData/document]=" + yellow("1 document retrieved, id='{}'"), data.getDocument().getId());
+            }
+            if (data.getDocuments() != null) {
+                log.debug(magenta(operation) + "[apiData/documents]=" + yellow("{} document(s)."), data.getDocuments().size());
+            }
         }
-        DataApiUtils.validate(jsonRes);
+
+        // If insertedIds is present then it could lead to upsert and we can skip the error block
+        if (jsonRes.getStatus()!= null && !jsonRes.getStatus().containsKey("insertedIds")) {
+            DataApiUtils.validate(jsonRes);
+        }
         return jsonRes;
     }
 
@@ -104,8 +117,7 @@ public class DataApiUtils {
      *     body to parse
      */
     public static void validate(@NonNull ApiResponse response) {
-
-        if (response.getErrors() !=null && !response.getErrors().isEmpty()) {
+        if (response.getStatus() == null && response.getErrors() !=null && !response.getErrors().isEmpty()) {
             ApiError jsonApiError = response.getErrors().get(0);
             if (log.isDebugEnabled()) {
                 log.debug("{} errors detected.", response.getErrors().size());

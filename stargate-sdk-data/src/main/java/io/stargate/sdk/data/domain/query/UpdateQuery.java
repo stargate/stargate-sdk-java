@@ -2,6 +2,7 @@ package io.stargate.sdk.data.domain.query;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.stargate.sdk.data.domain.JsonDocument;
+import io.stargate.sdk.data.domain.odm.Document;
 import lombok.Getter;
 
 import java.util.Map;
@@ -41,7 +42,7 @@ public class UpdateQuery {
     /**
      * Replacement.
      */
-    private JsonDocument replacement;
+    private Document<?> replacement;
 
     /**
      * Default constructor.

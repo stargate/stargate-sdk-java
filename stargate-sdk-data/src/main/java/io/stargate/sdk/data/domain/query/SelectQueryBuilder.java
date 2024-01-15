@@ -112,10 +112,8 @@ public class SelectQueryBuilder {
     /**
      * Max result.
      *
-     * @param limit
-     *      maximum number of returned object
-     * @return
-     *      number of items
+     * @param limit maximum number of returned object
+     * @return number of items
      */
     public SelectQueryBuilder withLimit(Integer limit) {
         if (limit == null || limit > 20) return this;

@@ -19,135 +19,118 @@ package io.stargate.sdk.data.domain;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.stargate.sdk.core.domain.ObjectMap;
+import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.utils.JsonUtils;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
+import java.lang.reflect.Array;
+import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.IntStream;
 
 
 /**
  * Json Api Payload.
  */
-@Getter @Setter
-public class JsonDocument extends AbstractDocument {
+public class JsonDocument extends Document<Map<String, Object>> {
 
     /**
-     * Data for inputs.
+     * Default Constructor.
      */
-    @JsonIgnore
-    @JsonAnyGetter
-    protected ObjectMap data;
-
-    /**
-     * Default constructor.
-     */
-    public JsonDocument() {}
-
-    /**
-     * Constructor with id.
-     *
-     * @param id
-     *      identifier
-     */
-    public JsonDocument(String id) {
-        this(id, null, null);
+    public JsonDocument() {
+        super();
+        this.data = new HashMap<>();
     }
 
     /**
-     * Constructor with id and data (map)
+     * Public constructor.
      *
-     * @param id
-     *      identifier
-     * @param data
-     *      data as a map
+     * @param json
+     *      json structure
      */
-    public JsonDocument(String id, Map<String, Object > data) {
-        this(id, data, null);
-    }
-
-    /**
-     * Constructor with id and data (map
-     *
-     * @param id
-     *      identifier
-     * @param bean
-     *      data as a beam
-     */
-    public JsonDocument(String id, Object bean) {
-        this(id, bean, null);
-    }
-
-    /**
-     * Constructor with id and data (map)
-     *
-     * @param id
-     *      identifier
-     * @param data
-     *      data as a map
-     * @param vector
-     *      vector
-     */
-    public JsonDocument(String id, Map<String, Object > data, float[] vector) {
-        this.id   = id;
-        this.vector = vector;
-        this.data = asObjectMap(data);
-    }
-
-    /**
-     * Constructor with id and data (beam)
-     *
-     * @param id
-     *      identifier
-     * @param bean
-     *      data as a beam
-     * @param vector
-     *      vector
-     */
-    public JsonDocument(String id, Object bean, float[] vector) {
-        this.id = id;
-        this.vector = vector;
-        this.data = asObjectMap(bean);
-    }
-
-    /**
-     * Convert as Object Map
-     *
-     * @param map
-     *      current map
-     */
-    private ObjectMap asObjectMap(Map<String, Object > map)  {
-        if (map == null) return null;
-        ObjectMap objectMap = new ObjectMap();
-        objectMap.putAll(map);
-        return objectMap;
-    }
-
-    /**
-     * Convert as Object Map
-     *
-     * @param bean
-     *      current bean
-     */
-    private ObjectMap asObjectMap(Object bean)  {
-        if (bean == null) return null;
-        if (bean instanceof String) {
-            bean = JsonUtils.unmarshallBean((String)bean, Map.class);
+    public JsonDocument(String json) {
+        data(json);
+        if (data.containsKey("_id")) {
+            this.id = (String) data.get("_id");
+            data.remove("_id");
         }
-        return JsonUtils.convertValue(bean, ObjectMap.class);
+        if (data.containsKey("$vector")) {
+            List<Double> doubleList = (List<Double>) data.get("$vector");
+            this.vector = new float[doubleList.size()];
+            for (int i = 0; i < doubleList.size(); i++) {
+                this.vector[i] = doubleList.get(i).floatValue();
+            }
+            data.remove("$vector");
+        }
     }
 
     /**
-     * Populate id.
+     * Fluent getter for document.
      *
      * @param id
-     *      identifier
+     *      id
      * @return
-     *      new JsonRecord
+     *      self reference
      */
+    @Override
     public JsonDocument id(String id) {
         this.id = id;
+        return this;
+    }
+
+    /**
+     * Fluent getter for document.
+     *
+     * @param vector
+     *      vector
+     * @return
+     *      self reference
+     */
+    @Override
+    public JsonDocument vector(float[] vector) {
+        this.vector = vector;
+        return this;
+    }
+
+    /**
+     * Fluent getter for document.
+     *
+     * @param data
+     *      data
+     * @return
+     *      self reference
+     */
+    @Override
+    public JsonDocument data(Map<String, Object> data) {
+        this.data = data;
+        return this;
+    }
+
+    /**
+     * Fluent getter for document.
+     *
+     * @param json
+     *      json
+     * @return
+     *      self reference
+     */
+    @SuppressWarnings("unchecked")
+    public JsonDocument data(String json) {
+        if (json == null) {
+            this.data = null;
+        } else {
+            this.data = JsonUtils.unmarshallBean((String)json, Map.class);
+        }
         return this;
     }
 
@@ -162,48 +145,267 @@ public class JsonDocument extends AbstractDocument {
      *      self reference
      */
     public JsonDocument put(String key, Object value) {
-        if (null == data) data = new ObjectMap();
+        if (null == data) data = new LinkedHashMap<String, Object>();
         data.put(key, value);
         return this;
     }
 
     /**
-     * Populate data.
-     *
-     * @param bean
-     *      data as beam
+     * Access element from the map
+     * @param key
+     *      current configuration key
+     * @param type
+     *      configuration type
      * @return
-     *      self reference
-     */
-    public JsonDocument data(@NonNull Object bean) {
-        this.data = asObjectMap(bean);
-        return this;
+     *      configuration value
+     * @param <K>
+     *     type f parameters
+    @ */
+    @SuppressWarnings("unchecked")
+    private <K> K get(String key, Class<K> type) {
+        Objects.requireNonNull(type, "Type is required");
+        if (data.containsKey(key)) {
+            if (type.isAssignableFrom(data.get(key).getClass())) {
+                return (K) data.get(key);
+            }
+            // Integer -> Long
+            if (type.equals(Long.class) && data.get(key) instanceof Integer) {
+                return (K) Long.valueOf((Integer) data.get(key));
+            }
+            // Integer -> Short
+            if (type.equals(Short.class) && data.get(key) instanceof Integer) {
+                return (K) (Short) ((Integer) data.get(key)).shortValue();
+            }
+            // Integer -> Byte
+            if (type.equals(Byte.class) && data.get(key) instanceof Integer) {
+                return (K) (Byte) ((Integer) data.get(key)).byteValue();
+            }
+            // Double -> Float
+            if (type.equals(Float.class) && data.get(key) instanceof Double) {
+                return (K) (Float) ((Double) data.get(key)).floatValue();
+            }
+            // String -> Character
+            if (type.equals(Character.class) && data.get(key) instanceof String) {
+                return (K) (Character) ((String) data.get(key)).charAt(0);
+            }
+            // String -> UUID
+            if (type.equals(UUID.class) && data.get(key) instanceof String) {
+                return (K) UUID.fromString((String) data.get(key));
+            }
+
+            throw new IllegalArgumentException("Argument '" + key + "' is not a " + type.getSimpleName() + " but a "
+                    + data.get(key).getClass().getSimpleName());
+        }
+        return null;
     }
 
     /**
-     * Populate data.
+     * Return a List of items.
      *
-     * @param map
-     *      data as map
+     * @param k
+     *      key
+     * @param itemClass
+     *      expected class
      * @return
-     *      self reference
+     *      list of items
+     * @param <K>
+     *      type of item
      */
-    public JsonDocument data(@NonNull Map<String, Object > map) {
-        this.data = asObjectMap(map);
-        return this;
+    @SuppressWarnings("unchecked")
+    public <K> List<K> getList(String k, Class<K> itemClass) {
+        return (List<K>) this.get(k, List.class);
     }
 
     /**
-     * Populate vector.
+     * Return an Array of items.
      *
-     * @param vector
-     *      embeddings
+     * @param k
+     *      key
+     * @param itemClass
+     *      expected class
      * @return
-     *      self reference
+     *      list of items
+     * @param <K>
+     *      type of item
      */
-    public JsonDocument vector(float[] vector) {
-        this.vector = vector;
-        return this;
+    @SuppressWarnings("unchecked")
+    public <K> K[] getArray(String k, Class<K> itemClass) {
+        List<K> list = getList(k, itemClass);
+        K[] array = (K[]) Array.newInstance(itemClass, list.size());
+        return list.toArray(array);
+    }
+
+    /**
+     * Access element from the map.
+     *
+     * @param k
+     *      current configuration key
+     * @param type
+     *      type of elements
+     * @return
+     *      configuration value
+     * @param <T>
+     *     type of parameters
+     */
+    public <T> T getObject(String k, Class<T> type) {
+        return JsonUtils.convertValueForDataApi(data.get(k), type);
+    }
+
+    /**
+     * Access element from the map.
+     *
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public String getString(String k) {
+        return get(k, String.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Double getDouble(String k) {
+        return get(k, Double.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Integer getInteger(String k) {
+        return get(k, Integer.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Boolean getBoolean(String k) {
+        return get(k, Boolean.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public UUID getUUID(String k) {
+        String uuid = getString(k);
+        return (uuid == null) ? null : UUID.fromString(uuid);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Float getFloat(String k) {
+        return get(k, Float.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Long getLong(String k) {
+
+        return get(k, Long.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Short getShort(String k) {
+        return get(k, Short.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Byte getByte(String k) {
+        return get(k, Byte.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Character getCharacter(String k) {
+        return  get(k, Character.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Date getDate(String k) {
+        return getObject(k, Date.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Calendar getCalendar(String k) {
+        return getObject(k, Calendar.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param k
+     *      current configuration key
+     * @return
+     *      configuration value
+     */
+    public Instant getInstant(String k) {
+        return getObject(k, Instant.class);
+    }
+
+    /**
+     * Access element from the map
+     * @param key
+     *      current configuration key
+     * @return
+     *      if key exists
+     */
+    public boolean isAttributeExist(String key) {
+        return data.containsKey(key);
     }
 
 

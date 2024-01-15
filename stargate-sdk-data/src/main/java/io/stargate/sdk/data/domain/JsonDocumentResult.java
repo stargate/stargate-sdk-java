@@ -2,6 +2,7 @@ package io.stargate.sdk.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,28 +20,38 @@ import java.util.UUID;
  * Json Results.
  */
 @Getter @Setter
-public class JsonResult extends AbstractDocument {
-
-    /**
-     * Similarity value in the response, can be null, using an Object
-     */
-    @JsonProperty("$similarity")
-    protected Float similarity;
+public class JsonDocumentResult extends DocumentResult<Map<String, Object>> {
 
     /**
      * Output as a map (to use JsonAySetter annotation).
      */
     @JsonAnySetter
-    protected Map<String, Object> data;
+    protected Map<String, Object> jsonRawData;
 
     /**
      * Default constructor.
      */
-    public JsonResult() {
+    public JsonDocumentResult() {
     }
 
     /**
-     * Access element from the map
+     * Access internal data.
+     *
+     * @return
+     *      map of object
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getData() {
+        if (data == null) {
+            data = JsonUtils.convertValueForDataApi(jsonRawData, Map.class);
+        }
+        return super.getData();
+    }
+
+    /**
+     * Access element from the map.
+     *
      * @param key
      *      current configuration key
      * @param type
@@ -53,7 +64,7 @@ public class JsonResult extends AbstractDocument {
     @SuppressWarnings("unchecked")
     private <K> K get(String key, Class<K> type) {
         Objects.requireNonNull(type, "Type is required");
-        if (data.containsKey(key)) {
+        if (getData().containsKey(key)) {
             if (type.isAssignableFrom(data.get(key).getClass())) {
                 return (K) data.get(key);
             }
@@ -88,10 +99,35 @@ public class JsonResult extends AbstractDocument {
         return null;
     }
 
+    /**
+     * Return an Array of items.
+     *
+     * @param k
+     *      key
+     * @param itemClass
+     *      expected class
+     * @return
+     *      list of items
+     * @param <K>
+     *      type of item
+     */
+    @SuppressWarnings("unchecked")
     public <K> List<K> getList(String k, Class<K> itemClass) {
         return (List<K>) this.get(k, List.class);
     }
 
+    /**
+     * Return an Array of items.
+     *
+     * @param k
+     *      key
+     * @param itemClass
+     *      expected class
+     * @return
+     *      list of items
+     * @param <K>
+     *      type of item
+     */
     @SuppressWarnings("unchecked")
     public <K> K[] getArray(String k, Class<K> itemClass) {
         List<K> list = getList(k, itemClass);
@@ -104,13 +140,15 @@ public class JsonResult extends AbstractDocument {
      *
      * @param k
      *      current configuration key
+     * @param type
+     *      type of elements
      * @return
      *      configuration value
      * @param <T>
      *     type f parameters
      */
     public <T> T getObject(String k, Class<T> type) {
-        return JsonUtils.convertValueForDataApi(data.get(k), type);
+        return JsonUtils.convertValueForDataApi(getData().get(k), type);
     }
 
     /**

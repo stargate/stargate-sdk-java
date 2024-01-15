@@ -11,7 +11,7 @@ public class JsonResultUpdate {
    /**
     * Json document
      */
-   JsonResult jsonResult;
+   JsonDocumentResult jsonResult;
 
     /**
      * Status Returned

@@ -1,15 +1,14 @@
 package io.stargate.sdk.data;
 
 import io.stargate.sdk.core.domain.Page;
+import io.stargate.sdk.data.domain.odm.Document;
+import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.data.domain.query.DeleteQuery;
 import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.query.SelectQuery;
-import io.stargate.sdk.data.domain.query.UpdateQuery;
-import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.odm.Result;
+import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +21,7 @@ import java.util.stream.Stream;
  * @param <DOC>
  *     current bean
  */
+@Getter
 public class CollectionRepository<DOC> {
 
     /**
@@ -49,7 +49,7 @@ public class CollectionRepository<DOC> {
      * Return name of the store.
      *
      * @return
-     *      sotre name
+     *      store name
      */
     public String getName() {
         return collectionClient.getCollection();
@@ -79,7 +79,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      generated identifier
      */
-    public String insert(Document<DOC> bean) {
+    public DocumentMutationResult<DOC> insert(Document<DOC> bean) {
         return collectionClient.insertOne(bean);
     }
 
@@ -90,10 +90,45 @@ public class CollectionRepository<DOC> {
      * @return
      *      generated identifier
      */
-    public String insert(Document<DOC> bean) {
-        return collectionClient.insertOne(bean);
+    public CompletableFuture<DocumentMutationResult<DOC>> insertASync(Document<DOC> bean) {
+        return collectionClient.insertOneASync(bean);
     }
 
+    // --------------------------
+    // ---    Insert All     ----
+    // --------------------------
+
+    // --------------------------
+    // ---    Insert All     ----
+    // --------------------------
+
+    /**
+     * Low level insertion of multiple records, they should not exist, or it will fail.
+     *
+     * @param documents
+     *      list of documents
+     * @return
+     *      list of ids
+     */
+    public final List<DocumentMutationResult<DOC>> insertAll(List<Document<DOC>> documents) {
+        return insertAllDistributed(documents, 20, 1);
+    }
+
+    /**
+     * Low level insertion of multiple records, they should not exist, or it will fail.
+     *
+     * @param documents
+     *      list of documents
+     * @param chunkSize
+     *      how many document per chunk
+     * @param concurrency
+     *      how many thread in parallel
+     * @return
+     *      list of ids
+     */
+    public final List<DocumentMutationResult<DOC>> insertAllDistributed(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+        return collectionClient.insertManyChunked(documents, chunkSize, concurrency);
+    }
 
 
     // --------------------------
@@ -108,8 +143,20 @@ public class CollectionRepository<DOC> {
      * @return
      *      an unique identifier for the document
      */
-    public final String save(@NonNull Document<DOC> current) {
-        return collectionClient.upsert(current.toJsonDocument());
+    public final DocumentMutationResult<DOC> save(Document<DOC> current) {
+        return collectionClient.upsertOne(current);
+    }
+
+    /**
+     * Upsert a record
+     *
+     * @param current
+     *      object Mapping
+     * @return
+     *      an unique identifier for the document
+     */
+    public final CompletableFuture<DocumentMutationResult<DOC>> saveASync(Document<DOC> current) {
+        return collectionClient.upsertOneASync(current);
     }
 
     // --------------------------
@@ -124,25 +171,52 @@ public class CollectionRepository<DOC> {
      * @return
      *      an unique identifier for the document
      */
-    public final List<String> saveAll(@NonNull List<Document<DOC>> documentList) {
-        return collectionClient.upsertMany(documentList.stream()
-                .map(Document::toJsonDocument)
-                .collect(Collectors.toList())).getAllIds();
+    public final List<DocumentMutationResult<DOC>> saveAll(List<Document<DOC>> documentList) {
+        return collectionClient.upsertMany(documentList);
     }
 
     /**
-     * Low level insertion of multiple records
+     * Create a new document a generating identifier asynchronously
      *
-     * @param documents
-     *      list of documents
+     * @param documentList
+     *      object Mapping
      * @return
-     *      list of ids
+     *      an unique identifier for the document
      */
-    public final List<String> insertAll(List<Document<DOC>> documents) {
-        if (documents == null || documents.isEmpty()) return new ArrayList<>();
-        return collectionClient.insertMany(documents.stream()
-                .map(Document::toJsonDocument)
-                .collect(Collectors.toList()));
+    public final CompletableFuture<List<DocumentMutationResult<DOC>>> saveAllASync(List<Document<DOC>> documentList) {
+        return collectionClient.upsertManyASync(documentList);
+    }
+
+    /**
+     * Create a new document a generating identifier.
+     *
+     * @param documentList
+     *      object Mapping
+     * @param chunkSize
+     *      size of the chunk to process items
+     * @param concurrency
+     *      concurrency to process items
+     * @return
+     *      an unique identifier for the document
+     */
+    public final List<DocumentMutationResult<DOC>> saveAllDistributed(List<Document<DOC>> documentList, int chunkSize, int concurrency) {
+        return collectionClient.upsertManyChunked(documentList, chunkSize, concurrency);
+    }
+
+    /**
+     * Create a new document a generating identifier asynchronously
+     *
+     * @param documentList
+     *      object Mapping
+     * @param chunkSize
+     *      size of the chunk to process items
+     * @param concurrency
+     *      concurrency to process items
+     * @return
+     *      an unique identifier for the document
+     */
+    public final CompletableFuture<List<DocumentMutationResult<DOC>>> saveAllDistributedASync(List<Document<DOC>> documentList, int chunkSize, int concurrency) {
+        return collectionClient.upsertManyChunkedASync(documentList, chunkSize, concurrency);
     }
 
     // --------------------------
@@ -176,26 +250,26 @@ public class CollectionRepository<DOC> {
     // --------------------------
 
     /**
-     * Find by Id.
+     * Find by id.
      *
      * @param query
      *      query to retrieve documents and vector
      * @return
      *      object if presents
      */
-    public Optional<Result<DOC>> find(@NonNull SelectQuery query) {
+    public Optional<DocumentResult<DOC>> find(@NonNull SelectQuery query) {
         return collectionClient.findOne(query, docClass);
     }
 
     /**
-     * Find by Id.
+     * Find by id.
      *
      * @param id
      *      identifier
      * @return
      *      object if presents
      */
-    public Optional<Result<DOC>> findById(@NonNull String id) {
+    public Optional<DocumentResult<DOC>> findById(@NonNull String id) {
         return collectionClient.findById(id, docClass);
     }
 
@@ -205,7 +279,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      retrieve all items
      */
-    public Stream<Result<DOC>> search() {
+    public Stream<DocumentResult<DOC>> search() {
         return collectionClient.findAll(docClass);
     }
 
@@ -217,7 +291,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      retrieve all items
      */
-    public Stream<Result<DOC>> search(SelectQuery query) {
+    public Stream<DocumentResult<DOC>> search(SelectQuery query) {
         return collectionClient.find(query, docClass);
     }
 
@@ -229,7 +303,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of records
      */
-    public Page<Result<DOC>> searchPage(SelectQuery query) {
+    public Page<DocumentResult<DOC>> searchPage(SelectQuery query) {
         return collectionClient.findPage(query, docClass);
     }
 
@@ -283,7 +357,7 @@ public class CollectionRepository<DOC> {
      * Delete item through a query.
      *
      * @param deleteQuery
-     *      delete queru
+     *      delete query
      * @return
      *       number of records deleted
      */
@@ -303,7 +377,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      object if presents
      */
-    public Optional<Result<DOC>> findByVector(@NonNull float[] vector) {
+    public Optional<DocumentResult<DOC>> findByVector(float[] vector) {
         return collectionClient.findOneByVector(vector, docClass);
     }
 
@@ -346,7 +420,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of results
      */
-    public Page<Result<DOC>> findVector(float[] vector, Filter metadataFilter) {
+    public Page<DocumentResult<DOC>> findVector(float[] vector, Filter metadataFilter) {
         return collectionClient.findVectorPage(vector, metadataFilter, null, null, docClass);
     }
 
@@ -360,9 +434,10 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of results
      */
-    public List<Result<DOC>> findVector(float[] vector, Integer limit) {
+    public List<DocumentResult<DOC>> findVector(float[] vector, Integer limit) {
         return collectionClient.findVectorPage(vector, null, limit, null, docClass).getResults();
     }
+
     /**
      * Search similarity from the vector and a limit, if a limit / no paging
      *
@@ -375,16 +450,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      page of results
      */
-    public List<Result<DOC>> findVector(float[] vector, Filter metadataFilter, Integer limit) {
+    public List<DocumentResult<DOC>> findVector(float[] vector, Filter metadataFilter, Integer limit) {
         return collectionClient.findVectorPage(vector, metadataFilter, limit, null, docClass).getResults();
-    }
-
-    /**
-     * Gets collectionClient.
-     *
-     * @return value of collectionClient
-     */
-    public CollectionClient getCollectionClient() {
-        return collectionClient;
     }
 }

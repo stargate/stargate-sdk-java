@@ -13,12 +13,12 @@ public class ApiData {
     /**
      * List of documents.
      */
-    List<JsonResult> documents;
+    List<JsonDocumentResult> documents;
 
     /**
      * Document.
      */
-    JsonResult document;
+    JsonDocumentResult document;
 
     /**
      * Next page state.

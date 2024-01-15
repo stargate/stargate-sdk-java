@@ -1,6 +1,7 @@
 package io.stargate.sdk.data.domain.query;
 
 import io.stargate.sdk.data.domain.JsonDocument;
+import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.http.domain.FilterKeyword;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
@@ -80,6 +81,16 @@ public class UpdateQueryBuilder {
      * Returned Map
      */
     public Map<String, Object> options;
+
+    /**
+     * Max result.
+     *
+     * @return
+     *      number of items
+     */
+    public UpdateQueryBuilder withUpsert() {
+        return withOption("upsert", true);
+    }
 
     /**
      * Values for return document.
@@ -194,23 +205,6 @@ public class UpdateQueryBuilder {
         return new UpdateQueryFilterBuilder(this, fieldName);
     }
 
-    /**
-     * Only return those fields if provided.
-     *
-     * @param fieldName
-     *          field name
-     * @return SearchDocumentWhere
-     *          current builder
-     */
-    public UpdateQueryFilterBuilder andWhere(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (filter == null || filter.isEmpty()) {
-            throw new IllegalArgumentException("Invalid query please use where() " +
-                    "as a where clause has been provided");
-        }
-        return new UpdateQueryFilterBuilder(this, fieldName);
-    }
-
     // -----------------------------------
     // -- Update: 'update'            ---
     // -----------------------------------
@@ -221,19 +215,21 @@ public class UpdateQueryBuilder {
     public Map<String, Object> update;
 
     /**
-     * replacement recod
+     * replacement record
      */
-    public JsonDocument replacement;
+    public Document<?> replacement;
 
     /**
      * Builder pattern
      *
      * @param replacement
      *      new value for document
+     * @param <DOC>
+     *     type of document
      * @return
      *      reference to self
      */
-    public UpdateQueryBuilder replaceBy(JsonDocument replacement) {
+    public <DOC> UpdateQueryBuilder replaceBy(Document<DOC> replacement) {
         this.replacement = replacement;
         return this;
     }

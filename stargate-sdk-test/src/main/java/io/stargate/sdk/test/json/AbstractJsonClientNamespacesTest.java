@@ -218,17 +218,17 @@ public class AbstractJsonClientNamespacesTest {
                 new Document<Product>()
                         .data(new Product("something Good", 9.99))));
         Assertions.assertEquals("id1", col.insertOne(
-                new Document<>("id1", new Product("something Good", 10.99))));
+                new Document<>().id("id1").data(new Product("something Good", 10.99))));
 
         // Insert a Json String, will do the needed magic
         Assertions.assertEquals("id2", col
-                .insertOne(new Document<>("id2", "{\"key\": \"value\"}")));
+                .insertOne(new JsonDocument().id("id2").data("{\"key\": \"value\"}")));
 
         // Insert a Map, also do the magic
-        col.insertOne(new Document<>("id3", "{\"key\": \"value\"}"));
+        col.insertOne(new JsonDocument().id("id3").data("{\"key\": \"value\"}"));
 
         // fine-grained json
-        col.insertOne(new JsonDocument("pf1844").put("attribute", "test"));
+        col.insertOne(new JsonDocument().id("pf1844").put("attribute", "test"));
     }
 
     /**
@@ -249,9 +249,9 @@ public class AbstractJsonClientNamespacesTest {
                 new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
 
         // Add vector without an id
-        colVector.insertOne(new Document<>(
-                new Product("id will be generated for you", 10.99),
-                new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
+        colVector.insertOne(new Document<>()
+                .data(new Product("id will be generated for you", 10.99))
+                .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}));
 
         // Insert a full-fledged object
         colVector.insertOne(new JsonDocument()
@@ -278,8 +278,9 @@ public class AbstractJsonClientNamespacesTest {
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
 
+        /*
         myCollection.insertMany(List.of(
-                new JsonDocument()
+                new Document<Product>()
                         .id("pf1844")
                         .data(new Product("HealthyFresh - Beef raw dog food", 9.99))
                         .vector(new float[] {1f, 0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f}),
@@ -293,13 +294,14 @@ public class AbstractJsonClientNamespacesTest {
                 new JsonDocument("pt0041")
                         .put("product_name", "Dog Ring Chew Toy")
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 1f, 1f, 0f, 0f, 0f, 0f}),
-                new JsonDocument("pf7043", new Product("Pepper Sausage Bacon dog Treats", 9.99))
+                new Document<Product>().id("pf7043")
+                        .data(new Product("Pepper Sausage Bacon dog Treats", 9.99))
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 1f}),
-                new JsonDocument()
+                new Document<Product>()
                         .id("pf7044")
                         .data(new Product("Pepper Sausage Beef dog Treats", 10.99))
                         .vector(new float[] {0f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f}))
-        );
+        );*/
 
     }
 

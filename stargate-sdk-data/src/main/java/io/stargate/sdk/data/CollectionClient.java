@@ -1,46 +1,53 @@
 package io.stargate.sdk.data;
 
 import io.stargate.sdk.core.domain.Page;
+import io.stargate.sdk.data.domain.ApiData;
+import io.stargate.sdk.data.domain.ApiError;
+import io.stargate.sdk.data.domain.odm.DocumentResult;
+import io.stargate.sdk.data.domain.odm.DocumentResultMapper;
 import io.stargate.sdk.data.domain.query.DeleteQuery;
 import io.stargate.sdk.data.domain.query.Filter;
-import io.stargate.sdk.data.domain.ApiData;
 import io.stargate.sdk.data.domain.ApiResponse;
 import io.stargate.sdk.data.domain.JsonDocument;
-import io.stargate.sdk.data.domain.JsonResult;
+import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.JsonResultUpdate;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.query.UpdateQuery;
 import io.stargate.sdk.data.domain.UpdateStatus;
-import io.stargate.sdk.data.domain.UpsertResult;
 import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.odm.Result;
-import io.stargate.sdk.data.domain.odm.ResultMapper;
 import io.stargate.sdk.data.exception.DataApiDocumentAlreadyExistException;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.utils.Assert;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.stargate.sdk.data.utils.DataApiUtils.executeOperation;
+import static io.stargate.sdk.data.utils.DataApiUtils.validate;
 import static io.stargate.sdk.utils.AnsiUtils.green;
-
 
 /**
  * Wrapper for collection operations.
@@ -87,55 +94,198 @@ public class CollectionClient {
     /**
      * Insert with a Json Document.
      *
-     * @param bean
-     *      current bean
-     * @param <DOC>
-     *      type of object in use
+     * @param json
+     *     json String
      * @return
-     *      new id
+     *      document identifier and status
      */
-    public final <DOC> String insertOne(@NonNull Document<DOC> bean) {
-        return insertOne(bean.toJsonDocument());
+    public final JsonDocumentMutationResult insertOne(String json) {
+        Assert.hasLength(json, "Json input");
+        return (JsonDocumentMutationResult) insertOne(new JsonDocument(json));
     }
 
     /**
-     * Insert a new document for a vector collection
+     * Insert with a Json Document asynchronously
      *
-     * @param jsonDocument
-     *      json Document
+     * @param json
+     *     json String
      * @return
-     *      identifier for the document
+     *      document identifier and status
      */
-    public String insertOne(JsonDocument jsonDocument) {
+    public final CompletableFuture<JsonDocumentMutationResult> insertOneAsync(String json) {
+        return CompletableFuture.supplyAsync(() -> insertOne(json));
+    }
+
+    /**
+     * Insert with a Json Document (schemaless)
+     *
+     * @param document
+     *      current bean
+     * @return
+     *      mutation result with status and id
+     */
+    public final JsonDocumentMutationResult insertOne(@NonNull JsonDocument document) {
+        // Enforce call to other methods
+        DocumentMutationResult<Map<String, Object>> mutationResult = insertOne((Document<Map<String, Object>>) document);
+        // Mapping of the ouput
+        JsonDocumentMutationResult res = new JsonDocumentMutationResult();
+        res.setStatus(mutationResult.getStatus());
+        res.setDocument(mutationResult.getDocument());
+        return res;
+    }
+
+    /**
+     * Insert with a Json Document (schemaless)
+     *
+     * @param document
+     *      current bean
+     * @return
+     *      mutation result with status and id
+     */
+    public final CompletableFuture<JsonDocumentMutationResult> insertOneAsync(@NonNull JsonDocument document) {
+        return CompletableFuture.supplyAsync(() -> insertOne(document));
+    }
+
+    /**
+     * Insert with a Json Document.
+     *
+     * @param document
+     *      current document
+     * @return
+     *      document identifier and status
+     * @param <T>
+     *     represent the pojo, payload of document
+     */
+    public final <T> DocumentMutationResult<T> insertOne(@NonNull Document<T> document) {
         log.debug("insert into {}/{}", green(namespace), green(collection));
-        return execute("insertOne", Map.of("document", jsonDocument))
-                .getStatusKeyAsStringStream("insertedIds")
-                .findAny()
-                .orElse(null);
+        if (document.getId() == null) {
+            // Enforce the UUID at client side to retrieve it in an easier way
+            document.setId(UUID.randomUUID().toString());
+        }
+        ApiResponse response = execute("insertOne", Map.of("document", document));
+        if (response.getErrors()!= null && !response.getErrors().isEmpty()) {
+            throw new DataApiDocumentAlreadyExistException(response.getErrors().get(0));
+        }
+        return new DocumentMutationResult<>(document, DocumentMutationStatus.CREATED);
+    }
+
+    /**
+     * Insert with a Json Document.
+     *
+     * @param document
+     *      current document
+     * @param <T>
+     *     represent the pojo, payload of document
+     * @return
+     *      document identifier and status
+     */
+    public final <T> CompletableFuture<DocumentMutationResult<T>> insertOneASync(@NonNull Document<T> document) {
+        return CompletableFuture.supplyAsync(() -> insertOne(document));
+    }
+
+    // --------------------------
+    // ---   Upsert One      ----
+    // --------------------------
+
+    /**
+     * Upsert a document in the collection.
+     *
+     * @param json
+     *      json to insert
+     * @return
+     *      document status and identifier
+     */
+    public final JsonDocumentMutationResult upsertOne(String json) {
+        Assert.hasLength(json, "Json input");
+        return (JsonDocumentMutationResult) upsertOne(new JsonDocument(json));
     }
 
     /**
      * Upsert a document in the collection.
      *
-     * @param jsonDocument
-     *      current document
+     * @param json
+     *      json to insert
      * @return
-     *      document id
+     *      document status and identifier
      */
-    public String upsert(@NonNull JsonDocument jsonDocument) {
-        if (jsonDocument.getId() == null) {
-            jsonDocument.setId(UUID.randomUUID().toString());
+    public final CompletableFuture<JsonDocumentMutationResult> upsertOneAsync(String json) {
+        return CompletableFuture.supplyAsync(() -> upsertOne(json));
+    }
+
+    /**
+     * Upsert a document in the collection.
+     *
+     * @param document
+     *      document to insert
+     * @return
+     *      document status and identifier
+     */
+    public final JsonDocumentMutationResult upsertOne(@NonNull JsonDocument document) {
+        // Enforce call to other methods
+        DocumentMutationResult<Map<String, Object>> mutationResult = upsertOne((Document<Map<String, Object>>) document);
+        // Mapping of the ouput
+        JsonDocumentMutationResult res = new JsonDocumentMutationResult();
+        res.setStatus(mutationResult.getStatus());
+        res.setDocument(mutationResult.getDocument());
+        return res;
+    }
+
+    /**
+     * Upsert a document in the collection.
+     *
+     * @param document
+     *      json Document to insert
+     * @return
+     *      document status and identifier
+     */
+    public final CompletableFuture<JsonDocumentMutationResult> upsertOneAsync(@NonNull JsonDocument document) {
+        return CompletableFuture.supplyAsync(() -> upsertOne(document));
+    }
+
+    /**
+     * Upsert a document in the collection.
+     *
+     * @param document
+     *      document to insert
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      document status and identifier
+     */
+    public <DOC> DocumentMutationResult<DOC> upsertOne(@NonNull Document<DOC> document) {
+        log.debug("upsert into {}/{}", green(namespace), green(collection));
+        if (document.getId() == null) {
+            document.setId(UUID.randomUUID().toString());
+       }
+       JsonResultUpdate u = findOneAndReplace(UpdateQuery.builder()
+                    .where("_id")
+                    .isEqualsTo(document.getId())
+                    .replaceBy(document)
+                    .withUpsert() // with opion upsert true
+                    .build());
+        DocumentMutationResult<DOC> result = new DocumentMutationResult<>(document);
+        if (u.getUpdateStatus().getUpsertedId() != null && u.getUpdateStatus().getUpsertedId().equals(document.getId())) {
+            result.setStatus(DocumentMutationStatus.CREATED);
+        } else if (u.getUpdateStatus().getModifiedCount() == 0) {
+            result.setStatus(DocumentMutationStatus.UNCHANGED);
+        } else {
+            result.setStatus(DocumentMutationStatus.UPDATED);
         }
-        try {
-            insertOne(jsonDocument);
-        } catch(DataApiDocumentAlreadyExistException e) {
-            findOneAndReplace(UpdateQuery.builder()
-              .where("_id")
-              .isEqualsTo(jsonDocument.getId())
-              .replaceBy(jsonDocument)
-              .build());
-        }
-        return jsonDocument.getId();
+        return result;
+    }
+
+    /**
+     * Upsert with Asynchronous method.
+     *
+     * @param document
+     *      document to insert
+     * @return
+     *      completion future
+     * @param <DOC>
+     *      current document nature
+     */
+    public <DOC> CompletableFuture<DocumentMutationResult<DOC>> upsertOneASync(@NonNull Document<DOC> document) {
+        return CompletableFuture.supplyAsync(() -> upsertOne(document));
     }
 
     // --------------------------
@@ -143,17 +293,67 @@ public class CollectionClient {
     // --------------------------
 
     /**
-     * Low level insertion of multiple records
+     * Try Insert Many with a String
+     *
+     * @param json
+     *      current Json
+     * @return
+     *      list of status
+     */
+    @SuppressWarnings("unchecked")
+    public final List<JsonDocumentMutationResult> insertMany(String json) {
+        // Map as a list of map
+        List<Map<String, Object>> docs = JsonUtils.unmarshallBeanForDataApi(json, List.class);
+        // Marshall as a list of Document
+        List<Document<Map<String, Object>>> jsonDocs = docs.stream().map(d -> {
+            Document<Map<String, Object>> doc = new Document<>();
+            doc.data(d);
+            return doc;
+        }).collect(Collectors.toList());
+        // Call insertMany
+        return insertMany(jsonDocs).stream()
+                .map(DocumentMutationResult::asJsonDocumentMutationResult)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Try Insert Many with a String Asynchronously.
+     *
+     * @param json
+     *      current Json
+     * @return
+     *      list of status
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyASync(String json) {
+        return CompletableFuture.supplyAsync(() -> insertMany(json));
+    }
+
+    /**
+     * Insert Documents: Default is non ordered and no replace.
      *
      * @param documents
      *      list of documents
      * @param <DOC>
-     *      object T in use.
+     *     represent the pojo, payload of document
      * @return
      *      list of ids
      */
-    public final <DOC> List<String> insertMany(List<DOC> documents) {
-        return insertMany(documents, false);
+    public final <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents) {
+        return insertMany(documents, false, false);
+    }
+
+    /**
+     * Try Insert Many with a String Asynchronously.
+     *
+     * @param documents
+     *      list of documents
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of status
+     */
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyASync(List<Document<DOC>> documents) {
+        return CompletableFuture.supplyAsync(() -> insertMany(documents));
     }
 
     /**
@@ -161,29 +361,188 @@ public class CollectionClient {
      *
      * @param documents
      *      list of documents
-     * @param <DOC>
-     *      object T in use.
      * @return
      *      list of ids
      */
-    public final <DOC> List<String> insertMany(List<DOC> documents, boolean ordered) {
-        if (documents == null || documents.isEmpty()) return new ArrayList<String>();
-        log.debug("insert many (size={},ordered={}) into {}/{}", documents.size(), ordered, green(namespace), green(collection));
-        return execute("insertMany", Map.of("documents", documents, "options",  Map.of("ordered", ordered))).getStatusKeyAsList("insertedIds");
+    public final List<JsonDocumentMutationResult> insertManyJsonDocuments(List<JsonDocument> documents) {
+        // Mapping inputs and outputs
+        return mapJsonDocumentMutationResultList(insertMany(mapJsonDocumentList(documents)));
     }
 
     /**
-     * Low level insertion of multiple records
+     * Insert Asynchronously a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyJsonDocumentsASync(List<JsonDocument> documents) {
+        return CompletableFuture.supplyAsync(() -> insertManyJsonDocuments(documents));
+    }
+
+    /**
+     * Insert a list of documents with the following constraints:
+     * - the list should be smaller than 20 or we get errors
+     * - the option 'ordered' is set to false to speed up the process
+     * - the option 'replace' is set to false, we do not replace documents
+     *
+     * @param documents
+     *      list of documents
+     * @param ordered
+     *      replace if already exist
+     * @param replaceIfExists
+     *      if set to true existing documents will be replaced.
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of ids
+     */
+    @SuppressWarnings("unchecked")
+    public final <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents, boolean ordered, boolean replaceIfExists) {
+        if (documents != null && !documents.isEmpty()) {
+            log.debug("insert many (size={},ordered={}) into {}/{}", green(String.valueOf(documents.size())),
+                    green(String.valueOf(ordered)), green(namespace), green(collection));
+
+            // Creating Status for output
+            Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
+
+            // Insert documents synchronously
+            ApiResponse apiResponse = execute("insertMany",
+                    Map.of("documents", documents, "options",
+                    Map.of("ordered", ordered)));
+
+            validate(apiResponse);
+            if (apiResponse.getStatus() != null) {
+                Optional.ofNullable(
+                        apiResponse.getStatus().get("insertedIds")
+                ).ifPresent(ids -> ((List<String>) ids)
+                     .forEach(id -> results.computeIfPresent(id, (k, v) -> {
+                        v.setStatus(DocumentMutationStatus.CREATED);
+                        return v;
+                     }))
+                );
+            }
+
+            // Identify documents already existing
+            if (apiResponse.getErrors()!=null) {
+                Pattern pattern = Pattern.compile("\'(.*?)\'");
+                apiResponse.getErrors()
+                        .stream()
+                        .filter(error -> "DOCUMENT_ALREADY_EXISTS".equals(error.getErrorCode()))
+                        .map(ApiError::getMessage)
+                        .map(msg -> pattern.matcher(msg))
+                        .filter(Matcher::find)
+                        .map(matcher -> matcher.group(1))
+                        .forEach(id -> {
+                            results.computeIfPresent(id, (k, v) -> {
+                                v.setStatus(DocumentMutationStatus.ALREADY_EXISTS);
+                                return v;
+                            });
+                        });
+            }
+
+            // Update ALREADY_EXISTS items
+            if (replaceIfExists) {
+                ExecutorService executor = Executors.newFixedThreadPool(10);
+                results.values()
+                        .stream()
+                        .filter(r -> DocumentMutationStatus.ALREADY_EXISTS.equals(r.getStatus()))
+                        .forEach(r -> executor.submit(() -> {
+                            JsonResultUpdate u = findOneAndReplace(UpdateQuery.builder()
+                                    .where("_id")
+                                    .isEqualsTo(r.getDocument().getId())
+                                    .replaceBy(r.getDocument())
+                                    .build());
+                            if (u.getUpdateStatus().getModifiedCount() == 0) {
+                                r.setStatus(DocumentMutationStatus.UNCHANGED);
+                            } else {
+                                r.setStatus(DocumentMutationStatus.UPDATED);
+                            }
+                        }));
+                executor.shutdown();
+                try {
+                    boolean ok = executor.awaitTermination(20L, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {}
+            }
+            return new ArrayList<>(results.values());
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * Insert a list of documents with the following constraints:
+     * - the list should be smaller than 20 or we get errors
+     * - the option 'ordered' is set to false to speed up the process
+     * - the option 'replace' is set to false, we do not replace documents
+     *
+     * @param documents
+     *      list of documents
+     * @param ordered
+     *      replace if already exist
+     * @param replaceIfExists
+     *      if set to true existing documents will be replaced.
+     * @return
+     *      list of ids
+     */
+    public final List<JsonDocumentMutationResult> insertManyJsonDocuments(List<JsonDocument> documents, boolean ordered, boolean replaceIfExists) {
+        return mapJsonDocumentMutationResultList(insertMany(mapJsonDocumentList(documents), ordered, replaceIfExists));
+    }
+
+    // ---------------------------------
+    // ---   Insert Many  Chunked   ----
+    // ---------------------------------
+
+    /**
+     * Insert a list of documents in a distributed manner
      *
      * @param documents
      *      list of documents
      * @param <DOC>
-     *      object T in use.
+     *     represent the pojo, payload of document
      * @return
      *      list of ids
      */
-    public final <DOC> List<String> insertManyChunked(List<DOC> documents) {
-        return insertManyChunked(documents, 20);
+    public final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents) {
+        return insertManyChunked(documents, 20, 10);
+    }
+
+    /**
+     * Insert a list of documents in a distributed manner asynchronously.
+     *
+     * @param documents
+     *      list of documents.
+     * @param <DOC>
+     *     represent the pojo, payload of documents.
+     * @return
+     *      list of ids
+     */
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyChunkedASync(List<Document<DOC>> documents) {
+        return CompletableFuture.supplyAsync(() -> insertManyChunked(documents));
+    }
+
+    /**
+     * Enforce Mapping with JsonDocument
+     *
+     * @param documents
+     *      list of documents
+     * @return
+     *      json document list
+     */
+    public final List<JsonDocumentMutationResult> insertManyChunkedJsonDocuments(List<JsonDocument> documents) {
+        return mapJsonDocumentMutationResultList(insertManyChunked(mapJsonDocumentList(documents)));
+    }
+
+    /**
+     * Enforce Mapping with JsonDocument asynchronously
+     *
+     * @param documents
+     *      list of documents
+     * @return
+     *      json document list
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyChunkedJsonDocumentsASync(List<JsonDocument> documents) {
+        return CompletableFuture.supplyAsync(() -> insertManyChunkedJsonDocuments(documents));
     }
 
     /**
@@ -193,13 +552,33 @@ public class CollectionClient {
      *      list of documents
      * @param chunkSize
      *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
      * @param <DOC>
-     *      object T in use.
+     *     represent the pojo, payload of document
      * @return
      *      list of ids
      */
-    public final <DOC> List<String> insertManyChunked(List<DOC> documents, int chunkSize) {
-        return insertManyChunked(documents, chunkSize, 1);
+    public final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+        return insertManyChunked(documents, chunkSize, concurrency,false);
+    }
+
+    /**
+     * Low level insertion of multiple records asynchronously
+     *
+     * @param documents
+     *      list of documents
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of ids
+     */
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyChunkedASync(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+        return CompletableFuture.supplyAsync(() -> insertManyChunked(documents, chunkSize, concurrency));
     }
 
     /**
@@ -212,114 +591,138 @@ public class CollectionClient {
      * @param concurrency
      *      how many threads to use
      * @param <DOC>
-     *      object T in use.
+     *     represent the pojo, payload of document
      * @return
      *      list of ids
      */
-    public final <DOC> List<String> insertManyChunked(List<DOC> documents, int chunkSize, int concurrency) {
-        Objects.requireNonNull(documents, "documents");
+    private final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency, boolean replaceIfExists) {
+        // Validations
         if (chunkSize < 1 || chunkSize > 20) {
             throw new IllegalArgumentException("ChunkSize must be between 1 and 20");
         }
         if (concurrency < 1 || concurrency > 50) {
             throw new IllegalArgumentException("Concurrency must be between 1 and 50");
         }
+
+        // Creating Status for output
+        Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
+
         ExecutorService executor = Executors.newFixedThreadPool(concurrency);
-        List<Future<List<String>>> futures = new ArrayList<>();
-        List<String> inserted = new ArrayList<>();
+        List<Future<List<DocumentMutationResult<DOC>>>> futures = new ArrayList<>();
         for (int i = 0; i < documents.size(); i += chunkSize) {
             int start = i;
             int end = Math.min(i + chunkSize, documents.size());
-            Callable<List<String>> task = () -> {
+            Callable<List<DocumentMutationResult<DOC>>> task = () -> {
                 log.debug("insert block (size={}) {}/{}", end-start, green(namespace), green(collection));
-                return execute("insertMany", Map.of("documents", documents.subList(start, end)))
-                        .getStatusKeyAsList("insertedIds");
+                return insertMany(documents.subList(start, end), false, replaceIfExists);
             };
             futures.add(executor.submit(task));
         }
 
         // Wait for all futures to completes
-        for (Future<List<String>> future : futures) {
+        for (Future<List<DocumentMutationResult<DOC>>> future : futures) {
             try {
-                inserted.addAll(future.get());
+                future.get().stream().forEach(r -> {
+                    results.computeIfPresent(r.getDocument().getId(), (k, v) -> {
+                        v.setStatus(r.getStatus());
+                        return v;
+                    });
+                });
             } catch (Exception e) {
                 throw new RuntimeException("Error when process a block", e);
             }
         }
-        return inserted;
+
+        return new ArrayList<>(results.values());
     }
 
-
-    // --------------------------
-    // ---   Upsert Many     ----
-    // --------------------------
-
     /**
-     * Upsert document with replacement if doc already exists.
-     *
+     * Initialization of the collection of document, filling uids
      * @param documents
-     *      documents
+     *      document list
      * @return
-     *      list of ids
+     *      map of documents
      * @param <DOC>
-     *          working document
+     *     represent the pojo, payload of document
      */
-    public final <DOC> UpsertResult upsertMany(List<DOC> documents) {
-        UpsertResult results = new UpsertResult();
-        results.setInsertedIds(insertMany(documents, false));
-        // TODO Updated Items
+    @NotNull
+    private static <DOC> Map<String, DocumentMutationResult<DOC>> initResultMap(List<Document<DOC>> documents) {
+        Map<String, DocumentMutationResult<DOC>> results = new LinkedHashMap<>(documents.size());
+        documents.forEach(d -> {
+            if (d.getId() == null) {
+                // Enforce the UUID at client side to retrieve it in an easier way
+                d.setId(UUID.randomUUID().toString());
+            }
+            results.put(d.getId(), new DocumentMutationResult<>(d));
+        });
         return results;
     }
 
+    // ------------------------------
+    // ---      Upsert Many      ----
+    // ------------------------------
+
     /**
-     * Upsert document with replacement if doc already exists.
-     *
+     * Upsert any items in the collection.
      * @param documents
-     *      documents
+     *      current collection list
      * @return
-     *      list of ids
+     *      list of statuses
      * @param <DOC>
-     *          working document
+     *     represent the pojo, payload of document
      */
-    public final <DOC> UpsertResult upsertManyChunked(List<DOC> documents) {
-        return upsertManyChunked(documents, 20);
+    public final <DOC> List<DocumentMutationResult<DOC>> upsertMany(List<Document<DOC>> documents) {
+        return insertMany(documents, false, true);
     }
 
     /**
-     * Upsert document with replacement if doc already exists, split in chunks
+     * Upsert any items in the collection asynchronously.
      *
      * @param documents
-     *      documents
-     * @param chunkSize
-     *      chunk size
+     *      current collection list
      * @return
-     *      list of ids
+     *      list of statuses
      * @param <DOC>
-     *          working document
+     *     represent the pojo, payload of document
      */
-    public final <DOC> UpsertResult upsertManyChunked(List<DOC> documents, int chunkSize) {
-        return upsertManyChunked(documents, chunkSize, 1, 1);
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyASync(List<Document<DOC>> documents) {
+        return CompletableFuture.supplyAsync(() -> upsertMany(documents));
     }
 
     /**
-     * Upsert document with replacement if doc already exists.
+     * Low level insertion of multiple records
      *
      * @param documents
-     *      documents
+     *      list of documents
      * @param chunkSize
-     *      chunk size
-     * @param concurrencyInsert
-     *      how many processor in parallel for insert
-     * @param concurrencyReplace
-     *      how many processor in parallel for replace
+     *      size of the block
+     * @param concurrency
+     *      concurrency
+     * @param <DOC>
+     *     represent the pojo, payload of document
      * @return
      *      list of ids
-     * @param <DOC>
-     *      working document
      */
-    public final <DOC> UpsertResult upsertManyChunked(List<DOC> documents, int chunkSize, int concurrencyInsert, int concurrencyReplace) {
-        // TODO Updated Items
-        return null;
+    public final <DOC> List<DocumentMutationResult<DOC>> upsertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+        return insertManyChunked(documents, chunkSize, concurrency,true);
+    }
+
+    /**
+     * Low level insertion of multiple records
+     *
+     * @param documents
+     *      list of documents
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      concurrency
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of ids
+     */
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyChunkedASync(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+        return CompletableFuture.supplyAsync(() -> upsertManyChunked(documents, chunkSize, concurrency));
     }
 
     // --------------------------
@@ -372,12 +775,25 @@ public class CollectionClient {
     /**
      * Find one document matching the query.
      *
+     * @param query
+     *      query documents and vector
+     * @return
+     *      result if exists
+     */
+    public Optional<JsonDocumentResult> findOne(SelectQuery query) {
+        log.debug("Query in {}/{}", green(namespace), green(collection));
+        return Optional.ofNullable(execute("findOne", query).getData().getDocument());
+    }
+
+    /**
+     * Find one document matching the query.
+     *
      * @param rawJsonQuery
      *      execute a direct json Query
      * @return
      *      result if exists
      */
-    public Optional<JsonResult> findOne(String rawJsonQuery) {
+    public Optional<JsonDocumentResult> findOne(String rawJsonQuery) {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         return Optional.ofNullable(execute("findOne", rawJsonQuery).getData().getDocument());
     }
@@ -394,8 +810,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findOne(String query, Class<DOC> clazz) {
-        return findOne(query).map(r -> new Result<>(r, clazz));
+    public <DOC> Optional<DocumentResult<DOC>> findOne(String query, Class<DOC> clazz) {
+        return findOne(query).map(r -> new DocumentResult<>(r, clazz));
     }
 
     /**
@@ -410,23 +826,9 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findOne(String query, ResultMapper<DOC> mapper) {
+    public <DOC> Optional<DocumentResult<DOC>> findOne(String query, DocumentResultMapper<DOC> mapper) {
         return findOne(query).map(mapper::map);
     }
-
-    /**
-     * Find one document matching the query.
-     *
-     * @param query
-     *      query documents and vector
-     * @return
-     *      result if exists
-     */
-    public Optional<JsonResult> findOne(SelectQuery query) {
-        log.debug("Query in {}/{}", green(namespace), green(collection));
-        return Optional.ofNullable(execute("findOne", query).getData().getDocument());
-    }
-
 
     /**
      * Find one document matching the query.
@@ -440,8 +842,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findOne(SelectQuery query, Class<DOC> clazz) {
-        return findOne(query).map(r -> new Result<>(r, clazz));
+    public <DOC> Optional<DocumentResult<DOC>> findOne(SelectQuery query, Class<DOC> clazz) {
+        return findOne(query).map(r -> new DocumentResult<>(r, clazz));
     }
 
     /**
@@ -456,7 +858,7 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findOne(SelectQuery query, ResultMapper<DOC> mapper) {
+    public <DOC> Optional<DocumentResult<DOC>> findOne(SelectQuery query, DocumentResultMapper<DOC> mapper) {
         return findOne(query).map(mapper::map);
     }
 
@@ -472,7 +874,7 @@ public class CollectionClient {
      * @return
      *      document
      */
-    public Optional<JsonResult> findById(String id) {
+    public Optional<JsonDocumentResult> findById(String id) {
         return findOne(SelectQuery.findById(id));
     }
 
@@ -488,8 +890,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findById(@NonNull String id, Class<DOC> clazz) {
-        return findById(id).map(r -> new Result<>(r, clazz));
+    public <DOC > Optional<DocumentResult<DOC>> findById(@NonNull String id, Class<DOC> clazz) {
+        return findById(id).map(r -> new DocumentResult<>(r, clazz));
     }
 
     /**
@@ -504,7 +906,7 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findById(@NonNull String id, ResultMapper<DOC> mapper) {
+    public <DOC> Optional<DocumentResult<DOC>> findById(@NonNull String id, DocumentResultMapper<DOC> mapper) {
         return findById(id).map(mapper::map);
     }
 
@@ -520,7 +922,7 @@ public class CollectionClient {
      * @return
      *      document
      */
-    public Optional<JsonResult> findOneByVector(float[] vector) {
+    public Optional<JsonDocumentResult> findOneByVector(float[] vector) {
         return findOne(SelectQuery.findByVector(vector));
     }
 
@@ -536,8 +938,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findOneByVector(float[] vector, Class<DOC> clazz) {
-        return findOneByVector(vector).map(r -> new Result<>(r, clazz));
+    public <DOC> Optional<DocumentResult<DOC>> findOneByVector(float[] vector, Class<DOC> clazz) {
+        return findOneByVector(vector).map(r -> new DocumentResult<>(r, clazz));
     }
 
     /**
@@ -552,7 +954,7 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Optional<Result<DOC>> findOneByVector(float[] vector, ResultMapper<DOC> mapper) {
+    public <DOC > Optional<DocumentResult<DOC>> findOneByVector(float[] vector, DocumentResultMapper<DOC> mapper) {
         return findOneByVector(vector).map(mapper::map);
     }
 
@@ -568,13 +970,13 @@ public class CollectionClient {
      * @return
      *      all items
      */
-    public Stream<JsonResult> find(SelectQuery query) {
-        List<JsonResult> documents = new ArrayList<>();
+    public Stream<JsonDocumentResult> find(SelectQuery query) {
+        List<JsonDocumentResult> documents = new ArrayList<>();
         String pageState = null;
         AtomicInteger pageCount = new AtomicInteger(0);
         do {
             log.debug("Fetching page " + pageCount.incrementAndGet());
-            Page<JsonResult> pageX = findPage(query);
+            Page<JsonDocumentResult> pageX = findPage(query);
             if (pageX.getPageState().isPresent())  {
                 pageState = pageX.getPageState().get();
             } else {
@@ -602,7 +1004,7 @@ public class CollectionClient {
      * @return
      *      page of results
      */
-    public Page<JsonResult> findPage(SelectQuery query) {
+    public Page<JsonDocumentResult> findPage(SelectQuery query) {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         ApiData apiData = execute("find", query).getData();
         int pageSize = (query != null && query.getLimit().isPresent()) ? query.getLimit().get() : SelectQuery.PAGING_SIZE_MAX;
@@ -617,7 +1019,7 @@ public class CollectionClient {
      * @return
      *      result if exists
      */
-    public Page<JsonResult> findPage(String query) {
+    public Page<JsonDocumentResult> findPage(String query) {
         log.debug("Query in {}/{}", green(namespace), green(collection));
         ApiData apiData = execute("find", query).getData();
         return new Page<>(20, apiData.getNextPageState(), apiData.getDocuments());
@@ -637,7 +1039,7 @@ public class CollectionClient {
      * @return
      *      result page
      */
-    public Stream<JsonResult> findVector(float[] vector, Integer limit) {
+    public Stream<JsonDocumentResult> findVector(float[] vector, Integer limit) {
         return findVector(vector, null, limit);
     }
 
@@ -653,7 +1055,7 @@ public class CollectionClient {
      * @return
      *      result page
      */
-    public Stream<JsonResult> findVector(float[] vector, Filter filter, Integer limit) {
+    public Stream<JsonDocumentResult> findVector(float[] vector, Filter filter, Integer limit) {
         return find(SelectQuery.builder()
                 .withFilter(filter)
                 .orderByAnn(vector)
@@ -671,7 +1073,7 @@ public class CollectionClient {
      * @return
      *      page page of results
      */
-    public Page<JsonResult> findVectorPage(SelectQuery query) {
+    public Page<JsonDocumentResult> findVectorPage(SelectQuery query) {
         return findPage(query);
     }
 
@@ -689,7 +1091,7 @@ public class CollectionClient {
      * @return
      *      result page
      */
-    public Page<JsonResult> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState) {
+    public Page<JsonDocumentResult> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState) {
         return findVectorPage(SelectQuery.builder()
                 .withFilter(filter)
                 .orderByAnn(vector)
@@ -717,7 +1119,7 @@ public class CollectionClient {
      * @return
      *      page of results
      */
-    public <DOC> Page<Result<DOC>> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState, Class<DOC> clazz) {
+    public <DOC> Page<DocumentResult<DOC>> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState, Class<DOC> clazz) {
         return mapPageJsonResultAsPageResult(findVectorPage(vector, filter, limit, pagingState), clazz);
     }
 
@@ -739,7 +1141,7 @@ public class CollectionClient {
      * @return
      *      page of results
      */
-    public <DOC> Page<Result<DOC>> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState, ResultMapper<DOC> mapper) {
+    public <DOC> Page<DocumentResult<DOC>> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState, DocumentResultMapper<DOC> mapper) {
         return mapPageJsonResultAsPageResult(findVectorPage(vector, filter, limit, pagingState), mapper);
     }
 
@@ -755,8 +1157,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public  <DOC> Stream<Result<DOC>> find(SelectQuery query, Class<DOC> clazz) {
-        return find(query).map(r -> new Result<>(r, clazz));
+    public  <DOC> Stream<DocumentResult<DOC>> find(SelectQuery query, Class<DOC> clazz) {
+        return find(query).map(r -> new DocumentResult<>(r, clazz));
     }
 
     /**
@@ -771,7 +1173,7 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public  <DOC> Stream<Result<DOC>> find(SelectQuery pageQuery, ResultMapper<DOC> mapper) {
+    public  <DOC> Stream<DocumentResult<DOC>> find(SelectQuery pageQuery, DocumentResultMapper<DOC> mapper) {
         return find(pageQuery).map(mapper::map);
     }
 
@@ -781,7 +1183,7 @@ public class CollectionClient {
      * @return
      *      all items
      */
-    public Stream<JsonResult> findAll() {
+    public Stream<JsonDocumentResult> findAll() {
         return find(SelectQuery.builder().build());
     }
 
@@ -795,8 +1197,8 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Stream<Result<DOC>> findAll(Class<DOC> clazz) {
-        return findAll().map(r -> new Result<>(r, clazz));
+    public <DOC> Stream<DocumentResult<DOC>> findAll(Class<DOC> clazz) {
+        return findAll().map(r -> new DocumentResult<>(r, clazz));
     }
 
     /**
@@ -809,7 +1211,7 @@ public class CollectionClient {
      * @param <DOC>
      *       class to be marshalled
      */
-    public <DOC> Stream<Result<DOC>> findAll(ResultMapper<DOC> mapper) {
+    public <DOC> Stream<DocumentResult<DOC>> findAll(DocumentResultMapper<DOC> mapper) {
         return findAll().map(mapper::map);
     }
 
@@ -822,10 +1224,10 @@ public class CollectionClient {
      *      class for target pojo
      * @return
      *      page of results
-     * @param <T>
+     * @param <DOC>
      *     class to be marshalled
      */
-    public <T> Page<Result<T>> findPage(SelectQuery query, Class<T> clazz) {
+    public <DOC> Page<DocumentResult<DOC>> findPage(SelectQuery query, Class<DOC> clazz) {
         return mapPageJsonResultAsPageResult(findPage(query), clazz);
     }
 
@@ -838,10 +1240,10 @@ public class CollectionClient {
      *      class for target pojo
      * @return
      *      page of results
-     * @param <T>
+     * @param <DOC>
      *     class to be marshalled
      */
-    public <T> Page<Result<T>> findPage(String query, Class<T> clazz) {
+    public <DOC> Page<DocumentResult<DOC>> findPage(String query, Class<DOC> clazz) {
         return mapPageJsonResultAsPageResult(findPage(query), clazz);
     }
 
@@ -857,7 +1259,7 @@ public class CollectionClient {
      * @param <DOC>
      *     class to be marshalled
      */
-    public <DOC> Page<Result<DOC>> findPage(SelectQuery query, ResultMapper<DOC> mapper) {
+    public <DOC > Page<DocumentResult<DOC>> findPage(SelectQuery query, DocumentResultMapper<DOC> mapper) {
         return mapPageJsonResultAsPageResult(findPage(query), mapper);
     }
 
@@ -873,7 +1275,7 @@ public class CollectionClient {
      * @param <DOC>
      *     class to be marshalled
      */
-    public <DOC> Page<Result<DOC>> findPage(String query, ResultMapper<DOC> mapper) {
+    public <DOC> Page<DocumentResult<DOC>> findPage(String query, DocumentResultMapper<DOC> mapper) {
         return mapPageJsonResultAsPageResult(findPage(query), mapper);
     }
 
@@ -889,13 +1291,13 @@ public class CollectionClient {
      * @return
      *      new page
      */
-    public <DOC> Page<Result<DOC>> mapPageJsonResultAsPageResult(Page<JsonResult> pageJson, Class<DOC> clazz) {
+    public <DOC> Page<DocumentResult<DOC>> mapPageJsonResultAsPageResult(Page<JsonDocumentResult> pageJson, Class<DOC> clazz) {
         return new Page<>(
                 pageJson.getPageSize(),
                 pageJson.getPageState().orElse(null),
                 pageJson.getResults()
                         .stream()
-                        .map(r -> new Result<>(r, clazz))
+                        .map(r -> new DocumentResult<>(r, clazz))
                         .collect(Collectors.toList()));
     }
 
@@ -911,7 +1313,7 @@ public class CollectionClient {
      * @return
      *      new page
      */
-    public <DOC> Page<Result<DOC>> mapPageJsonResultAsPageResult(Page<JsonResult> pageJson, ResultMapper<DOC> mapper) {
+    public <DOC> Page<DocumentResult<DOC>> mapPageJsonResultAsPageResult(Page<JsonDocumentResult> pageJson, DocumentResultMapper<DOC> mapper) {
         return new Page<>(
                 pageJson.getPageSize(),
                 pageJson.getPageState().orElse(null),
@@ -1010,7 +1412,7 @@ public class CollectionClient {
      * @param query
      *      query to find the record
      * @return
-     *      result of the update
+     *     result of the update
      */
     public JsonResultUpdate findOneAndReplace(UpdateQuery query) {
         return updateQuery("findOneAndReplace", query);
@@ -1114,6 +1516,38 @@ public class CollectionClient {
         return updateQuery("updateMany", query).getUpdateStatus();
     }
 
+    // --------------------------
+    // ---  Utilities        ----
+    // --------------------------
+
+    /**
+     * Mapper for Json document list input.
+     *
+     * @param documents
+     *      json document list
+     * @return
+     *      Document of Map
+     */
+    private List<Document<Map<String, Object>>> mapJsonDocumentList(List<JsonDocument> documents) {
+        return documents.stream()
+                .map(d -> (Document<Map<String, Object>>) d)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Mapper for ouput Json Document.
+     *
+     * @param list
+     *      document list
+     * @return
+     *      json document mutation
+     */
+    private List<JsonDocumentMutationResult> mapJsonDocumentMutationResultList(List<DocumentMutationResult<Map<String, Object>>> list) {
+        return list.stream()
+                .map(DocumentMutationResult::asJsonDocumentMutationResult)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Syntax sugar.
      *
@@ -1123,7 +1557,7 @@ public class CollectionClient {
      *      payload returned
      */
     private ApiResponse execute(String operation, Object payload) {
-        return executeOperation(stargateHttpClient, collectionResource, operation, payload);
+       return executeOperation(stargateHttpClient, collectionResource, operation, payload);
     }
 
 }

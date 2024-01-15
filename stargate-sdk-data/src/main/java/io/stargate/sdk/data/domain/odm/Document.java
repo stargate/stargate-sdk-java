@@ -1,8 +1,16 @@
 package io.stargate.sdk.data.domain.odm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.stargate.sdk.data.domain.JsonDocument;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import javax.print.Doc;
 
 /**
  * Working with entities.
@@ -10,91 +18,48 @@ import lombok.Data;
  * @param <T>
  *     type of bean in use
  */
-@Data
+@JsonSerialize(using = DocumentSerializer.class)
 public class Document<T> {
 
     /**
      * Row id for a vector
      */
+    @JsonProperty("_id")
+    @Getter @Setter
     protected String id;
-
-    /**
-     * Metadata for a vector
-     */
-    protected T data;
 
     /**
      * Embeddings
      */
+    @JsonProperty("$vector")
+    @Getter @Setter
     protected float[] vector;
 
+    /**
+     * Metadata for a vector
+     */
+    @Getter @Setter
+    // @JsonUnwrapped -> Not working, moving to custom serializer
+    protected T data;
 
     /**
-     * Default constructor.
+     * Default Document
      */
-    public Document() {}
-
-    /**
-     * Default document.
-     *
-     * @param record
-     *      current json record
-     * @param clazz
-     *      class
-     */
-    public Document(JsonDocument record, Class<T> clazz) {
-        this.id         = record.getId();
-        this.data       = JsonUtils.convertValue(record.getData(), clazz);
-        this.vector     = record.getVector();
+    public Document() {
     }
 
     /**
-     * Default document.
-     *
-     * @param bean
-     *      current payload
-     */
-    public Document(T bean) {
-        this(null, bean, null);
-    }
-
-    /**
-     * Default document.
-     *
+     * Full Constructor
      * @param id
      *      identifier
-     * @param bean
-     *      current payload
-     */
-    public Document(String id, T bean) {
-        this(id, bean, null);
-    }
-
-    /**
-     * Default document.
-     *
-     * @param bean
-     *      current payload
+     * @param data
+     *      data
      * @param vector
-     *      vector embeddings
+     *      vector
      */
-    public Document(T bean, float[] vector) {
-        this(null, bean, vector);
-    }
-
-    /**
-     * Default document.
-     *
-     * @param id
-     *      identifier
-     * @param bean
-     *      current payload
-     * @param vector
-     *      vector embeddings
-     */
-    public Document(String id, T bean, float[] vector) {
-        this.id     = id;
-        this.data   = bean;
+    public Document(String id, T data, float[] vector) {
+        this.id = id;
+        this.data = data;
         this.vector = vector;
     }
 
@@ -140,26 +105,18 @@ public class Document<T> {
     /**
      * Static initialization.
      *
-     * @param result
-     *      json result
-     * @param clazz
-     *      current class
+     * @param id
+     *      identifier
+     * @param vector
+     *      vector
+     * @param data
+     *      payload
      * @return
      *      document
      * @param <R>
      *      typed object
      */
-    public static <R> Document<R> of(JsonDocument result, Class<R> clazz) {
-        return new Document<R>(result, clazz);
-    }
-
-    /**
-     * Mapping with internal layer.
-     *
-     * @return
-     *      json record
-     */
-    public JsonDocument toJsonDocument() {
-        return new JsonDocument(id, data, vector);
+    public static <R> Document<R> of(String id, float[] vector, R data) {
+        return new Document<R>().id(id).vector(vector).data(data);
     }
 }

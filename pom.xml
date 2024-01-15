@@ -28,8 +28,8 @@
 		<logback.version>1.4.14</logback.version>
 
 		<!-- grpc -->
-		<stargate-grpc.version>2.1.0-BETA-6</stargate-grpc.version>
-		<grpc-netty.version>1.60.1</grpc-netty.version>
+		<stargate-grpc.version>2.1.0-BETA-7</stargate-grpc.version>
+		<grpc-netty.version>1.61.0</grpc-netty.version>
 
 		<httpclient.version>5.3</httpclient.version>
 		<retry4j.version>0.15.0</retry4j.version>
