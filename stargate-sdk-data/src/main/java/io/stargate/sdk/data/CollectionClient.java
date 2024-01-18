@@ -3,18 +3,18 @@ package io.stargate.sdk.data;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.domain.ApiData;
 import io.stargate.sdk.data.domain.ApiError;
-import io.stargate.sdk.data.domain.odm.DocumentResult;
-import io.stargate.sdk.data.domain.odm.DocumentResultMapper;
-import io.stargate.sdk.data.domain.query.DeleteQuery;
-import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.ApiResponse;
 import io.stargate.sdk.data.domain.JsonDocument;
 import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.JsonResultUpdate;
-import io.stargate.sdk.data.domain.query.SelectQuery;
-import io.stargate.sdk.data.domain.query.UpdateQuery;
 import io.stargate.sdk.data.domain.UpdateStatus;
 import io.stargate.sdk.data.domain.odm.Document;
+import io.stargate.sdk.data.domain.odm.DocumentResult;
+import io.stargate.sdk.data.domain.odm.DocumentResultMapper;
+import io.stargate.sdk.data.domain.query.DeleteQuery;
+import io.stargate.sdk.data.domain.query.Filter;
+import io.stargate.sdk.data.domain.query.SelectQuery;
+import io.stargate.sdk.data.domain.query.UpdateQuery;
 import io.stargate.sdk.data.exception.DataApiDocumentAlreadyExistException;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
@@ -22,11 +22,11 @@ import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +65,10 @@ public class CollectionClient {
     /** Collection identifier. */
     @Getter
     private final String collection;
+
+    /** Flag to enforce the order of insertion. */
+    @Getter @Setter
+    private boolean insertManyOrdered = false;
 
     /**
      * Resource for collection: /v1/{namespace}/{collection}
@@ -197,7 +201,7 @@ public class CollectionClient {
      */
     public final JsonDocumentMutationResult upsertOne(String json) {
         Assert.hasLength(json, "Json input");
-        return (JsonDocumentMutationResult) upsertOne(new JsonDocument(json));
+        return upsertOne(new JsonDocument(json));
     }
 
     /**
@@ -302,18 +306,7 @@ public class CollectionClient {
      */
     @SuppressWarnings("unchecked")
     public final List<JsonDocumentMutationResult> insertMany(String json) {
-        // Map as a list of map
-        List<Map<String, Object>> docs = JsonUtils.unmarshallBeanForDataApi(json, List.class);
-        // Marshall as a list of Document
-        List<Document<Map<String, Object>>> jsonDocs = docs.stream().map(d -> {
-            Document<Map<String, Object>> doc = new Document<>();
-            doc.data(d);
-            return doc;
-        }).collect(Collectors.toList());
-        // Call insertMany
-        return insertMany(jsonDocs).stream()
-                .map(DocumentMutationResult::asJsonDocumentMutationResult)
-                .collect(Collectors.toList());
+        return insertManyJsonDocuments(mapJsonStringToJsonDocumentList(json));
     }
 
     /**
@@ -329,34 +322,6 @@ public class CollectionClient {
     }
 
     /**
-     * Insert Documents: Default is non ordered and no replace.
-     *
-     * @param documents
-     *      list of documents
-     * @param <DOC>
-     *     represent the pojo, payload of document
-     * @return
-     *      list of ids
-     */
-    public final <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents) {
-        return insertMany(documents, false, false);
-    }
-
-    /**
-     * Try Insert Many with a String Asynchronously.
-     *
-     * @param documents
-     *      list of documents
-     * @param <DOC>
-     *     represent the pojo, payload of document
-     * @return
-     *      list of status
-     */
-    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyASync(List<Document<DOC>> documents) {
-        return CompletableFuture.supplyAsync(() -> insertMany(documents));
-    }
-
-    /**
      * Low level insertion of multiple records
      *
      * @param documents
@@ -365,7 +330,6 @@ public class CollectionClient {
      *      list of ids
      */
     public final List<JsonDocumentMutationResult> insertManyJsonDocuments(List<JsonDocument> documents) {
-        // Mapping inputs and outputs
         return mapJsonDocumentMutationResultList(insertMany(mapJsonDocumentList(documents)));
     }
 
@@ -382,6 +346,114 @@ public class CollectionClient {
     }
 
     /**
+     * Insert Documents: Default is non ordered and no replace.
+     *
+     * @param documents
+     *      list of documents
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of ids
+     */
+    public final <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents) {
+        return insertMany(documents, false);
+    }
+
+    /**
+     * Try Insert Many with a String Asynchronously.
+     *
+     * @param documents
+     *      list of documents
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of status
+     */
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyASync(List<Document<DOC>> documents) {
+        return CompletableFuture.supplyAsync(() -> insertMany(documents));
+    }
+
+    // ------------------------------
+    // ---      Upsert Many      ----
+    // ------------------------------
+
+    /**
+     * Upsert of up to 20 documents, expressed as an array within json String.
+     *
+     * @param json
+     *      an array of documents within json String.
+     * @return
+     *      insertion status for each document (in order of input).
+     */
+    public final List<JsonDocumentMutationResult> upsertMany(String json) {
+        return upsertManyJsonDocuments(mapJsonStringToJsonDocumentList(json));
+    }
+
+    /**
+     * Upsert of up to 20 documents Asynchronously, expressed as an array within json String.
+     *
+     * @param json
+     *      an array of documents within json String.
+     * @return
+     *      insertion status for each document (in order of input).
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> upsertManyASync(String json) {
+        return CompletableFuture.supplyAsync(() -> upsertMany(json));
+    }
+
+    /**
+     * Upsert of up to 20 documents, expressed as key/value documents.
+     *
+     * @param documents
+     *      list of documents
+     * @return
+     *      list of ids
+     */
+    public final List<JsonDocumentMutationResult> upsertManyJsonDocuments(List<JsonDocument> documents) {
+        return mapJsonDocumentMutationResultList(upsertMany(mapJsonDocumentList(documents)));
+    }
+
+    /**
+     * Upsert of up to 20 documents, expressed as key/value documents.
+     *
+     * @param documents
+     *      list of documents
+     * @return
+     *      list of ids
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> upsertManyJsonDocumentsASync(List<JsonDocument> documents) {
+        return  CompletableFuture.supplyAsync(() -> upsertManyJsonDocuments(documents));
+    }
+
+    /**
+     * Upsert any items in the collection.
+     *
+     * @param documents
+     *      current collection list
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of statuses
+     */
+    public final <DOC> List<DocumentMutationResult<DOC>> upsertMany(List<Document<DOC>> documents) {
+        return insertMany(documents, true);
+    }
+
+    /**
+     * Upsert of up to 20 documents, expressed as key/value documents.
+     *
+     * @param documents
+     *      list of documents
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of ids
+     */
+    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyASync(List<Document<DOC>> documents) {
+        return  CompletableFuture.supplyAsync(() -> upsertMany(documents));
+    }
+
+    /**
      * Insert a list of documents with the following constraints:
      * - the list should be smaller than 20 or we get errors
      * - the option 'ordered' is set to false to speed up the process
@@ -389,8 +461,6 @@ public class CollectionClient {
      *
      * @param documents
      *      list of documents
-     * @param ordered
-     *      replace if already exist
      * @param replaceIfExists
      *      if set to true existing documents will be replaced.
      * @param <DOC>
@@ -399,10 +469,10 @@ public class CollectionClient {
      *      list of ids
      */
     @SuppressWarnings("unchecked")
-    public final <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents, boolean ordered, boolean replaceIfExists) {
+    private <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents, boolean replaceIfExists) {
         if (documents != null && !documents.isEmpty()) {
             log.debug("insert many (size={},ordered={}) into {}/{}", green(String.valueOf(documents.size())),
-                    green(String.valueOf(ordered)), green(namespace), green(collection));
+                    green(String.valueOf(insertManyOrdered)), green(namespace), green(collection));
 
             // Creating Status for output
             Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
@@ -410,7 +480,7 @@ public class CollectionClient {
             // Insert documents synchronously
             ApiResponse apiResponse = execute("insertMany",
                     Map.of("documents", documents, "options",
-                    Map.of("ordered", ordered)));
+                    Map.of("ordered", insertManyOrdered)));
 
             validate(apiResponse);
             if (apiResponse.getStatus() != null) {
@@ -470,79 +540,72 @@ public class CollectionClient {
         return new ArrayList<>();
     }
 
-    /**
-     * Insert a list of documents with the following constraints:
-     * - the list should be smaller than 20 or we get errors
-     * - the option 'ordered' is set to false to speed up the process
-     * - the option 'replace' is set to false, we do not replace documents
-     *
-     * @param documents
-     *      list of documents
-     * @param ordered
-     *      replace if already exist
-     * @param replaceIfExists
-     *      if set to true existing documents will be replaced.
-     * @return
-     *      list of ids
-     */
-    public final List<JsonDocumentMutationResult> insertManyJsonDocuments(List<JsonDocument> documents, boolean ordered, boolean replaceIfExists) {
-        return mapJsonDocumentMutationResultList(insertMany(mapJsonDocumentList(documents), ordered, replaceIfExists));
-    }
-
     // ---------------------------------
-    // ---   Insert Many  Chunked   ----
+    // ---  Insert Many  Chunked   ----
     // ---------------------------------
 
     /**
-     * Insert a list of documents in a distributed manner
+     * Low level insertion of multiple records
      *
-     * @param documents
-     *      list of documents
-     * @param <DOC>
-     *     represent the pojo, payload of document
+     * @param json
+     *      Json String
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
      * @return
      *      list of ids
      */
-    public final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents) {
-        return insertManyChunked(documents, 20, 10);
+    public final List<JsonDocumentMutationResult> insertManyChunked(String json, int chunkSize, int concurrency) {
+        return insertManyJsonDocumentsChunked(mapJsonStringToJsonDocumentList(json), chunkSize, concurrency);
     }
 
     /**
-     * Insert a list of documents in a distributed manner asynchronously.
+     * Low level insertion of multiple records
      *
-     * @param documents
-     *      list of documents.
-     * @param <DOC>
-     *     represent the pojo, payload of documents.
+     * @param json
+     *      Json String
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
      * @return
      *      list of ids
      */
-    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyChunkedASync(List<Document<DOC>> documents) {
-        return CompletableFuture.supplyAsync(() -> insertManyChunked(documents));
+    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyChunkedASync(String json, int chunkSize, int concurrency) {
+        return CompletableFuture.supplyAsync(() -> insertManyChunked(json, chunkSize, concurrency));
     }
 
     /**
-     * Enforce Mapping with JsonDocument
+     * Low level insertion of multiple records
      *
      * @param documents
      *      list of documents
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
      * @return
-     *      json document list
+     *      list of ids
      */
-    public final List<JsonDocumentMutationResult> insertManyChunkedJsonDocuments(List<JsonDocument> documents) {
-        return mapJsonDocumentMutationResultList(insertManyChunked(mapJsonDocumentList(documents)));
+    public final List<JsonDocumentMutationResult> insertManyJsonDocumentsChunked(List<JsonDocument> documents, int chunkSize, int concurrency) {
+        return mapJsonDocumentMutationResultList(insertManyChunked(mapJsonDocumentList(documents), chunkSize, concurrency));
     }
 
     /**
-     * Enforce Mapping with JsonDocument asynchronously
+     * Low level insertion of multiple records
      *
      * @param documents
      *      list of documents
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
      * @return
-     *      json document list
+     *      list of ids
      */
-    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyChunkedJsonDocumentsASync(List<JsonDocument> documents) {
-        return CompletableFuture.supplyAsync(() -> insertManyChunkedJsonDocuments(documents));
+    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyJsonDocumentsChunkedASync(List<JsonDocument> documents, int chunkSize, int concurrency) {
+        return CompletableFuture.supplyAsync(() -> insertManyJsonDocumentsChunked(documents, chunkSize, concurrency));
     }
 
     /**
@@ -581,6 +644,42 @@ public class CollectionClient {
         return CompletableFuture.supplyAsync(() -> insertManyChunked(documents, chunkSize, concurrency));
     }
 
+    // ---------------------------------
+    // ---  Upsert Many  Chunked   ----
+    // ---------------------------------
+
+    /**
+     * Low level insertion of multiple records
+     *
+     * @param json
+     *      Json String
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
+     * @return
+     *      list of ids
+     */
+    public final List<JsonDocumentMutationResult> upsertManyChunked(String json, int chunkSize, int concurrency) {
+        return upsertManyJsonDocumentsChunked(mapJsonStringToJsonDocumentList(json), chunkSize, concurrency);
+    }
+
+    /**
+     * Low level insertion of multiple records
+     *
+     * @param json
+     *      Json String
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
+     * @return
+     *      list of ids
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> upsertManyChunkedASync(String json, int chunkSize, int concurrency) {
+        return CompletableFuture.supplyAsync(() -> upsertManyChunked(json, chunkSize, concurrency));
+    }
+
     /**
      * Low level insertion of multiple records
      *
@@ -589,104 +688,28 @@ public class CollectionClient {
      * @param chunkSize
      *      size of the block
      * @param concurrency
-     *      how many threads to use
-     * @param <DOC>
-     *     represent the pojo, payload of document
+     *      number of blocks in parallel
      * @return
      *      list of ids
      */
-    private final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency, boolean replaceIfExists) {
-        // Validations
-        if (chunkSize < 1 || chunkSize > 20) {
-            throw new IllegalArgumentException("ChunkSize must be between 1 and 20");
-        }
-        if (concurrency < 1 || concurrency > 50) {
-            throw new IllegalArgumentException("Concurrency must be between 1 and 50");
-        }
-
-        // Creating Status for output
-        Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
-
-        ExecutorService executor = Executors.newFixedThreadPool(concurrency);
-        List<Future<List<DocumentMutationResult<DOC>>>> futures = new ArrayList<>();
-        for (int i = 0; i < documents.size(); i += chunkSize) {
-            int start = i;
-            int end = Math.min(i + chunkSize, documents.size());
-            Callable<List<DocumentMutationResult<DOC>>> task = () -> {
-                log.debug("insert block (size={}) {}/{}", end-start, green(namespace), green(collection));
-                return insertMany(documents.subList(start, end), false, replaceIfExists);
-            };
-            futures.add(executor.submit(task));
-        }
-
-        // Wait for all futures to completes
-        for (Future<List<DocumentMutationResult<DOC>>> future : futures) {
-            try {
-                future.get().stream().forEach(r -> {
-                    results.computeIfPresent(r.getDocument().getId(), (k, v) -> {
-                        v.setStatus(r.getStatus());
-                        return v;
-                    });
-                });
-            } catch (Exception e) {
-                throw new RuntimeException("Error when process a block", e);
-            }
-        }
-
-        return new ArrayList<>(results.values());
+    public final List<JsonDocumentMutationResult> upsertManyJsonDocumentsChunked(List<JsonDocument> documents, int chunkSize, int concurrency) {
+        return mapJsonDocumentMutationResultList(insertManyChunked(mapJsonDocumentList(documents), chunkSize, concurrency));
     }
 
     /**
-     * Initialization of the collection of document, filling uids
-     * @param documents
-     *      document list
-     * @return
-     *      map of documents
-     * @param <DOC>
-     *     represent the pojo, payload of document
-     */
-    @NotNull
-    private static <DOC> Map<String, DocumentMutationResult<DOC>> initResultMap(List<Document<DOC>> documents) {
-        Map<String, DocumentMutationResult<DOC>> results = new LinkedHashMap<>(documents.size());
-        documents.forEach(d -> {
-            if (d.getId() == null) {
-                // Enforce the UUID at client side to retrieve it in an easier way
-                d.setId(UUID.randomUUID().toString());
-            }
-            results.put(d.getId(), new DocumentMutationResult<>(d));
-        });
-        return results;
-    }
-
-    // ------------------------------
-    // ---      Upsert Many      ----
-    // ------------------------------
-
-    /**
-     * Upsert any items in the collection.
-     * @param documents
-     *      current collection list
-     * @return
-     *      list of statuses
-     * @param <DOC>
-     *     represent the pojo, payload of document
-     */
-    public final <DOC> List<DocumentMutationResult<DOC>> upsertMany(List<Document<DOC>> documents) {
-        return insertMany(documents, false, true);
-    }
-
-    /**
-     * Upsert any items in the collection asynchronously.
+     * Low level insertion of multiple records
      *
      * @param documents
-     *      current collection list
+     *      list of documents
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      number of blocks in parallel
      * @return
-     *      list of statuses
-     * @param <DOC>
-     *     represent the pojo, payload of document
+     *      list of ids
      */
-    public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyASync(List<Document<DOC>> documents) {
-        return CompletableFuture.supplyAsync(() -> upsertMany(documents));
+    public final CompletableFuture<List<JsonDocumentMutationResult>> upsertManyJsonDocumentsChunkedASync(List<JsonDocument> documents, int chunkSize, int concurrency) {
+        return CompletableFuture.supplyAsync(() -> upsertManyJsonDocumentsChunked(documents, chunkSize, concurrency));
     }
 
     /**
@@ -723,6 +746,61 @@ public class CollectionClient {
      */
     public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyChunkedASync(List<Document<DOC>> documents, int chunkSize, int concurrency) {
         return CompletableFuture.supplyAsync(() -> upsertManyChunked(documents, chunkSize, concurrency));
+    }
+
+    /**
+     * Low level insertion of multiple records
+     *
+     * @param documents
+     *      list of documents
+     * @param chunkSize
+     *      size of the block
+     * @param concurrency
+     *      how many threads to use
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     * @return
+     *      list of ids
+     */
+    private final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency, boolean replaceIfExists) {
+        // Validations
+        if (chunkSize < 1 || chunkSize > 20) {
+            throw new IllegalArgumentException("ChunkSize must be between 1 and 20");
+        }
+        if (concurrency < 1 || concurrency > 50) {
+            throw new IllegalArgumentException("Concurrency must be between 1 and 50");
+        }
+
+        // Creating Status for output
+        Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
+
+        ExecutorService executor = Executors.newFixedThreadPool(concurrency);
+        List<Future<List<DocumentMutationResult<DOC>>>> futures = new ArrayList<>();
+        for (int i = 0; i < documents.size(); i += chunkSize) {
+            int start = i;
+            int end = Math.min(i + chunkSize, documents.size());
+            Callable<List<DocumentMutationResult<DOC>>> task = () -> {
+                log.debug("insert block (size={}) {}/{}", end-start, green(namespace), green(collection));
+                return insertMany(documents.subList(start, end), replaceIfExists);
+            };
+            futures.add(executor.submit(task));
+        }
+
+        // Wait for all futures to completes
+        for (Future<List<DocumentMutationResult<DOC>>> future : futures) {
+            try {
+                future.get().stream().forEach(r -> {
+                    results.computeIfPresent(r.getDocument().getId(), (k, v) -> {
+                        v.setStatus(r.getStatus());
+                        return v;
+                    });
+                });
+            } catch (Exception e) {
+                throw new RuntimeException("Error when process a block", e);
+            }
+        }
+
+        return new ArrayList<>(results.values());
     }
 
     // --------------------------
@@ -1521,6 +1599,28 @@ public class CollectionClient {
     // --------------------------
 
     /**
+     * Initialization of the collection of document, filling uids
+     * @param documents
+     *      document list
+     * @return
+     *      map of documents
+     * @param <DOC>
+     *     represent the pojo, payload of document
+     */
+    @NotNull
+    private static <DOC> Map<String, DocumentMutationResult<DOC>> initResultMap(List<Document<DOC>> documents) {
+        Map<String, DocumentMutationResult<DOC>> results = new LinkedHashMap<>(documents.size());
+        documents.forEach(d -> {
+            if (d.getId() == null) {
+                // Enforce the UUID at client side to retrieve it in an easier way
+                d.setId(UUID.randomUUID().toString());
+            }
+            results.put(d.getId(), new DocumentMutationResult<>(d));
+        });
+        return results;
+    }
+
+    /**
      * Mapper for Json document list input.
      *
      * @param documents
@@ -1546,6 +1646,21 @@ public class CollectionClient {
         return list.stream()
                 .map(DocumentMutationResult::asJsonDocumentMutationResult)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Marshalling a list of document from JSON.
+     *
+     * @param json
+     *      current Json String
+     * @return
+     *      list of documents
+     */
+    @SuppressWarnings("unchecked")
+    private List<JsonDocument> mapJsonStringToJsonDocumentList(String json) {
+        List<Map<String, Object>> kvList = JsonUtils.unmarshallBeanForDataApi(json, List.class);
+        // Marshall as a list of Document
+        return kvList.stream().map(JsonDocument::new).collect(Collectors.toList());
     }
 
     /**

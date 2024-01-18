@@ -98,9 +98,17 @@ public class CollectionRepository<DOC> {
     // ---    Insert All     ----
     // --------------------------
 
-    // --------------------------
-    // ---    Insert All     ----
-    // --------------------------
+    /**
+     * Low level insertion of multiple records, they should not exist, or it will fail.
+     *
+     * @param documents
+     *      list of documents
+     * @return
+     *      list of ids
+     */
+    public final List<DocumentMutationResult<DOC>> insert(List<Document<DOC>> documents) {
+        return collectionClient.insertMany(documents);
+    }
 
     /**
      * Low level insertion of multiple records, they should not exist, or it will fail.
@@ -110,8 +118,8 @@ public class CollectionRepository<DOC> {
      * @return
      *      list of ids
      */
-    public final List<DocumentMutationResult<DOC>> insertAll(List<Document<DOC>> documents) {
-        return insertAllDistributed(documents, 20, 1);
+    public final CompletableFuture<List<DocumentMutationResult<DOC>>> insertASync(List<Document<DOC>> documents) {
+        return  collectionClient.insertManyASync(documents);
     }
 
     /**
@@ -126,10 +134,25 @@ public class CollectionRepository<DOC> {
      * @return
      *      list of ids
      */
-    public final List<DocumentMutationResult<DOC>> insertAllDistributed(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+    public final List<DocumentMutationResult<DOC>> insert(List<Document<DOC>> documents, int chunkSize, int concurrency) {
         return collectionClient.insertManyChunked(documents, chunkSize, concurrency);
     }
 
+    /**
+     * Low level insertion of multiple records, they should not exist, or it will fail.
+     *
+     * @param documents
+     *      list of documents
+     * @param chunkSize
+     *      how many document per chunk
+     * @param concurrency
+     *      how many thread in parallel
+     * @return
+     *      list of ids
+     */
+    public final CompletableFuture<List<DocumentMutationResult<DOC>>> insertASync(List<Document<DOC>> documents, int chunkSize, int concurrency) {
+        return collectionClient.insertManyChunkedASync(documents, chunkSize, concurrency);
+    }
 
     // --------------------------
     // ---  Save / Upsert    ----
@@ -199,7 +222,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      an unique identifier for the document
      */
-    public final List<DocumentMutationResult<DOC>> saveAllDistributed(List<Document<DOC>> documentList, int chunkSize, int concurrency) {
+    public final List<DocumentMutationResult<DOC>> saveAll(List<Document<DOC>> documentList, int chunkSize, int concurrency) {
         return collectionClient.upsertManyChunked(documentList, chunkSize, concurrency);
     }
 
@@ -215,7 +238,7 @@ public class CollectionRepository<DOC> {
      * @return
      *      an unique identifier for the document
      */
-    public final CompletableFuture<List<DocumentMutationResult<DOC>>> saveAllDistributedASync(List<Document<DOC>> documentList, int chunkSize, int concurrency) {
+    public final CompletableFuture<List<DocumentMutationResult<DOC>>> saveAllASync(List<Document<DOC>> documentList, int chunkSize, int concurrency) {
         return collectionClient.upsertManyChunkedASync(documentList, chunkSize, concurrency);
     }
 

@@ -60,6 +60,13 @@ public class JsonDocument extends Document<Map<String, Object>> {
      */
     public JsonDocument(String json) {
         data(json);
+        parseIdAndVector();
+    }
+
+    /**
+     * Export Id and Vector as keys if exists
+     */
+    private void parseIdAndVector() {
         if (data.containsKey("_id")) {
             this.id = (String) data.get("_id");
             data.remove("_id");
@@ -72,6 +79,17 @@ public class JsonDocument extends Document<Map<String, Object>> {
             }
             data.remove("$vector");
         }
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param keyValue
+     *      key value for the Json
+     */
+    public JsonDocument(Map<String, Object> keyValue) {
+        this.data = keyValue;
+        parseIdAndVector();
     }
 
     /**
