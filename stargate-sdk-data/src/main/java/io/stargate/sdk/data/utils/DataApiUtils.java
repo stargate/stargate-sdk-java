@@ -55,6 +55,8 @@ public class DataApiUtils {
         } else if (body instanceof String) {
             stringBody += (String) body;
         } else {
+            log.debug("Body is not null but" + yellow(" {}"), body.getClass().getName());
+            log.debug("Body " + yellow(" {}"), body.toString());
             stringBody += JsonUtils.marshallForDataApi(body);
         }
         stringBody += "}";

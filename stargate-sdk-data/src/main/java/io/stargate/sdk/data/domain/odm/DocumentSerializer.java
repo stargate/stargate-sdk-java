@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import io.stargate.sdk.utils.JsonUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,7 +29,9 @@ public class DocumentSerializer<T> extends JsonSerializer<Document<T>> {
     public void serialize(Document<T> value, JsonGenerator gen, SerializerProvider serializerProvider) throws IOException {
         gen.writeStartObject();
         Map<String, Object> dataMap = null;
-        if (value.getData() instanceof Map) {
+        if (value.getData() == null) {
+            dataMap = new HashMap<>();
+        } else if (value.getData() instanceof Map) {
             dataMap = (Map<String, Object>) value.getData();
         } else {
             dataMap = JsonUtils.convertValueForDataApi(value.getData(), Map.class);
