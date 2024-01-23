@@ -22,7 +22,7 @@ import static io.stargate.sdk.data.utils.DataApiUtils.executeOperation;
 import static io.stargate.sdk.utils.AnsiUtils.green;
 
 /**
- * Client for the JSON Document API.
+ * Client core for Data API (crud for namespaces).
  */
 @Slf4j
 @Getter

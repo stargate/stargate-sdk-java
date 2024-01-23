@@ -1,4 +1,4 @@
 /**
- * Utilities to work with Json Structures
+ * Utilities to build and parse http requests
  */
 package io.stargate.sdk.data.utils;

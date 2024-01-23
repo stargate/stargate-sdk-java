@@ -8,29 +8,28 @@ import lombok.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Payload for json api response.
+ * Represents the Api response.
  */
 @Data
 public class ApiResponse {
 
     /**
-     * Return by everything except find*()
+     * Return by all operations except find*()
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, Object> status;
 
     /**
-     * If an error ocured
+     * List of errors, could be one per inserted items with reason.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<ApiError> errors;
 
     /**
-     * Data retrieved by find*()
+     * Data retrieve with operations find
      */
     private ApiData data;
 
@@ -41,7 +40,7 @@ public class ApiResponse {
     }
 
     /**
-     * Syntax sugar.
+     * Read a value as a stream from the key/value 'status' map.
      *
      * @param key
      *      key to be retrieved
@@ -57,7 +56,7 @@ public class ApiResponse {
     }
 
     /**
-     * Use when attribute in status is an object.
+     * Read a value as a List from the key/value 'status' map.
      *
      * @param key
      *      target get
@@ -68,7 +67,7 @@ public class ApiResponse {
      * @param <T>
      *      type in used
      */
-    public <T> T getStatusKeyAsObject(@NonNull String key, Class<T> targetClass) {
+    public <T> T getStatusKeyAsObject(@NonNull String key, @NonNull Class<T> targetClass) {
         if (status.containsKey(key)) {
             return JsonUtils.convertValue(status.get(key), targetClass);
         }
@@ -76,7 +75,7 @@ public class ApiResponse {
     }
 
     /**
-     * Use when attribute in status is a list.
+     * Read a value as a Specialized class from the key/value 'status' map.
      *
      * @param key
      *      target get
@@ -97,19 +96,7 @@ public class ApiResponse {
     }
 
     /**
-     * Syntax sugar.
-     *
-     * @param key
-     *      key to be retrieved
-     * @return
-     *      list of values
-     */
-    public List<String> getStatusKeyAsList(@NonNull String key) {
-        return getStatusKeyAsStringStream(key).collect(Collectors.toList());
-    }
-
-    /**
-     * Syntax sugar.
+     * Read a value as an Integer from the key/value 'status' map.
      *
      * @param key
      *      key to be retrieved

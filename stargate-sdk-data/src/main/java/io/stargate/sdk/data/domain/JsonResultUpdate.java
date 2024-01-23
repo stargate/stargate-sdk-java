@@ -3,7 +3,7 @@ package io.stargate.sdk.data.domain;
 import lombok.Data;
 
 /**
- * Payload for json Api update.
+ * Represents the payload returned for a specialized update function.
  */
 @Data
 public class JsonResultUpdate {

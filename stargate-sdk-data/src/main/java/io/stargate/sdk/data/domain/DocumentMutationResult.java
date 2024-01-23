@@ -1,6 +1,5 @@
-package io.stargate.sdk.data;
+package io.stargate.sdk.data.domain;
 
-import io.stargate.sdk.data.domain.JsonDocument;
 import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
@@ -9,7 +8,7 @@ import lombok.Setter;
 import java.util.Map;
 
 /**
- * Wrapper to get result from API with schemaless document.
+ * Result per document mutation working a generic Document&lt;T&gt;
  *
  * @param <T>
  *     represents the pojo for returned document

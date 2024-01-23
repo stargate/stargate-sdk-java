@@ -1,20 +1,19 @@
 package io.stargate.sdk.data.utils;
 
 import io.stargate.sdk.data.domain.ApiData;
+import io.stargate.sdk.data.domain.ApiError;
+import io.stargate.sdk.data.domain.ApiResponse;
+import io.stargate.sdk.data.exception.DataApiDocumentAlreadyExistException;
+import io.stargate.sdk.data.exception.DataApiErrorCode;
+import io.stargate.sdk.data.exception.DataApiException;
+import io.stargate.sdk.data.exception.DataApiInvalidArgumentException;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
-import io.stargate.sdk.data.domain.ApiError;
-import io.stargate.sdk.data.domain.ApiResponse;
-import io.stargate.sdk.data.exception.DataApiErrorCode;
-import io.stargate.sdk.data.exception.DataApiException;
-import io.stargate.sdk.data.exception.DataApiDocumentAlreadyExistException;
-import io.stargate.sdk.data.exception.DataApiInvalidArgumentException;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.function.Function;
 
 import static io.stargate.sdk.utils.AnsiUtils.magenta;
@@ -32,12 +31,12 @@ public class DataApiUtils {
     private DataApiUtils() {}
 
     /**
-     * Accessing api.
+     * Wrapper to execute Http POST request.
      *
      * @param stargateHttpClient
      *      http client
      * @param operation
-     *      name of the operation
+     *      operation name
      * @param rootResource
      *      rest resource
      * @param body

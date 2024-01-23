@@ -1,4 +1,4 @@
 /**
- * Main package for client to works with Stargate Data API (collection,vector)
+ * Core Data API Client Classes.
  */
 package io.stargate.sdk.data;

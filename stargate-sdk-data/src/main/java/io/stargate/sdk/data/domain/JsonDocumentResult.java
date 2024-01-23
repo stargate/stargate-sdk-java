@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Json Results.
+ * Represents entity returns for find() queries working with shemaless documents.
  */
 @Getter @Setter
 public class JsonDocumentResult extends DocumentResult<Map<String, Object>> {

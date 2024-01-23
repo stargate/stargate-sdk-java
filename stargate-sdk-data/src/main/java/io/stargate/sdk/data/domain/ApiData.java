@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * Payload for json api response.
+ * Subpart of the payload for json api response holding returned data.
  */
 @Data
 public class ApiData {

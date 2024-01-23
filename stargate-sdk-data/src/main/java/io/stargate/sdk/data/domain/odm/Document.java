@@ -14,7 +14,7 @@ import lombok.Setter;
 import javax.print.Doc;
 
 /**
- * Working with entities.
+ * Unitary entity for a document. Adding `id` and `vector`.
  *
  * @param <T>
  *     type of bean in use
@@ -119,5 +119,16 @@ public class Document<T> {
      */
     public static <R> Document<R> of(String id, float[] vector, R data) {
         return new Document<R>().id(id).vector(vector).data(data);
+    }
+
+    /**
+     * Print the document as a Json String.
+     *
+     * @return
+     *      json string
+     */
+    @Override
+    public String toString() {
+        return JsonUtils.marshallForDataApi(this);
     }
 }

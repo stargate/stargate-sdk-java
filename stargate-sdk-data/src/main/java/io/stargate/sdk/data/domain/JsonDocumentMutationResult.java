@@ -1,11 +1,9 @@
-package io.stargate.sdk.data;
-
-import io.stargate.sdk.data.domain.JsonDocument;
+package io.stargate.sdk.data.domain;
 
 import java.util.Map;
 
 /**
- * Wrapper to get result from API with schemaless document
+ * Result per document working with a schemaless document (JsonDocument or Json String).
  */
 public class JsonDocumentMutationResult extends DocumentMutationResult<Map<String, Object>> {
 

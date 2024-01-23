@@ -4,7 +4,10 @@ import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.domain.ApiData;
 import io.stargate.sdk.data.domain.ApiError;
 import io.stargate.sdk.data.domain.ApiResponse;
+import io.stargate.sdk.data.domain.DocumentMutationResult;
+import io.stargate.sdk.data.domain.DocumentMutationStatus;
 import io.stargate.sdk.data.domain.JsonDocument;
+import io.stargate.sdk.data.domain.JsonDocumentMutationResult;
 import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.JsonResultUpdate;
 import io.stargate.sdk.data.domain.UpdateStatus;
@@ -50,7 +53,7 @@ import static io.stargate.sdk.data.utils.DataApiUtils.validate;
 import static io.stargate.sdk.utils.AnsiUtils.green;
 
 /**
- * Wrapper for collection operations.
+ * Client for a collection (crud for documents).
  */
 @Slf4j
 public class CollectionClient {

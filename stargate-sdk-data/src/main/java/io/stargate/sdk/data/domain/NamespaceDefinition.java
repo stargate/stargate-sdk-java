@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Pogo to create a namspace.
+ * Represents the Namespace (keyspac) definition with its name and metadata.
  */
 @Data
 public class NamespaceDefinition {

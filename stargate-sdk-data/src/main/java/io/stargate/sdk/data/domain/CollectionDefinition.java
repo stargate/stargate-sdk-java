@@ -3,7 +3,7 @@ package io.stargate.sdk.data.domain;
 import lombok.Data;
 
 /**
- * Request to create a collection.
+ * Represents the Collection definition with its name and metadata.
  */
 @Data
 public class CollectionDefinition {

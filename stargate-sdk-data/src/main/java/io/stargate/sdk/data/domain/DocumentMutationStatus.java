@@ -1,7 +1,7 @@
-package io.stargate.sdk.data;
+package io.stargate.sdk.data.domain;
 
 /**
- * Each document will have a STATUS.
+ * Status and document mutation like <code>CREATED</code>, <code>UPDATED</code> or <code>UNCHANGED</code>...
  */
 public enum DocumentMutationStatus {
     /** Document Created. */

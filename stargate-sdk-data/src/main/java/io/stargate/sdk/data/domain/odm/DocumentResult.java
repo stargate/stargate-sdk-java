@@ -10,7 +10,7 @@ import java.util.Map;
 
 
 /**
- * Result class with ODM.
+ * Unitary entity for a return document. It is a document amended with `similarity`.
  *
  * @param <DOC>
  *     pojo in use for ODM
@@ -83,5 +83,4 @@ public class DocumentResult<DOC> extends Document<DOC> {
     public static <R> DocumentResult<R> of(JsonDocumentResult result, Class<R> clazz) {
         return new DocumentResult<>(result, clazz);
     }
-
 }

@@ -40,7 +40,7 @@ import java.util.stream.IntStream;
 
 
 /**
- * Json Api Payload.
+ * Represents a document without schema contraints as a Map&lt;String, Object&gt;.(key/value)
  */
 public class JsonDocument extends Document<Map<String, Object>> {
 
@@ -425,6 +425,5 @@ public class JsonDocument extends Document<Map<String, Object>> {
     public boolean isAttributeExist(String key) {
         return data.containsKey(key);
     }
-
 
 }

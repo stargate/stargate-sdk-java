@@ -19,7 +19,7 @@ import static io.stargate.sdk.data.utils.DataApiUtils.executeOperation;
 import static io.stargate.sdk.utils.AnsiUtils.green;
 
 /**
- * Work with namespace and collections.
+ * Client for a namespace (crud for collections).
  */
 @Getter  @Slf4j
 public class NamespaceClient {

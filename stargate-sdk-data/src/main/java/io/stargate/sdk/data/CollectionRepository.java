@@ -1,6 +1,7 @@
 package io.stargate.sdk.data;
 
 import io.stargate.sdk.core.domain.Page;
+import io.stargate.sdk.data.domain.DocumentMutationResult;
 import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.data.domain.query.DeleteQuery;
@@ -16,10 +17,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Crud repository with Json Api
+ * Client implementing repository pattern for a collection.
  *
  * @param <DOC>
- *     current bean
+ *    java bean representing a document
  */
 @Getter
 public class CollectionRepository<DOC> {

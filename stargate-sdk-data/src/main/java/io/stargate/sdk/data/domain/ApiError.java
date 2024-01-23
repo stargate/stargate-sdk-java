@@ -3,7 +3,7 @@ package io.stargate.sdk.data.domain;
 import lombok.Data;
 
 /**
- * Payload for json Api error.
+ * Subpart of the payload for json api response holding error information.
  */
 @Data
 public class ApiError {
