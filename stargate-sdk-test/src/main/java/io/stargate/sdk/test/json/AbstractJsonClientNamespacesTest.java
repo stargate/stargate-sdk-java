@@ -173,14 +173,14 @@ public class AbstractJsonClientNamespacesTest {
       nsClient.createCollection(CollectionDefinition.builder()
               .name(TEST_COLLECTION_VECTORIZE)
               .vector(14, cosine)
-              .vectorize("openai", "gpt3.5-turbo")
+              //.vectorize("openai", "gpt3.5-turbo")
               .build());
        // Then
        Assertions.assertTrue(nsClient.isCollectionExists(TEST_COLLECTION_VECTORIZE));
        nsClient.createCollection(CollectionDefinition.builder()
                 .name("tmp_vectorize")
                 .vector(14, cosine)
-                .vectorize("openai", "gpt3.5-turbo")
+                //.vectorize("openai", "gpt3.5-turbo")
                 .build());
         //Assertions.assertTrue(nsClient.isCollectionExists("tmp_vectorize"));
     }

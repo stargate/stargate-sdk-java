@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.utils.JsonUtils;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,6 +33,17 @@ public class JsonDocumentResult extends DocumentResult<Map<String, Object>> {
      * Default constructor.
      */
     public JsonDocumentResult() {
+    }
+
+    /**
+     * For a schemaless document you might want to overrride.
+     *
+     * @return
+     *      similarity
+     */
+    @Override
+    public Float getSimilarity() {
+        return (similarity == null) ? getFloat("$similarity") : similarity;
     }
 
     /**

@@ -54,9 +54,10 @@ public class DataApiUtils {
         } else if (body instanceof String) {
             stringBody += (String) body;
         } else {
-            log.debug("Body is not null but" + yellow(" {}"), body.getClass().getName());
-            log.debug("Body " + yellow(" {}"), body.toString());
-            stringBody += JsonUtils.marshallForDataApi(body);
+            String obj = JsonUtils.marshallForDataApi(body);
+            //log.debug("[body(class)]=" + yellow(" {}"), body.getClass());
+            //log.debug("[body(str)]=" + yellow(" {}"), obj);
+            stringBody += obj;
         }
         stringBody += "}";
         log.debug(magenta(operation) + "[request]=" + yellow("{}"), stringBody);
@@ -73,8 +74,9 @@ public class DataApiUtils {
             }
         }
 
-        // If insertedIds is present then it could lead to upsert and we can skip the error block
-        if (jsonRes.getStatus()!= null && !jsonRes.getStatus().containsKey("insertedIds")) {
+        // If insertedIds is present then it could lead to upsert
+        if (jsonRes.getStatus()!= null && !jsonRes.getStatus().containsKey("insertedIds") ||
+           (jsonRes.getStatus()==null && jsonRes.getErrors() != null)) {
             DataApiUtils.validate(jsonRes);
         }
         return jsonRes;

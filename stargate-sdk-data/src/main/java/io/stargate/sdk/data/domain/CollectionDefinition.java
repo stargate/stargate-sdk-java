@@ -1,6 +1,10 @@
 package io.stargate.sdk.data.domain;
 
+import com.sun.jdi.InvalidStackFrameException;
 import lombok.Data;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents the Collection definition with its name and metadata.
@@ -34,18 +38,43 @@ public class CollectionDefinition {
     }
 
     /**
+     * Indexing Options for the collection definition
+     */
+    @Data
+    public static class Indexing {
+
+        /**
+         * If not empty will index everything but those properties.
+         */
+        private List<String> deny;
+
+        /**
+         * If not empty will index just those properties.
+         */
+        private List<String> allow;
+
+    }
+
+    /**
      * Options for the collection.
      */
     @Data
     public static class Options {
+
         /**
          * Vector options.
          */
         private Vector vector;
+
         /**
-         * Vectorize options.
+         * Vectorized options.
          */
-        private Vectorize vectorize;
+        //private Vectorize vectorize;
+
+        /**
+         * Indexing options
+         */
+        private Indexing indexing;
 
         /**
          * Default constructor.
@@ -160,6 +189,52 @@ public class CollectionDefinition {
         /**
          * Builder pattern.
          *
+         * @param properties
+         *      size
+         * @return
+         *    self reference
+         */
+        public Builder indexingDeny(String... properties) {
+            if (properties != null) {
+                if (options == null) {
+                    options = new Options();
+                }
+                if (options.indexing == null) {
+                    options.indexing = new Indexing();
+                }
+                if (options.indexing.allow !=null) {
+                    throw new IllegalStateException("'indexing.deny' and 'indexing.allow' are mutually exclusive");
+                }
+                options.indexing.deny = Arrays.asList(properties);
+            }
+            return this;
+        }
+
+        /**
+         * Builder pattern.
+         *
+         * @param properties
+         *      size
+         * @return
+         *    self reference
+         */
+        public Builder indexingAllow(String... properties) {
+            if (properties != null) {
+                if (options.indexing == null) {
+                    options.indexing = new Indexing();
+                }
+                if (options.indexing.deny !=null) {
+                    throw new IllegalStateException("'indexing.deny' and 'indexing.allow' are mutually exclusive");
+                }
+                options.indexing.allow = Arrays.asList(properties);
+            }
+            return this;
+        }
+
+
+        /**
+         * Builder pattern.
+         *
          * @param dimension
          *      dimension
          * @param function
@@ -182,12 +257,12 @@ public class CollectionDefinition {
          *      name
          * @return
          *    self reference
-         */
+         *
         public Builder vectorize(String service, String modelName) {
             llmProvider(service);
             llmModel(modelName);
             return this;
-        }
+        }*/
 
         /**
          * Builder pattern.
@@ -215,7 +290,7 @@ public class CollectionDefinition {
          *      service
          * @return
          *    self reference
-         */
+         *
         public Builder llmProvider(String service) {
             if (options == null) {
                 options = new Options();
@@ -234,7 +309,7 @@ public class CollectionDefinition {
          *      modelName
          * @return
          *    self reference
-         */
+         *
         public Builder llmModel(String modelName) {
             if (options.vectorize == null) {
                 options.vectorize = new Options.Vectorize();
@@ -244,7 +319,7 @@ public class CollectionDefinition {
             }
             options.vectorize.options.modelName = modelName;
             return this;
-        }
+        }*/
 
         /**
          * Build the output.
@@ -254,8 +329,8 @@ public class CollectionDefinition {
          */
         public CollectionDefinition build() {
             CollectionDefinition req = new CollectionDefinition();
-            req.name = this.name;
-            req.options = this.options;
+            req.name     = this.name;
+            req.options  = this.options;
             return req;
         }
 

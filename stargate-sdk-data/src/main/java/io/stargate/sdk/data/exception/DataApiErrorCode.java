@@ -24,6 +24,7 @@ public enum DataApiErrorCode {
             "The replace document and document resolved using filter have different _id"),
     /** error. */
     FILTER_UNRESOLVABLE("Unable to resolve the filter"),
+    UNINDEXED_FILTER_PATH("Unindexed filter path."),
     /** error. */
     FILTER_MULTIPLE_ID_FILTER(
             "Should only have one _id filter, document id cannot be restricted by more than one relation if it includes an Equal"),

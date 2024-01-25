@@ -1058,15 +1058,11 @@ public class CollectionClient {
         do {
             log.debug("Fetching page " + pageCount.incrementAndGet());
             Page<JsonDocumentResult> pageX = findPage(query);
-            if (pageX.getPageState().isPresent())  {
-                pageState = pageX.getPageState().get();
-            } else {
-                pageState = null;
-            }
-            // We have enough documents
+            pageState = pageX.getPageState().orElse(null);
+
+            // We do not need all items of this page as limit is exceed
             if (query.getLimit().isPresent() &&
                     documents.size() + pageX.getResults().size() > query.getLimit().get()) {
-
                 documents.addAll(pageX.getResults().subList(0, query.getLimit().get() - documents.size()));
                 break;
             }
