@@ -55,7 +55,7 @@ public class DeleteQuery {
      *      query
      */
     public static DeleteQuery deleteById(@NonNull String id) {
-        return DeleteQuery.builder().where("_id").isEqualsTo(id).build();
+        return DeleteQuery.builder().filter(Filter.findById(id)).build();
     }
 
     /**

@@ -1,8 +1,7 @@
 package io.stargate.sdk.data.domain.query;
 
 import io.stargate.sdk.http.domain.FilterKeyword;
-import io.stargate.sdk.utils.Assert;
-import io.stargate.sdk.utils.JsonUtils;
+import io.stargate.sdk.http.domain.FilterOperator;
 import lombok.NonNull;
 
 import java.util.HashMap;
@@ -202,8 +201,7 @@ public class SelectQueryBuilder {
      * @return
      *      reference to self
      */
-    @SuppressWarnings("unchecked")
-    public SelectQueryBuilder withFilter(Filter pFilter) {
+    public SelectQueryBuilder filter(Filter pFilter) {
         if (pFilter == null) return this;
         if (filter == null) {
             filter = new HashMap<>();
@@ -214,34 +212,17 @@ public class SelectQueryBuilder {
 
     /**
      * Full filter as a json string.
-     * @param jsonFilter
-     *      filter
+     * @param fieldName
+     *      name of the filter
+     * @param op
+     *      operator
+     * @param value
+     *      simple filter
      * @return
      *      reference to self
      */
-    @SuppressWarnings("unchecked")
-    public SelectQueryBuilder withJsonFilter(String jsonFilter) {
-        if (jsonFilter == null) return this;
-        this.filter = JsonUtils.unmarshallBean(jsonFilter, Map.class);
-        return this;
-    }
-
-    /**
-     * Work with arguments.
-     *
-     * @param fieldName
-     *      current field name.
-     * @return
-     *      builder for the filter
-     */
-    public SelectQueryFilterBuilder where(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (filter != null) {
-            throw new IllegalArgumentException("Invalid query please use and() " +
-                    "as a where clause has been provided");
-        }
-        filter = new HashMap<>();
-        return new SelectQueryFilterBuilder(this, fieldName);
+    public SelectQueryBuilder where(String fieldName, FilterOperator op, Object value) {
+        return filter(new Filter(fieldName, op, value));
     }
 
     // -------------------------------

@@ -1,7 +1,7 @@
 package io.stargate.sdk.data.domain.query;
 
 import io.stargate.sdk.http.domain.FilterKeyword;
-import io.stargate.sdk.utils.Assert;
+import io.stargate.sdk.http.domain.FilterOperator;
 import io.stargate.sdk.utils.JsonUtils;
 
 import java.util.HashMap;
@@ -87,44 +87,41 @@ public class DeleteQueryBuilder {
      *      reference to self
      */
     @SuppressWarnings("unchecked")
-    public DeleteQueryBuilder withJsonFilter(String jsonFilter) {
+    public DeleteQueryBuilder filter(String jsonFilter) {
         this.filter = JsonUtils.unmarshallBean(jsonFilter, Map.class);
         return this;
     }
 
     /**
-     * Work with arguments.
+     * Full filter as a filter object
      *
-     * @param fieldName
-     *      current field name.
+     * @param pFilter
+     *      filter
      * @return
-     *      builder for the filter
+     *      reference to self
      */
-    public DeleteQueryFilterBuilder where(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (filter != null) {
-            throw new IllegalArgumentException("Invalid query please use and() " +
-                    "as a where clause has been provided");
+    public DeleteQueryBuilder filter(Filter pFilter) {
+        if (pFilter == null) return this;
+        if (filter == null) {
+            filter = new HashMap<>();
         }
-        filter = new HashMap<>();
-        return new DeleteQueryFilterBuilder(this, fieldName);
+        filter.putAll(pFilter.filter);
+        return this;
     }
 
     /**
-     * Only return those fields if provided.
-     *
+     * Full filter as a json string.
      * @param fieldName
-     *          field name
-     * @return SearchDocumentWhere
-     *          current builder
+     *      name of the filter
+     * @param op
+     *      operator
+     * @param value
+     *      simple filter
+     * @return
+     *      reference to self
      */
-    public DeleteQueryFilterBuilder andWhere(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (filter == null || filter.isEmpty()) {
-            throw new IllegalArgumentException("Invalid query please use where() " +
-                    "as a where clause has been provided");
-        }
-        return new DeleteQueryFilterBuilder(this, fieldName);
+    public DeleteQueryBuilder where(String fieldName, FilterOperator op, Object value) {
+        return filter(new Filter(fieldName, op, value));
     }
 
     // -------------------------------

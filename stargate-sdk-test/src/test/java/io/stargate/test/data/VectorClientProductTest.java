@@ -2,18 +2,18 @@ package io.stargate.test.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.data.DataApiClient;
 import io.stargate.sdk.data.CollectionClient;
 import io.stargate.sdk.data.CollectionRepository;
-import io.stargate.sdk.data.domain.DocumentMutationResult;
+import io.stargate.sdk.data.DataApiClient;
 import io.stargate.sdk.data.domain.CollectionDefinition;
-import io.stargate.sdk.data.domain.query.Filter;
+import io.stargate.sdk.data.domain.DocumentMutationResult;
 import io.stargate.sdk.data.domain.JsonDocument;
 import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.NamespaceDefinition;
-import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.data.domain.odm.DocumentResult;
+import io.stargate.sdk.data.domain.query.Filter;
+import io.stargate.sdk.data.domain.query.SelectQuery;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -187,7 +187,7 @@ class VectorClientProductTest {
     public void shouldMetaDataFiltering() {
             Page<JsonDocumentResult> page =  myCollection.findPage(SelectQuery.builder()
                     .includeSimilarity()
-                    .where("product_price").isEqualsTo(9.99)
+                    .filter(new Filter().where("product_price").isEqualsTo(9.99))
                     .orderByAnn(new float[]{1f, 1f, 1f, 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f})
                     .withLimit(2)
                     .build());

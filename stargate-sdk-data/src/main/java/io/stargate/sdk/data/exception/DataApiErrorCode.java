@@ -24,6 +24,7 @@ public enum DataApiErrorCode {
             "The replace document and document resolved using filter have different _id"),
     /** error. */
     FILTER_UNRESOLVABLE("Unable to resolve the filter"),
+    /** error. */
     UNINDEXED_FILTER_PATH("Unindexed filter path."),
     /** error. */
     FILTER_MULTIPLE_ID_FILTER(
@@ -64,66 +65,47 @@ public enum DataApiErrorCode {
     INVALID_FILTER_EXPRESSION("Invalid filter expression"),
     /** error. */
     INVALID_COLLECTION_NAME("Invalid collection name "),
-
     /** error. */
     INVALID_JSONAPI_COLLECTION_SCHEMA("Not a valid json api collection schema: "),
-
     /** error. */
     TOO_MANY_COLLECTIONS("Too many collections"),
-
     /** error. */
     UNSUPPORTED_FILTER_DATA_TYPE("Unsupported filter data type"),
-
     /** error. */
     UNSUPPORTED_FILTER_OPERATION("Unsupported filter operator"),
-
     /** error. */
     INVALID_SORT_CLAUSE_PATH("Invalid sort clause path"),
-
     /** error. */
     INVALID_SORT_CLAUSE_VALUE(
             "Sort ordering value can only be `1` for ascending or `-1` for descending."),
 
     /** error. */
     INVALID_USAGE_OF_VECTORIZE("`$vectorize` and `$vector` can't be used together."),
-
     /** error. */
     UNSUPPORTED_OPERATION("Unsupported operation class"),
-
     /** error. */
     UNSUPPORTED_PROJECTION_PARAM("Unsupported projection parameter"),
-
     /** error. */
     UNSUPPORTED_UPDATE_DATA_TYPE("Unsupported update data type"),
-
     /** error. */
     UNSUPPORTED_UPDATE_OPERATION("Unsupported update operation"),
-
     /** error. */
     UNSUPPORTED_COMMAND_EMBEDDING_SERVICE(
             "Unsupported command `createEmbeddingService` since application is configured for property based embedding"),
-
     /** error. */
     UNAVAILABLE_EMBEDDING_SERVICE("Unable to vectorize data, embedding service not available"),
-
     /** error. */
     UNSUPPORTED_UPDATE_OPERATION_MODIFIER("Unsupported update operation modifier"),
-
     /** error. */
     UNSUPPORTED_UPDATE_OPERATION_PARAM("Unsupported update operation parameter"),
-
     /** error. */
     UNSUPPORTED_UPDATE_OPERATION_PATH("Invalid update operation path"),
-
     /** error. */
     UNSUPPORTED_UPDATE_OPERATION_TARGET("Unsupported target JSON value for update operation"),
-
     /** error. */
     UNSUPPORTED_UPDATE_FOR_DOC_ID("Cannot use operator with '_id' field"),
-
     /** error. */
     UNSUPPORTED_UPDATE_FOR_VECTOR("Cannot use operator with '$vector' field"),
-
     /** error. */
     UNSUPPORTED_UPDATE_FOR_VECTORIZE("Cannot use operator with '$vectorize' field"),
 

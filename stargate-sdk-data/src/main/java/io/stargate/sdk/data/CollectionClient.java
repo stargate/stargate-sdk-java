@@ -1,5 +1,6 @@
 package io.stargate.sdk.data;
 
+import com.sun.jdi.InvalidStackFrameException;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.domain.ApiData;
 import io.stargate.sdk.data.domain.ApiError;
@@ -15,6 +16,7 @@ import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.data.domain.odm.DocumentResultMapper;
 import io.stargate.sdk.data.domain.query.DeleteQuery;
+import io.stargate.sdk.data.domain.query.DeleteResult;
 import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.query.UpdateQuery;
@@ -27,7 +29,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -108,7 +110,7 @@ public class CollectionClient {
      */
     public final JsonDocumentMutationResult insertOne(String json) {
         Assert.hasLength(json, "Json input");
-        return (JsonDocumentMutationResult) insertOne(new JsonDocument(json));
+        return insertOne(new JsonDocument(json));
     }
 
     /**
@@ -134,7 +136,7 @@ public class CollectionClient {
     public final JsonDocumentMutationResult insertOne(@NonNull JsonDocument document) {
         // Enforce call to other methods
         DocumentMutationResult<Map<String, Object>> mutationResult = insertOne((Document<Map<String, Object>>) document);
-        // Mapping of the ouput
+        // Mapping of the output
         JsonDocumentMutationResult res = new JsonDocumentMutationResult();
         res.setStatus(mutationResult.getStatus());
         res.setDocument(mutationResult.getDocument());
@@ -230,7 +232,7 @@ public class CollectionClient {
     public final JsonDocumentMutationResult upsertOne(@NonNull JsonDocument document) {
         // Enforce call to other methods
         DocumentMutationResult<Map<String, Object>> mutationResult = upsertOne((Document<Map<String, Object>>) document);
-        // Mapping of the ouput
+        // Mapping of the output
         JsonDocumentMutationResult res = new JsonDocumentMutationResult();
         res.setStatus(mutationResult.getStatus());
         res.setDocument(mutationResult.getDocument());
@@ -265,11 +267,10 @@ public class CollectionClient {
             document.setId(UUID.randomUUID().toString());
        }
        JsonResultUpdate u = findOneAndReplace(UpdateQuery.builder()
-                    .where("_id")
-                    .isEqualsTo(document.getId())
-                    .replaceBy(document)
-                    .withUpsert() // with opion upsert true
-                    .build());
+               .filter(new Filter().where("_id").isEqualsTo(document.getId()))
+               .replaceBy(document)
+               .withUpsert() // with option upsert=true
+               .build());
         DocumentMutationResult<DOC> result = new DocumentMutationResult<>(document);
         if (u.getUpdateStatus().getUpsertedId() != null && u.getUpdateStatus().getUpsertedId().equals(document.getId())) {
             result.setStatus(DocumentMutationStatus.CREATED);
@@ -307,7 +308,6 @@ public class CollectionClient {
      * @return
      *      list of status
      */
-    @SuppressWarnings("unchecked")
     public final List<JsonDocumentMutationResult> insertMany(String json) {
         return insertManyJsonDocuments(mapJsonStringToJsonDocumentList(json));
     }
@@ -458,9 +458,9 @@ public class CollectionClient {
 
     /**
      * Insert a list of documents with the following constraints:
-     * - the list should be smaller than 20 or we get errors
-     * - the option 'ordered' is set to false to speed up the process
-     * - the option 'replace' is set to false, we do not replace documents
+     * - the list should be smaller than 20, or we get errors
+     * - the option 'ordered' is set to false in order to speed up the process
+     * - the option 'replace' is set to false in order to  we do not replace documents
      *
      * @param documents
      *      list of documents
@@ -499,20 +499,18 @@ public class CollectionClient {
 
             // Identify documents already existing
             if (apiResponse.getErrors()!=null) {
-                Pattern pattern = Pattern.compile("\'(.*?)\'");
+                Pattern pattern = Pattern.compile("'(.*?)'");
                 apiResponse.getErrors()
                         .stream()
                         .filter(error -> "DOCUMENT_ALREADY_EXISTS".equals(error.getErrorCode()))
                         .map(ApiError::getMessage)
-                        .map(msg -> pattern.matcher(msg))
+                        .map(pattern::matcher)
                         .filter(Matcher::find)
                         .map(matcher -> matcher.group(1))
-                        .forEach(id -> {
-                            results.computeIfPresent(id, (k, v) -> {
-                                v.setStatus(DocumentMutationStatus.ALREADY_EXISTS);
-                                return v;
-                            });
-                        });
+                        .forEach(id -> results.computeIfPresent(id, (k, v) -> {
+                            v.setStatus(DocumentMutationStatus.ALREADY_EXISTS);
+                            return v;
+                        }));
             }
 
             // Update ALREADY_EXISTS items
@@ -523,8 +521,7 @@ public class CollectionClient {
                         .filter(r -> DocumentMutationStatus.ALREADY_EXISTS.equals(r.getStatus()))
                         .forEach(r -> executor.submit(() -> {
                             JsonResultUpdate u = findOneAndReplace(UpdateQuery.builder()
-                                    .where("_id")
-                                    .isEqualsTo(r.getDocument().getId())
+                                    .filter(new Filter().where("_id").isEqualsTo(r.getDocument().getId()))
                                     .replaceBy(r.getDocument())
                                     .build());
                             if (u.getUpdateStatus().getModifiedCount() == 0) {
@@ -536,7 +533,9 @@ public class CollectionClient {
                 executor.shutdown();
                 try {
                     boolean ok = executor.awaitTermination(20L, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException("insert many is not finished", e);
+                }
             }
             return new ArrayList<>(results.values());
         }
@@ -765,7 +764,7 @@ public class CollectionClient {
      * @return
      *      list of ids
      */
-    private final <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency, boolean replaceIfExists) {
+    private <DOC> List<DocumentMutationResult<DOC>> insertManyChunked(List<Document<DOC>> documents, int chunkSize, int concurrency, boolean replaceIfExists) {
         // Validations
         if (chunkSize < 1 || chunkSize > 20) {
             throw new IllegalArgumentException("ChunkSize must be between 1 and 20");
@@ -792,12 +791,10 @@ public class CollectionClient {
         // Wait for all futures to completes
         for (Future<List<DocumentMutationResult<DOC>>> future : futures) {
             try {
-                future.get().stream().forEach(r -> {
-                    results.computeIfPresent(r.getDocument().getId(), (k, v) -> {
-                        v.setStatus(r.getStatus());
-                        return v;
-                    });
-                });
+                future.get().forEach(r -> results.computeIfPresent(r.getDocument().getId(), (k, v) -> {
+                    v.setStatus(r.getStatus());
+                    return v;
+                }));
             } catch (Exception e) {
                 throw new RuntimeException("Error when process a block", e);
             }
@@ -847,10 +844,11 @@ public class CollectionClient {
      *      existence status
      */
     public boolean isDocumentExists(String id) {
+        Filter findById = new Filter().where("_id").isEqualsTo(id);
         return findOne(SelectQuery.builder()
-                .select("_id")
-                .where("_id")
-                .isEqualsTo(id).build()).isPresent();
+                    .select("_id")
+                    .filter(findById).build())
+                .isPresent();
     }
 
     /**
@@ -1053,7 +1051,7 @@ public class CollectionClient {
      */
     public Stream<JsonDocumentResult> find(SelectQuery query) {
         List<JsonDocumentResult> documents = new ArrayList<>();
-        String pageState = null;
+        String pageState;
         AtomicInteger pageCount = new AtomicInteger(0);
         do {
             log.debug("Fetching page " + pageCount.incrementAndGet());
@@ -1134,7 +1132,7 @@ public class CollectionClient {
      */
     public Stream<JsonDocumentResult> findVector(float[] vector, Filter filter, Integer limit) {
         return find(SelectQuery.builder()
-                .withFilter(filter)
+                .filter(filter)
                 .orderByAnn(vector)
                 .withLimit(limit)
                 .includeSimilarity()
@@ -1148,7 +1146,7 @@ public class CollectionClient {
      * @param query
      *      return query Page
      * @return
-     *      page page of results
+     *      page of results
      */
     public Page<JsonDocumentResult> findVectorPage(SelectQuery query) {
         return findPage(query);
@@ -1170,7 +1168,7 @@ public class CollectionClient {
      */
     public Page<JsonDocumentResult> findVectorPage(float[] vector, Filter filter, Integer limit, String pagingState) {
         return findVectorPage(SelectQuery.builder()
-                .withFilter(filter)
+                .filter(filter)
                 .orderByAnn(vector)
                 .withLimit(limit)
                 .withPagingState(pagingState)
@@ -1409,11 +1407,11 @@ public class CollectionClient {
      * @param deleteQuery
      *      delete query
      * @return
-     *      number of deleted records
+     *      number of deleted records and status
      */
-    public int deleteOne(DeleteQuery deleteQuery) {
+    public DeleteResult deleteOne(DeleteQuery deleteQuery) {
         log.debug("Delete in {}/{}", green(namespace), green(collection));
-        return execute("deleteOne", deleteQuery).getStatusKeyAsInt("deletedCount");
+        return new DeleteResult(execute("deleteOne", deleteQuery));
     }
 
     /**
@@ -1424,7 +1422,7 @@ public class CollectionClient {
      * @return
      *      number of deleted records
      */
-    public int deleteById(String id) {
+    public DeleteResult deleteById(String id) {
         return deleteOne(DeleteQuery.deleteById(id));
     }
 
@@ -1436,7 +1434,7 @@ public class CollectionClient {
      * @return
      *      number of deleted records
      */
-    public int deleteByVector(float[] vector) {
+    public DeleteResult deleteByVector(float[] vector) {
         return deleteOne(DeleteQuery.deleteByVector(vector));
     }
 
@@ -1452,9 +1450,77 @@ public class CollectionClient {
      * @return
      *      number of deleted records
      */
-    public int deleteMany(DeleteQuery deleteQuery) {
+    public DeleteResult deleteMany(DeleteQuery deleteQuery) {
+        AtomicInteger totalCount = new AtomicInteger(0);
+        DeleteResult res;
+        do {
+            res = new DeleteResult(execute("deleteMany", deleteQuery));
+            totalCount.addAndGet(res.getDeletedCount());
+        } while(res.isMoreData());
+        return new DeleteResult(totalCount.get(), false);
+    }
+
+    /**
+     * Perform a distributed deleted.
+     * @param deleteQuery
+     *      deleting query
+     * @param concurrency
+     *      concrrency number
+     * @return
+     *      the delete result
+     */
+    public DeleteResult deleteManyChunked(DeleteQuery deleteQuery, int concurrency) {
+        if (concurrency < 1 || concurrency > 50) {
+            throw new IllegalArgumentException("Concurrency must be between 1 and 50");
+        }
+        AtomicInteger totalCount =
+                new AtomicInteger(0);
+        ExecutorService executor =
+                Executors.newFixedThreadPool(concurrency);
+        ExecutorCompletionService<DeleteResult> completionService =
+                new ExecutorCompletionService<>(executor);
+        try {
+            for (int i = 0; i < concurrency; i++) {
+                completionService.submit(() -> deleteManyPaged(deleteQuery));
+            }
+
+            int activeTasks = concurrency;
+
+            while (activeTasks > 0) {
+                Future<DeleteResult> completedFuture = completionService.take();
+                DeleteResult result = completedFuture.get();
+                totalCount.addAndGet(result.getDeletedCount());
+                if (result.isMoreData()) {
+                    completionService.submit(() -> deleteManyPaged(deleteQuery));
+                } else {
+                    activeTasks--;
+                }
+            }
+
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot delete chunked in a distributed mode", e);
+        } finally {
+            executor.shutdown();
+            try {
+                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        return new DeleteResult(totalCount.get(), false);
+    }
+
+    /**
+     * Delete multiple records from a request.
+     *
+     * @param deleteQuery
+     *      delete query
+     * @return
+     *      number of deleted records
+     */
+    public DeleteResult deleteManyPaged(DeleteQuery deleteQuery) {
         log.debug("Delete in {}/{}", green(namespace), green(collection));
-        return execute("deleteMany", deleteQuery).getStatusKeyAsInt("deletedCount");
+        return new DeleteResult(execute("deleteMany", deleteQuery));
     }
 
     /**
@@ -1463,7 +1529,7 @@ public class CollectionClient {
      * @return
      *      number of items deleted
      */
-    public int deleteAll() {
+    public DeleteResult deleteAll() {
         return deleteMany(null);
     }
 
@@ -1513,7 +1579,7 @@ public class CollectionClient {
      * @param operation
      *      operation to used
      * @param query
-     *      uquery to use
+     *      query to use
      * @return
      *      returned object by the Api
      */
@@ -1598,7 +1664,7 @@ public class CollectionClient {
     // --------------------------
 
     /**
-     * Initialization of the collection of document, filling uids
+     * Initialization of the collection of document, filling uid
      * @param documents
      *      document list
      * @return
@@ -1606,7 +1672,6 @@ public class CollectionClient {
      * @param <DOC>
      *     represent the pojo, payload of document
      */
-    @NotNull
     private static <DOC> Map<String, DocumentMutationResult<DOC>> initResultMap(List<Document<DOC>> documents) {
         Map<String, DocumentMutationResult<DOC>> results = new LinkedHashMap<>(documents.size());
         documents.forEach(d -> {
@@ -1634,7 +1699,7 @@ public class CollectionClient {
     }
 
     /**
-     * Mapper for ouput Json Document.
+     * Mapper for output Json Document.
      *
      * @param list
      *      document list

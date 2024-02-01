@@ -1,9 +1,8 @@
 package io.stargate.sdk.data.domain.query;
 
-import io.stargate.sdk.data.domain.JsonDocument;
 import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.http.domain.FilterKeyword;
-import io.stargate.sdk.utils.Assert;
+import io.stargate.sdk.http.domain.FilterOperator;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 
@@ -168,9 +167,41 @@ public class UpdateQueryBuilder {
      *      reference to self
      */
     @SuppressWarnings("unchecked")
-    public UpdateQueryBuilder withJsonFilter(String jsonFilter) {
+    public UpdateQueryBuilder filter(String jsonFilter) {
         this.filter = JsonUtils.unmarshallBean(jsonFilter, Map.class);
         return this;
+    }
+
+    /**
+     * Full filter as a filter object
+     *
+     * @param pFilter
+     *      filter
+     * @return
+     *      reference to self
+     */
+    public UpdateQueryBuilder filter(Filter pFilter) {
+        if (pFilter == null) return this;
+        if (filter == null) {
+            filter = new HashMap<>();
+        }
+        filter.putAll(pFilter.filter);
+        return this;
+    }
+
+    /**
+     * Full filter as a json string.
+     * @param fieldName
+     *      name of the filter
+     * @param op
+     *      operator
+     * @param value
+     *      simple filter
+     * @return
+     *      reference to self
+     */
+    public UpdateQueryBuilder where(String fieldName, FilterOperator op, Object value) {
+        return filter(new Filter(fieldName, op, value));
     }
 
     /**
@@ -185,24 +216,6 @@ public class UpdateQueryBuilder {
     public UpdateQueryBuilder withJsonUpdate(String jsonUpdate) {
         this.update = JsonUtils.unmarshallBean(jsonUpdate, Map.class);
         return this;
-    }
-
-    /**
-     * Work with arguments.
-     *
-     * @param fieldName
-     *      current field name.
-     * @return
-     *      builder for the filter
-     */
-    public UpdateQueryFilterBuilder where(String fieldName) {
-        Assert.hasLength(fieldName, "fieldName");
-        if (filter != null) {
-            throw new IllegalArgumentException("Invalid query please use and() " +
-                    "as a where clause has been provided");
-        }
-        filter = new HashMap<>();
-        return new UpdateQueryFilterBuilder(this, fieldName);
     }
 
     // -----------------------------------

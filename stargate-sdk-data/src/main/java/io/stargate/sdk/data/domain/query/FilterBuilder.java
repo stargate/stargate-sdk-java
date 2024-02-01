@@ -86,6 +86,30 @@ public class FilterBuilder {
     }
 
     /**
+     * $in: [ ... ]
+     *
+     * @param value
+     *      value
+     * @return
+     *      self reference
+     */
+    public Filter isInArray(Object[] value) {
+        return simpleOperator(FilterOperator.IN, value);
+    }
+
+    /**
+     * $in: [ ... ]
+     *
+     * @param value
+     *      value
+     * @return
+     *      self reference
+     */
+    public Filter isNotInArray(Object[] value) {
+        return simpleOperator(FilterOperator.NOT_IN, value);
+    }
+
+    /**
      * $all: [ ... ]
      *
      * @param value
@@ -189,7 +213,7 @@ public class FilterBuilder {
      *      self reference
      */
     public Filter hasSize(int size) {
-        return simpleKeyword(FilterKeyword.SIZE, true);
+        return simpleKeyword(FilterKeyword.SIZE, size);
     }
 
 }

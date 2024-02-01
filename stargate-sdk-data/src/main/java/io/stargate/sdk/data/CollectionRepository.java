@@ -5,6 +5,7 @@ import io.stargate.sdk.data.domain.DocumentMutationResult;
 import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.data.domain.odm.DocumentResult;
 import io.stargate.sdk.data.domain.query.DeleteQuery;
+import io.stargate.sdk.data.domain.query.DeleteResult;
 import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import lombok.Getter;
@@ -344,8 +345,8 @@ public class CollectionRepository<DOC> {
      *      if document has been deleted.
      */
     public boolean delete(@NonNull Document<DOC> document) {
-        if (document.getId() != null)     return collectionClient.deleteById(document.getId()) > 0;
-        if (document.getVector() != null) return collectionClient.deleteByVector(document.getVector()) > 0;
+        if (document.getId() != null)     return collectionClient.deleteById(document.getId()).getDeletedCount() > 0;
+        if (document.getVector() != null) return collectionClient.deleteByVector(document.getVector()).getDeletedCount() > 0;
         throw new IllegalArgumentException("Cannot delete record without id or vector");
     }
 
@@ -355,7 +356,7 @@ public class CollectionRepository<DOC> {
      * @return
      *     number of document deleted
      */
-    public int deleteAll() {
+    public DeleteResult deleteAll() {
         return collectionClient.deleteAll();
     }
 
@@ -385,9 +386,37 @@ public class CollectionRepository<DOC> {
      * @return
      *       number of records deleted
      */
-    public int deleteAll(DeleteQuery deleteQuery) {
+    public DeleteResult deleteAll(DeleteQuery deleteQuery) {
         return collectionClient.deleteMany(deleteQuery);
     }
+
+    /**
+     * Delete item through a query.
+     *
+     * @param deleteQuery
+     *      delete query
+     * @param concurrency
+     *      how many chunks processed in parallel
+     * @return
+     *       number of records deleted
+     */
+    public DeleteResult deleteAllChunked(DeleteQuery deleteQuery, int concurrency) {
+        return collectionClient.deleteManyChunked(deleteQuery, concurrency);
+    }
+
+    /**
+     * Delete item through a query.
+     *
+     * @param deleteQuery
+     *      delete query
+     * @return
+     *       number of records deleted
+     */
+    public DeleteResult deletePage(DeleteQuery deleteQuery) {
+        return collectionClient.deleteManyPaged(deleteQuery);
+    }
+
+
 
     // ------------------------------
     // --- OPERATIONS VECTOR     ----
@@ -414,7 +443,7 @@ public class CollectionRepository<DOC> {
      *      if object deleted
      */
     public boolean deleteByVector(float[] vector) {
-        return collectionClient.deleteByVector(vector) > 0;
+        return collectionClient.deleteByVector(vector).getDeletedCount() > 0;
     }
 
 
@@ -427,7 +456,7 @@ public class CollectionRepository<DOC> {
      *      if object deleted
      */
     public boolean deleteById(String id) {
-        return collectionClient.deleteById(id) > 0;
+        return collectionClient.deleteById(id).getDeletedCount() > 0;
     }
 
     // ------------------------------

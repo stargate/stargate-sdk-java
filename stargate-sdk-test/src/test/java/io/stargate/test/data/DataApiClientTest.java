@@ -7,9 +7,11 @@ import io.stargate.sdk.data.domain.JsonDocumentResult;
 import io.stargate.sdk.data.domain.JsonResultUpdate;
 import io.stargate.sdk.data.domain.odm.Document;
 import io.stargate.sdk.data.domain.odm.DocumentResult;
+import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.query.UpdateQuery;
 import io.stargate.sdk.data.domain.query.UpdateQueryBuilder;
+import io.stargate.sdk.http.domain.FilterOperator;
 import io.stargate.sdk.test.json.AbstractJsonClientNamespacesTest;
 import io.stargate.sdk.utils.JsonUtils;
 import org.junit.jupiter.api.Assertions;
@@ -47,9 +49,10 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
         CollectionClient colClient = jsonApiClient
                 .namespace(TEST_NAMESPACE_1)
                 .collection(TEST_COLLECTION_VECTOR);
-        Optional<JsonDocumentResult> opt = colClient.findOne(SelectQuery.builder()
-                .where("product_price").isEqualsTo(9.99)
-                .build());
+        Filter propFilter = new Filter()
+                .where("product_price")
+                .isEqualsTo(9.99);
+        Optional<JsonDocumentResult> opt = colClient.findOne(SelectQuery.builder().filter(propFilter).build());
         Assertions.assertTrue(opt.isPresent());
         System.out.println(opt.get());
     }
@@ -141,7 +144,7 @@ public class DataApiClientTest extends AbstractJsonClientNamespacesTest {
                 .collection(TEST_COLLECTION);
 
         JsonResultUpdate result = col1.findOneAndUpdate(UpdateQuery.builder()
-                .where("_id").isEqualsTo("9")
+                .where("_id", FilterOperator.EQUALS_TO, "9")
                 .updateSet("val1", "updated_from_code")
                 .withReturnDocument(UpdateQueryBuilder.ReturnDocument.after)
                 .enableUpsert()

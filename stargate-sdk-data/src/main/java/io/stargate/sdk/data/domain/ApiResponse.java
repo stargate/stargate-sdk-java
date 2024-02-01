@@ -110,4 +110,19 @@ public class ApiResponse {
         throw new IllegalArgumentException("Key '" + key + "' does not exist in status");
     }
 
+    /**
+     * Read a value as an Integer from the key/value 'status' map.
+     *
+     * @param key
+     *      key to be retrieved
+     * @return
+     *      list of values
+     */
+    public Boolean getStatusKeyAsBoolean(@NonNull String key) {
+        if (status.containsKey(key)) {
+            return (Boolean) status.get(key);
+        }
+        throw new IllegalArgumentException("Key '" + key + "' does not exist in status");
+    }
+
 }

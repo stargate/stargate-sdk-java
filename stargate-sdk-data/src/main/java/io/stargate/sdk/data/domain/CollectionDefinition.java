@@ -53,6 +53,11 @@ public class CollectionDefinition {
          */
         private List<String> allow;
 
+        /**
+         * Default constructor.
+         */
+        public Indexing() {}
+
     }
 
     /**

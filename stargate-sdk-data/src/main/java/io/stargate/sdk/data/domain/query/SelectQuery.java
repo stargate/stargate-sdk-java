@@ -2,6 +2,7 @@ package io.stargate.sdk.data.domain.query;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.stargate.sdk.http.domain.FilterKeyword;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -59,6 +60,38 @@ public class SelectQuery {
     }
 
     /**
+     * Build a SQL query with a filter (no projection).
+     *
+     * @param pFilter
+     *      current filter
+     */
+    public SelectQuery(Filter pFilter) {
+        if (pFilter != null) {
+            filter = new HashMap<>();
+            filter.putAll(pFilter.filter);
+        }
+    }
+
+    /**
+     * Build a query with a filter (no projection).
+     *
+     * @param pFilter
+     *      current filter
+     * @param vector
+     *      semantic search
+     */
+    public SelectQuery(float[] vector, Filter pFilter) {
+        if (vector != null) {
+            sort = new HashMap<>();
+            sort.put(FilterKeyword.VECTOR.getKeyword(), vector);
+        }
+        if (pFilter != null) {
+            filter = new HashMap<>();
+            filter.putAll(pFilter.filter);
+        }
+    }
+
+    /**
      * Constructor from a builder.
      *
      * @param builder
@@ -84,7 +117,7 @@ public class SelectQuery {
      *      query
      */
     public static SelectQuery findById(@NonNull String id) {
-        return SelectQuery.builder().where("_id").isEqualsTo(id).build();
+        return SelectQuery.builder().filter(Filter.findById(id)).build();
     }
 
     /**
@@ -98,6 +131,19 @@ public class SelectQuery {
     public static SelectQuery findByVector(float[] vector) {
         if (vector == null) throw new IllegalArgumentException("vector cannot be null");
         return SelectQuery.builder().orderByAnn(vector).build();
+    }
+
+    /**
+     * Build the find by vector request
+     *
+     * @param filter
+     *      document vector
+     * @return
+     *      query
+     */
+    public static SelectQuery findWithFilter(Filter filter) {
+        if (filter == null) throw new IllegalArgumentException("filter cannot be null");
+        return SelectQuery.builder().filter(filter).build();
     }
 
     /**
