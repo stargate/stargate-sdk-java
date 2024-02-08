@@ -31,6 +31,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -349,6 +350,30 @@ public class CollectionClient {
     }
 
     /**
+     * Insert a list of JsonDocument.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    public final List<JsonDocumentMutationResult> insertMany(JsonDocument... documents) {
+        return insertManyJsonDocuments(Arrays.asList(documents));
+    }
+
+    /**
+     * Insert Asynchronously a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> insertManyAsync(JsonDocument... documents) {
+        return insertManyJsonDocumentsASync(Arrays.asList(documents));
+    }
+
+    /**
      * Insert Documents: Default is non ordered and no replace.
      *
      * @param documents
@@ -374,6 +399,32 @@ public class CollectionClient {
      */
     public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyASync(List<Document<DOC>> documents) {
         return CompletableFuture.supplyAsync(() -> insertMany(documents));
+    }
+
+    /**
+     * Insert a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    @SafeVarargs
+    public final <T> List<DocumentMutationResult<T>> insertMany(Document<T>... documents) {
+        return insertMany(Arrays.asList(documents));
+    }
+
+    /**
+     * Insert Asynchronously a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    @SafeVarargs
+    public final  <T> CompletableFuture<List<DocumentMutationResult<T>>> insertManyAsync(Document<T>... documents) {
+        return insertManyASync(Arrays.asList(documents));
     }
 
     // ------------------------------
@@ -429,6 +480,30 @@ public class CollectionClient {
     }
 
     /**
+     * Insert a list of JsonDocument.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    public final List<JsonDocumentMutationResult> upsertMany(JsonDocument... documents) {
+        return upsertManyJsonDocuments(Arrays.asList(documents));
+    }
+
+    /**
+     * Insert Asynchronously a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    public final CompletableFuture<List<JsonDocumentMutationResult>> upsertManyAsync(JsonDocument... documents) {
+        return upsertManyJsonDocumentsASync(Arrays.asList(documents));
+    }
+
+    /**
      * Upsert any items in the collection.
      *
      * @param documents
@@ -454,6 +529,32 @@ public class CollectionClient {
      */
     public final <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyASync(List<Document<DOC>> documents) {
         return  CompletableFuture.supplyAsync(() -> upsertMany(documents));
+    }
+
+    /**
+     * Insert a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    @SafeVarargs
+    public final <T> List<DocumentMutationResult<T>> upsertMany(Document<T>... documents) {
+        return upsertMany(Arrays.asList(documents));
+    }
+
+    /**
+     * Insert Asynchronously a list of documents.
+     *
+     * @param documents
+     *      document list
+     * @return
+     *      list of statuses when complete.
+     */
+    @SafeVarargs
+    public final  <T> CompletableFuture<List<DocumentMutationResult<T>>> upsertManyManyAsync(Document<T>... documents) {
+        return upsertManyASync(Arrays.asList(documents));
     }
 
     /**
