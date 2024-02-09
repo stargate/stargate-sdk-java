@@ -1,19 +1,27 @@
 package io.stargate.sdk.http;
 
+import com.evanlennick.retry4j.CallExecutorBuilder;
+import com.evanlennick.retry4j.Status;
+import com.evanlennick.retry4j.config.RetryConfig;
+import com.evanlennick.retry4j.config.RetryConfigBuilder;
 import io.stargate.sdk.api.ApiConstants;
 import io.stargate.sdk.audit.ServiceCallObserver;
 import io.stargate.sdk.exception.AlreadyExistException;
 import io.stargate.sdk.exception.AuthenticationException;
 import io.stargate.sdk.http.audit.ServiceHttpCallEvent;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
+import io.stargate.sdk.http.domain.UserAgentChunk;
 import io.stargate.sdk.loadbalancer.UnavailableResourceException;
 import io.stargate.sdk.utils.CompletableFutures;
-import com.evanlennick.retry4j.CallExecutorBuilder;
-import com.evanlennick.retry4j.Status;
-import com.evanlennick.retry4j.config.RetryConfig;
-import com.evanlennick.retry4j.config.RetryConfigBuilder;
 import org.apache.hc.client5.http.auth.StandardAuthScheme;
-import org.apache.hc.client5.http.classic.methods.*;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.classic.methods.HttpTrace;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.StandardCookieSpec;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -34,11 +42,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -69,6 +78,9 @@ public class RetryHttpClient implements ApiConstants {
     
     /** Default settings in Request and Retry */
     public static final Duration DEFAULT_RETRY_DELAY  = Duration.ofMillis(100);
+
+    /** Default settings in Request and Retry */
+    public static List<UserAgentChunk> userAgents = new ArrayList<>();
     
     // -------------------------------------------
     // ----------------   Settings  --------------
@@ -151,6 +163,7 @@ public class RetryHttpClient implements ApiConstants {
     public static synchronized RetryHttpClient getInstance() {
         if (_instance == null) {
             _instance = new RetryHttpClient();
+            userAgents.add(new UserAgentChunk(ApiConstants.REQUEST_WITH, ApiConstants.class.getPackage().getImplementationVersion()));
             final PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
             connManager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
             connManager.setMaxTotal(100);
@@ -159,7 +172,35 @@ public class RetryHttpClient implements ApiConstants {
         }
         return _instance;
     }
-    
+
+    /**
+     * Add an item to the user agent chain.
+     *
+     * @param userAgent
+     *      user Agent chain
+     */
+    public void pushUserAgent(UserAgentChunk userAgent) {
+        userAgents.add(userAgent);
+    }
+
+    /**
+     * Give access to the user agent header.
+     *
+     * @return
+     *      user agent header
+     */
+    public String getUserAgentHeader() {
+        StringBuilder components = new StringBuilder();
+        StringBuilder versions = new StringBuilder();
+        for (int i = userAgents.size()-1; i >= 0; i--) {
+            components.append(userAgents.get(i).getComponent());
+            components.append("/");
+            versions.append(userAgents.get(userAgents.size()-i-1).getVersion());
+            if (i > 0) versions.append("/");
+        }
+        return components.toString() + versions.toString();
+    }
+
     // -------------------------------------------
     // ---------- Working with HTTP --------------
     // -------------------------------------------
@@ -465,12 +506,15 @@ public class RetryHttpClient implements ApiConstants {
         }
         req.addHeader(HEADER_CONTENT_TYPE, contentType);
         req.addHeader(HEADER_ACCEPT, CONTENT_TYPE_JSON);
-        req.addHeader(HEADER_USER_AGENT, REQUEST_WITH);
+
+        req.addHeader(HEADER_USER_AGENT, getUserAgentHeader());
+        req.addHeader(HEADER_REQUESTED_WITH, getUserAgentHeader());
+
         req.addHeader(HEADER_REQUEST_ID, UUID.randomUUID().toString());
-        req.addHeader(HEADER_REQUESTED_WITH, REQUEST_WITH);
         req.addHeader(HEADER_CASSANDRA, token);
         req.addHeader(HEADER_AUTHORIZATION, "Bearer " + token);
         req.setConfig(requestConfig);
+
         if (null != body) {
             // If you don't set a Charset the client will use ISO-8859-1
             // preventing the use of UNICODE characters, and also the server assumes UTF-8
@@ -478,6 +522,11 @@ public class RetryHttpClient implements ApiConstants {
             req.setEntity(new StringEntity(body, ContentType.TEXT_PLAIN.withCharset(StandardCharsets.UTF_8)));
         }
         return req;
+    }
+
+    private String buildUserAgent() {
+
+        return userAgents.stream().map(UserAgentChunk::toString).collect(Collectors.joining(" "));
     }
     
     /**

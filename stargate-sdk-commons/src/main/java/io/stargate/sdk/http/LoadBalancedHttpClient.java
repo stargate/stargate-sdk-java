@@ -242,9 +242,6 @@ public class LoadBalancedHttpClient implements ApiConstants {
                 lb = deployment.lookupStargateNode();
                 // Build Parameters
                 String targetEndPoint = mapper.apply(lb.getResource());
-                //System.out.println(targetEndPoint);
-                //System.out.println(body);
-                //System.out.println(method);
                 if (null != suffix) targetEndPoint+= suffix;
                 // Invoke request
                 return RetryHttpClient.getInstance()

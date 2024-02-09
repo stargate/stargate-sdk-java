@@ -35,6 +35,6 @@ public interface ApiConstants {
     String HEADER_REQUESTED_WITH    = "X-Requested-With";
     
     /** Value for the requested with. */
-    String REQUEST_WITH = "astra-db-java-client/" + ApiConstants.class.getPackage().getImplementationVersion();
+    String REQUEST_WITH = "stargate-sdk";
 
 }
