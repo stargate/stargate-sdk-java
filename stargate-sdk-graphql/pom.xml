@@ -13,7 +13,7 @@
 
     <properties>
         <dgs.codegen.version>5.1.17</dgs.codegen.version>
-        <graphql-codegen.version>1.50</graphql-codegen.version>
+        <graphql-codegen.version>1.60.0</graphql-codegen.version>
     </properties>
 
     <dependencies>
