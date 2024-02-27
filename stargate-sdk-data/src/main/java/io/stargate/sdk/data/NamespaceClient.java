@@ -8,6 +8,7 @@ import io.stargate.sdk.data.domain.SimilarityMetric;
 import io.stargate.sdk.data.exception.DataApiCollectionNotFoundException;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -24,27 +25,25 @@ import static io.stargate.sdk.utils.AnsiUtils.green;
 @Getter  @Slf4j
 public class NamespaceClient {
 
-    /** Get Topology of the nodes. */
-    protected final LoadBalancedHttpClient stargateHttpClient;
-
     /** Collection. */
-    private String namespace;
+    private final String namespace;
 
-    /**
-     * /v1/{namespace}
-     */
-    public final Function<ServiceHttp, String> namespaceResource = (node) ->
-            DataApiClient.rootResource.apply(node) + "/" + namespace;
+    /** Reference to data api client. */
+    private final DataApiClient dataApiClient;
+
+    /** Resource for namespace. */
+    public final Function<ServiceHttp, String> namespaceResource;
 
     /**
      * Full constructor.
      *
-     * @param httpClient client http
+     * @param dataApiClient data api client reference
      * @param namespace namespace identifier
      */
-    public NamespaceClient(LoadBalancedHttpClient httpClient, String namespace) {
+    protected NamespaceClient(@NonNull DataApiClient dataApiClient, @NonNull String namespace) {
         this.namespace          = namespace;
-        this.stargateHttpClient = httpClient;
+        this.dataApiClient      = dataApiClient;
+        this.namespaceResource  = (node) -> dataApiClient.rootResource.apply(node) + "/" + namespace;
         Assert.notNull(namespace, "namespace");
     }
 
@@ -129,7 +128,7 @@ public class NamespaceClient {
     public CollectionClient createCollection(CollectionDefinition req) {
         execute("createCollection", req);
         log.info("Collection  '" + green("{}") + "' has been created", req.getName());
-        return new CollectionClient(stargateHttpClient, namespace, req.getName());
+        return new CollectionClient(this, req.getName());
     }
 
     /**
@@ -171,7 +170,7 @@ public class NamespaceClient {
      *      api response
      */
     private ApiResponse execute(String operation, Object payload) {
-        return executeOperation(stargateHttpClient, namespaceResource, operation, payload);
+        return executeOperation(dataApiClient.getStargateHttpClient(), namespaceResource, operation, payload);
     }
 
     /**
@@ -205,7 +204,7 @@ public class NamespaceClient {
         if (findCollections()
                 .map(CollectionDefinition::getName)
                 .noneMatch(collectionName::equals)) throw new DataApiCollectionNotFoundException(collectionName);
-        return new CollectionClient(stargateHttpClient, namespace, collectionName);
+        return new CollectionClient(this, collectionName);
     }
 
     /**

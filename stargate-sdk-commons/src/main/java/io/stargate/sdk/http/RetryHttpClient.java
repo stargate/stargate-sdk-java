@@ -10,7 +10,6 @@ import io.stargate.sdk.exception.AlreadyExistException;
 import io.stargate.sdk.exception.AuthenticationException;
 import io.stargate.sdk.http.audit.ServiceHttpCallEvent;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
-import io.stargate.sdk.http.domain.UserAgentChunk;
 import io.stargate.sdk.loadbalancer.UnavailableResourceException;
 import io.stargate.sdk.utils.CompletableFutures;
 import org.apache.hc.client5.http.auth.StandardAuthScheme;
@@ -47,6 +46,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -80,7 +80,7 @@ public class RetryHttpClient implements ApiConstants {
     public static final Duration DEFAULT_RETRY_DELAY  = Duration.ofMillis(100);
 
     /** Default settings in Request and Retry */
-    public static List<UserAgentChunk> userAgents = new ArrayList<>();
+    public static LinkedHashMap<String, String> userAgents = new LinkedHashMap<>();
     
     // -------------------------------------------
     // ----------------   Settings  --------------
@@ -163,7 +163,6 @@ public class RetryHttpClient implements ApiConstants {
     public static synchronized RetryHttpClient getInstance() {
         if (_instance == null) {
             _instance = new RetryHttpClient();
-            userAgents.add(new UserAgentChunk(ApiConstants.REQUEST_WITH, ApiConstants.class.getPackage().getImplementationVersion()));
             final PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
             connManager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
             connManager.setMaxTotal(100);
@@ -176,11 +175,15 @@ public class RetryHttpClient implements ApiConstants {
     /**
      * Add an item to the user agent chain.
      *
-     * @param userAgent
-     *      user Agent chain
+     * @param component
+     *      component
+     * @param version
+     *      version number
      */
-    public void pushUserAgent(UserAgentChunk userAgent) {
-        userAgents.add(userAgent);
+    public void pushUserAgent(String component, String version) {
+        if (!userAgents.containsKey(component)) {
+            userAgents.put(component, version);
+        }
     }
 
     /**
@@ -190,15 +193,19 @@ public class RetryHttpClient implements ApiConstants {
      *      user agent header
      */
     public String getUserAgentHeader() {
-        StringBuilder components = new StringBuilder();
-        StringBuilder versions = new StringBuilder();
-        for (int i = userAgents.size()-1; i >= 0; i--) {
-            components.append(userAgents.get(i).getComponent());
-            components.append("/");
-            versions.append(userAgents.get(userAgents.size()-i-1).getVersion());
-            if (i > 0) versions.append("/");
+        if (userAgents.isEmpty()) {
+            userAgents.put(ApiConstants.REQUEST_WITH, ApiConstants.class.getPackage().getImplementationVersion());
         }
-        return components.toString() + versions.toString();
+        List<Map.Entry<String, String>> entryList = new ArrayList<>(userAgents.entrySet());
+        StringBuilder sb = new StringBuilder();
+        for (int i = entryList.size() - 1; i >= 0; i--) {
+            Map.Entry<String, String> entry = entryList.get(i);
+            sb.append(entry.getKey()).append("/").append(entry.getValue());
+            if (i > 0) { // Add a space between entries, but not after the last entry
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
 
     // -------------------------------------------
@@ -509,6 +516,7 @@ public class RetryHttpClient implements ApiConstants {
 
         req.addHeader(HEADER_USER_AGENT, getUserAgentHeader());
         req.addHeader(HEADER_REQUESTED_WITH, getUserAgentHeader());
+        System.out.println("User-Agent: " + getUserAgentHeader());
 
         req.addHeader(HEADER_REQUEST_ID, UUID.randomUUID().toString());
         req.addHeader(HEADER_CASSANDRA, token);
@@ -524,11 +532,6 @@ public class RetryHttpClient implements ApiConstants {
         return req;
     }
 
-    private String buildUserAgent() {
-
-        return userAgents.stream().map(UserAgentChunk::toString).collect(Collectors.joining(" "));
-    }
-    
     /**
      * Implementing retries.
      *

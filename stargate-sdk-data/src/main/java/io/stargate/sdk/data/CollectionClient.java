@@ -1,6 +1,5 @@
 package io.stargate.sdk.data;
 
-import com.sun.jdi.InvalidStackFrameException;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.domain.ApiData;
 import io.stargate.sdk.data.domain.ApiError;
@@ -21,7 +20,6 @@ import io.stargate.sdk.data.domain.query.Filter;
 import io.stargate.sdk.data.domain.query.SelectQuery;
 import io.stargate.sdk.data.domain.query.UpdateQuery;
 import io.stargate.sdk.data.exception.DataApiDocumentAlreadyExistException;
-import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
@@ -61,40 +59,32 @@ import static io.stargate.sdk.utils.AnsiUtils.green;
 @Slf4j
 public class CollectionClient {
 
-    /** Get Topology of the nodes. */
-    protected final LoadBalancedHttpClient stargateHttpClient;
-
-    /** Namespace identifier. */
-    @Getter
-    private final String namespace;
-
     /** Collection identifier. */
     @Getter
     private final String collection;
+
+    /** keep reference to namespace client. */
+    private final NamespaceClient namespaceClient;
+
+    /** Resource collection. */
+    public final Function<ServiceHttp, String> collectionResource;
 
     /** Flag to enforce the order of insertion. */
     @Getter @Setter
     private boolean insertManyOrdered = false;
 
     /**
-     * Resource for collection: /v1/{namespace}/{collection}
-     */
-    public Function<ServiceHttp, String> collectionResource = (node) ->
-            DataApiClient.rootResource.apply(node) + "/" + getNamespace() + "/" + getCollection();
-
-    /**
      * Full constructor.
      *
-     * @param httpClient client http
-     * @param namespace namespace identifier
-     * @param collection collection identifier
+     * @param namespaceClient
+     *      client namespace http
+     * @param collection
+     *      collection identifier
      */
-    public CollectionClient(LoadBalancedHttpClient httpClient, String namespace, String collection) {
-        this.namespace          = namespace;
+    protected CollectionClient(@NonNull NamespaceClient namespaceClient, @NonNull String collection) {
         this.collection         = collection;
-        this.stargateHttpClient = httpClient;
-        Assert.notNull(collection, "Collection");
-        Assert.notNull(namespace, "Namespace");
+        this.namespaceClient    = namespaceClient;
+        this.collectionResource = (node) -> namespaceClient.getNamespaceResource().apply(node) + "/" + getCollection();
     }
 
     // --------------------------
@@ -167,7 +157,7 @@ public class CollectionClient {
      *     represent the pojo, payload of document
      */
     public final <T> DocumentMutationResult<T> insertOne(@NonNull Document<T> document) {
-        log.debug("insert into {}/{}", green(namespace), green(collection));
+        log.debug("insert into {}/{}", green(namespaceClient.getNamespace()), green(collection));
         if (document.getId() == null) {
             // Enforce the UUID at client side to retrieve it in an easier way
             document.setId(UUID.randomUUID().toString());
@@ -263,7 +253,7 @@ public class CollectionClient {
      *      document status and identifier
      */
     public <DOC> DocumentMutationResult<DOC> upsertOne(@NonNull Document<DOC> document) {
-        log.debug("upsert into {}/{}", green(namespace), green(collection));
+        log.debug("upsert into {}/{}", green(namespaceClient.getNamespace()), green(collection));
         if (document.getId() == null) {
             document.setId(UUID.randomUUID().toString());
        }
@@ -408,9 +398,11 @@ public class CollectionClient {
      *      document list
      * @return
      *      list of statuses when complete.
+     * @param <DOC>
+     *     represent the pojo, payload of document
      */
     @SafeVarargs
-    public final <T> List<DocumentMutationResult<T>> insertMany(Document<T>... documents) {
+    public final <DOC> List<DocumentMutationResult<DOC>> insertMany(Document<DOC>... documents) {
         return insertMany(Arrays.asList(documents));
     }
 
@@ -419,11 +411,13 @@ public class CollectionClient {
      *
      * @param documents
      *      document list
+     * @param <DOC>
+     *     represent the pojo, payload of document
      * @return
      *      list of statuses when complete.
      */
     @SafeVarargs
-    public final  <T> CompletableFuture<List<DocumentMutationResult<T>>> insertManyAsync(Document<T>... documents) {
+    public final  <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> insertManyAsync(Document<DOC>... documents) {
         return insertManyASync(Arrays.asList(documents));
     }
 
@@ -536,11 +530,13 @@ public class CollectionClient {
      *
      * @param documents
      *      document list
+     * @param <DOC>
+     *     represent the pojo, payload of document
      * @return
      *      list of statuses when complete.
      */
     @SafeVarargs
-    public final <T> List<DocumentMutationResult<T>> upsertMany(Document<T>... documents) {
+    public final <DOC> List<DocumentMutationResult<DOC>> upsertMany(Document<DOC>... documents) {
         return upsertMany(Arrays.asList(documents));
     }
 
@@ -549,11 +545,13 @@ public class CollectionClient {
      *
      * @param documents
      *      document list
+     * @param <DOC>
+     *     represent the pojo, payload of document
      * @return
      *      list of statuses when complete.
      */
     @SafeVarargs
-    public final  <T> CompletableFuture<List<DocumentMutationResult<T>>> upsertManyManyAsync(Document<T>... documents) {
+    public final  <DOC> CompletableFuture<List<DocumentMutationResult<DOC>>> upsertManyManyAsync(Document<DOC>... documents) {
         return upsertManyASync(Arrays.asList(documents));
     }
 
@@ -576,7 +574,7 @@ public class CollectionClient {
     private <DOC> List<DocumentMutationResult<DOC>> insertMany(List<Document<DOC>> documents, boolean replaceIfExists) {
         if (documents != null && !documents.isEmpty()) {
             log.debug("insert many (size={},ordered={}) into {}/{}", green(String.valueOf(documents.size())),
-                    green(String.valueOf(insertManyOrdered)), green(namespace), green(collection));
+                    green(String.valueOf(insertManyOrdered)), green(namespaceClient.getNamespace()), green(collection));
 
             // Creating Status for output
             Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
@@ -870,9 +868,9 @@ public class CollectionClient {
         if (chunkSize < 1 || chunkSize > 20) {
             throw new IllegalArgumentException("ChunkSize must be between 1 and 20");
         }
-        if (concurrency < 1 || concurrency > 50) {
-            throw new IllegalArgumentException("Concurrency must be between 1 and 50");
-        }
+        //if (concurrency < 1 || concurrency > 50) {
+        //    throw new IllegalArgumentException("Concurrency must be between 1 and 50");
+       // }
 
         // Creating Status for output
         Map<String, DocumentMutationResult<DOC>> results = initResultMap(documents);
@@ -883,7 +881,7 @@ public class CollectionClient {
             int start = i;
             int end = Math.min(i + chunkSize, documents.size());
             Callable<List<DocumentMutationResult<DOC>>> task = () -> {
-                log.debug("insert block (size={}) {}/{}", end-start, green(namespace), green(collection));
+                log.debug("insert block (size={}) {}/{}", end-start, green(namespaceClient.getNamespace()), green(collection));
                 return insertMany(documents.subList(start, end), replaceIfExists);
             };
             futures.add(executor.submit(task));
@@ -927,7 +925,7 @@ public class CollectionClient {
      *      number of document.
      */
     public Integer countDocuments(Filter jsonFilter) {
-        log.debug("Counting {}/{}", green(namespace), green(collection));
+        log.debug("Counting {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return execute("countDocuments", jsonFilter).getStatusKeyAsInt("count");
     }
 
@@ -961,7 +959,7 @@ public class CollectionClient {
      *      result if exists
      */
     public Optional<JsonDocumentResult> findOne(SelectQuery query) {
-        log.debug("Query in {}/{}", green(namespace), green(collection));
+        log.debug("Query in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return Optional.ofNullable(execute("findOne", query).getData().getDocument());
     }
 
@@ -974,7 +972,7 @@ public class CollectionClient {
      *      result if exists
      */
     public Optional<JsonDocumentResult> findOne(String rawJsonQuery) {
-        log.debug("Query in {}/{}", green(namespace), green(collection));
+        log.debug("Query in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return Optional.ofNullable(execute("findOne", rawJsonQuery).getData().getDocument());
     }
 
@@ -1181,7 +1179,7 @@ public class CollectionClient {
      *      page of results
      */
     public Page<JsonDocumentResult> findPage(SelectQuery query) {
-        log.debug("Query in {}/{}", green(namespace), green(collection));
+        log.debug("Query in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         ApiData apiData = execute("find", query).getData();
         int pageSize = (query != null && query.getLimit().isPresent()) ? query.getLimit().get() : SelectQuery.PAGING_SIZE_MAX;
         return new Page<>(pageSize, apiData.getNextPageState(), apiData.getDocuments());
@@ -1196,7 +1194,7 @@ public class CollectionClient {
      *      result if exists
      */
     public Page<JsonDocumentResult> findPage(String query) {
-        log.debug("Query in {}/{}", green(namespace), green(collection));
+        log.debug("Query in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         ApiData apiData = execute("find", query).getData();
         return new Page<>(20, apiData.getNextPageState(), apiData.getDocuments());
     }
@@ -1511,7 +1509,7 @@ public class CollectionClient {
      *      number of deleted records and status
      */
     public DeleteResult deleteOne(DeleteQuery deleteQuery) {
-        log.debug("Delete in {}/{}", green(namespace), green(collection));
+        log.debug("Delete in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return new DeleteResult(execute("deleteOne", deleteQuery));
     }
 
@@ -1620,7 +1618,7 @@ public class CollectionClient {
      *      number of deleted records
      */
     public DeleteResult deleteManyPaged(DeleteQuery deleteQuery) {
-        log.debug("Delete in {}/{}", green(namespace), green(collection));
+        log.debug("Delete in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return new DeleteResult(execute("deleteMany", deleteQuery));
     }
 
@@ -1685,7 +1683,7 @@ public class CollectionClient {
      *      returned object by the Api
      */
     private JsonResultUpdate updateQuery(String operation, UpdateQuery query) {
-        log.debug("{} in {}/{}", operation, green(namespace), green(collection));
+        log.debug("{} in {}/{}", operation, green(namespaceClient.getNamespace()), green(collection));
         ApiResponse response = execute(operation, query);
         JsonResultUpdate jru = new JsonResultUpdate();
         if (response.getData() != null) {
@@ -1739,7 +1737,7 @@ public class CollectionClient {
      *      update status
      */
     public UpdateStatus updateOne(UpdateQuery query) {
-        log.debug("updateOne in {}/{}", green(namespace), green(collection));
+        log.debug("updateOne in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return updateQuery("updateOne", query).getUpdateStatus();
     }
 
@@ -1756,7 +1754,7 @@ public class CollectionClient {
      *      update status
      */
     public UpdateStatus updateMany(UpdateQuery query) {
-        log.debug("updateMany in {}/{}", green(namespace), green(collection));
+        log.debug("updateMany in {}/{}", green(namespaceClient.getNamespace()), green(collection));
         return updateQuery("updateMany", query).getUpdateStatus();
     }
 
@@ -1837,7 +1835,7 @@ public class CollectionClient {
      *      payload returned
      */
     private ApiResponse execute(String operation, Object payload) {
-       return executeOperation(stargateHttpClient, collectionResource, operation, payload);
+       return executeOperation(namespaceClient.getDataApiClient().getStargateHttpClient(), collectionResource, operation, payload);
     }
 
 }

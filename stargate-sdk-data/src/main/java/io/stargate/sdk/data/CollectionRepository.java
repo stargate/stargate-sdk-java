@@ -26,9 +26,7 @@ import java.util.stream.Stream;
 @Getter
 public class CollectionRepository<DOC> {
 
-    /**
-     * Raw collection client.
-     */
+    /** Raw collection client. */
     protected final CollectionClient collectionClient;
 
     /** Keep ref to the generic. */

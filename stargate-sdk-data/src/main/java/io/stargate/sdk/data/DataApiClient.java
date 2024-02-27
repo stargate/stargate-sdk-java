@@ -41,21 +41,21 @@ public class DataApiClient {
     private static final String DEFAULT_DATACENTER = "dc1";
 
     /** path for json api. */
-    public static final String PATH_V1  = "/v1";
+    public static final String DEFAULT_VERSION = "v1";
 
-    /**
-     * /v1
-     */
-    public static Function<ServiceHttp, String> rootResource = (node) -> node.getEndpoint() + PATH_V1;
+    /** Function to compute the root. */
+    public final Function<ServiceHttp, String> rootResource;
 
     /** Get Topology of the nodes. */
     protected final LoadBalancedHttpClient stargateHttpClient;
+
+    protected final String version;
 
     /**
      * Default Constructor
      */
     public DataApiClient() {
-        this(DEFAULT_ENDPOINT);
+        this(DEFAULT_ENDPOINT, DEFAULT_VERSION);
     }
 
     /**
@@ -65,6 +65,18 @@ public class DataApiClient {
      *      service endpoint
      */
     public DataApiClient(String endpoint) {
+        this(endpoint, DEFAULT_VERSION);
+    }
+
+    /**
+     * Single instance of Stargate, could be used for tests.
+     *
+     * @param endpoint
+     *      service endpoint
+     * @param version
+     *      provide version number
+     */
+    public DataApiClient(String endpoint, String version) {
         Assert.hasLength(endpoint, "stargate endpoint");
         // Single instance running
         ServiceHttp rest = new ServiceHttp(DEFAULT_SERVICE_ID, endpoint, endpoint + PATH_HEALTH_CHECK);
@@ -77,6 +89,8 @@ public class DataApiClient {
         ServiceDeployment<ServiceHttp> deploy =
                 new ServiceDeployment<ServiceHttp>().addDatacenter(sDc);
         this.stargateHttpClient  = new LoadBalancedHttpClient(deploy);
+        this.version             = version;
+        this.rootResource        = (node) -> node.getEndpoint() +  "/" + version;
     }
 
     /**
@@ -86,8 +100,22 @@ public class DataApiClient {
      *      http client topology aware
      */
     public DataApiClient(ServiceDeployment<ServiceHttp> serviceDeployment) {
+        this(serviceDeployment, DEFAULT_VERSION);
+    }
+
+    /**
+     * Initialized document API with a URL and a token.
+     *
+     * @param serviceDeployment
+     *      http client topology aware
+     * @param version
+     *      customized version
+     */
+    public DataApiClient(ServiceDeployment<ServiceHttp> serviceDeployment, String version) {
         Assert.notNull(serviceDeployment, "service deployment topology");
         this.stargateHttpClient = new LoadBalancedHttpClient(serviceDeployment);
+        this.version             = version;
+        this.rootResource        = (node) -> node.getEndpoint() +  "/" + version;
     }
 
     // ------------------------------------------
@@ -127,7 +155,7 @@ public class DataApiClient {
      */
     public NamespaceClient createNamespace(String namespace) {
         this.createNamespace(NamespaceDefinition.builder().name(namespace).build());
-        return new NamespaceClient(stargateHttpClient, namespace);
+        return new NamespaceClient(this, namespace);
     }
 
    /**
@@ -175,7 +203,7 @@ public class DataApiClient {
      */
     public NamespaceClient namespace(String namespace) {
         if (findAllNamespaces().noneMatch(namespace::equals)) throw new DataApiNamespaceNotFoundException(namespace);
-        return new NamespaceClient(stargateHttpClient, namespace);
+        return new NamespaceClient(this, namespace);
     }
 
 }
