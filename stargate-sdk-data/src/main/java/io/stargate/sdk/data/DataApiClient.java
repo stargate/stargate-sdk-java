@@ -49,6 +49,7 @@ public class DataApiClient {
     /** Get Topology of the nodes. */
     protected final LoadBalancedHttpClient stargateHttpClient;
 
+    /** Version of the API. */
     protected final String version;
 
     /**
