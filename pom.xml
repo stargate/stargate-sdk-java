@@ -65,6 +65,7 @@
 		<module>stargate-sdk-test</module>
 		<module>stargate-sdk-data</module>
 		<module>stargate-sdk</module>
+        <module>stargate-dataapi-client</module>
     </modules>
 	
 	<dependencyManagement>

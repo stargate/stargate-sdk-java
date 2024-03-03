@@ -23,14 +23,14 @@ import javax.print.Doc;
 public class Document<T> {
 
     /**
-     * Row id for a vector
+     * Row id for a vector.
      */
     @JsonProperty("_id")
     @Getter @Setter
     protected String id;
 
     /**
-     * Embeddings
+     * Embeddings.
      */
     @JsonProperty("$vector")
     @Getter @Setter

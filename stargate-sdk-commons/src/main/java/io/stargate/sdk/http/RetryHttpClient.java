@@ -516,8 +516,6 @@ public class RetryHttpClient implements ApiConstants {
 
         req.addHeader(HEADER_USER_AGENT, getUserAgentHeader());
         req.addHeader(HEADER_REQUESTED_WITH, getUserAgentHeader());
-        System.out.println("User-Agent: " + getUserAgentHeader());
-
         req.addHeader(HEADER_REQUEST_ID, UUID.randomUUID().toString());
         req.addHeader(HEADER_CASSANDRA, token);
         req.addHeader(HEADER_AUTHORIZATION, "Bearer " + token);

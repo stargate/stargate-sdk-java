@@ -8,6 +8,8 @@ import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.loadbalancer.LoadBalancedResource;
 import io.stargate.sdk.loadbalancer.NoneResourceAvailableException;
 import io.stargate.sdk.loadbalancer.UnavailableResourceException;
+import io.stargate.sdk.utils.AnsiUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.Method;
 
 import java.util.function.Function;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Rest API is an Http Service of Stargate
  */
+@Slf4j
 public class LoadBalancedHttpClient implements ApiConstants {
 
     /** Logger for our Client. */
