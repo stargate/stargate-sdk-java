@@ -3,14 +3,14 @@ package io.stargate.data_api.client;
 
 import io.stargate.data_api.client.exception.NamespaceNotFoundException;
 import io.stargate.data_api.client.model.CreateNamespaceOptions;
-import lombok.NonNull;
 
+import java.io.Closeable;
 import java.util.stream.Stream;
 
 /**
  * Client core for Data API (crud for namespaces).
  */
-public interface DataApiClient {
+public interface DataApiClient extends Closeable {
 
     /**
      * Get a list of the database names
@@ -59,7 +59,7 @@ public interface DataApiClient {
      * @return
      *      client for namespace
      */
-    default DataApiNamespace createNamespace(@NonNull String namespace) {
+    default DataApiNamespace createNamespace(String namespace) {
         return createNamespace(namespace, CreateNamespaceOptions.simpleStrategy(1));
     }
 

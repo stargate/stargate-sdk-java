@@ -3,6 +3,7 @@ package io.stargate.data_api.internal.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.data_api.client.model.CreateNamespaceOptions;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -46,6 +47,10 @@ public class CreateNamespaceRequest {
     public CreateNamespaceRequest() {
     }
 
-
+    /** {@inheritDoc} */
+    @Override
+    public String toString() {
+        return JsonUtils.marshallForDataApi(this);
+    }
 
 }

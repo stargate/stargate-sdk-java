@@ -1,6 +1,7 @@
 package io.stargate.data_api.internal.model;
 
 import io.stargate.data_api.client.model.CreateCollectionOptions;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
 
 /**
@@ -19,4 +20,9 @@ public class CreateCollectionRequest {
      */
     private CreateCollectionOptions options;
 
+    /** {@inheritDoc} */
+    @Override
+    public String toString() {
+        return JsonUtils.marshallForDataApi(this);
+    }
 }

@@ -37,7 +37,7 @@ public class Assert {
      *      param name
      */
     public static void hasLength(String s, String name) {
-        if (s == null || "".equals(s)) {
+        if (s == null || s.isEmpty()) {
             throw new IllegalArgumentException("Parameter '" + name + "' should be null nor empty");
         }
     }

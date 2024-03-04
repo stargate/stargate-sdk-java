@@ -12,8 +12,10 @@ import io.stargate.sdk.api.TokenProvider;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.utils.Assert;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
@@ -21,11 +23,14 @@ import java.util.stream.Stream;
 
 import static io.stargate.sdk.utils.AnsiUtils.green;
 import static io.stargate.sdk.utils.AnsiUtils.yellow;
+import static io.stargate.sdk.utils.Assert.hasLength;
+import static io.stargate.sdk.utils.Assert.notNull;
 
 /**
  * Implementation of Client.
  */
 @Slf4j
+@Getter
 public class DataApiClientImpl implements DataApiClient {
 
     /** default endpoint. */
@@ -60,8 +65,9 @@ public class DataApiClientImpl implements DataApiClient {
      * @param version
      *      provide version number
      */
-    public DataApiClientImpl(String endpoint, String version,  TokenProvider tokenProvider) {
-        Assert.hasLength(endpoint, "stargate endpoint");
+    public DataApiClientImpl(String endpoint, String version, TokenProvider tokenProvider) {
+        hasLength(endpoint, "stargate endpoint");
+        notNull(tokenProvider, "tokenProvider");
         // Single instance running
         ServiceHttp rest = new ServiceHttp(DEFAULT_SERVICE_ID, endpoint, endpoint + PATH_HEALTH_CHECK);
         // DC with default auth and single node
@@ -95,7 +101,7 @@ public class DataApiClientImpl implements DataApiClient {
      *      customized version
      */
     public DataApiClientImpl(ServiceDeployment<ServiceHttp> serviceDeployment, String version) {
-        Assert.notNull(serviceDeployment, "service deployment topology");
+        notNull(serviceDeployment, "service deployment topology");
         this.stargateHttpClient = new LoadBalancedHttpClient(serviceDeployment);
         this.version             = version;
         this.rootResource        = (node) -> node.getEndpoint() +  "/" + version;
@@ -121,6 +127,7 @@ public class DataApiClientImpl implements DataApiClient {
     /** {@inheritDoc} */
     @Override
     public DataApiNamespace createNamespace(String namespace, CreateNamespaceOptions options) {
+        hasLength(namespace, "namespace");
         CreateNamespaceRequest request = new CreateNamespaceRequest();
         request.setName(namespace);
         request.setOptions(options);
@@ -131,8 +138,15 @@ public class DataApiClientImpl implements DataApiClient {
 
     /** {@inheritDoc} */
     public void dropNamespace(String namespace) {
+        hasLength("namespace", namespace);
         execute("dropNamespace", Map.of("name", namespace));
         log.info("Namespace  '" + green("{}") + "' has been deleted", namespace);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() throws IOException {
+        // Close eventual listeners
     }
 
     /**
@@ -146,5 +160,6 @@ public class DataApiClientImpl implements DataApiClient {
     private ApiResponse execute(String operation, Object payload) {
         return DataApiUtils.executeOperation(stargateHttpClient, rootResource, operation, payload);
     }
+
 
 }

@@ -53,6 +53,6 @@ public class ApiError {
      * Throw exception from an ApiError.
      */
     public void throwDataApiException() {
-        throw new DataApiException(getMessage(), getErrorCode(), getErrorMessage());
+        throw new DataApiException("[" + getErrorCode() + "] - " + getMessage(), getErrorCode(), getErrorMessage());
     }
 }

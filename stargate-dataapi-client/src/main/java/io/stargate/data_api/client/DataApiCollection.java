@@ -5,4 +5,5 @@ package io.stargate.data_api.client;
  */
 public interface DataApiCollection<TResult> {
 
+
 }
