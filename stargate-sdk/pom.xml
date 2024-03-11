@@ -45,6 +45,12 @@
 
 		<dependency>
 			<groupId>com.datastax.stargate</groupId>
+			<artifactId>stargate-sdk-data-v1</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.datastax.stargate</groupId>
 			<artifactId>stargate-sdk-data</artifactId>
 			<version>${project.version}</version>
 		</dependency>

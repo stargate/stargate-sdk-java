@@ -20,10 +20,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.api.ApiResponse;
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
+import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.rest.domain.Keyspace;
 import io.stargate.sdk.utils.Assert;
@@ -91,7 +91,7 @@ public class StargateRestApiClient {
         ServiceHttp rest = new ServiceHttp(DEFAULT_SERVICE_ID, endpoint, endpoint + PATH_HEALTH_CHECK);
         // Api provider
         TokenProvider tokenProvider =
-                new TokenProviderHttpAuth();
+                new StargateAuthenticationService();
         // DC with default auth and single node
         ServiceDatacenter<ServiceHttp> sDc =
                 new ServiceDatacenter<>(DEFAULT_DATACENTER, tokenProvider, Collections.singletonList(rest));

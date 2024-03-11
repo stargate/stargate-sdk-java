@@ -1,6 +1,6 @@
 package io.stargate.sdk;
 
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.loadbalancer.LoadBalancingPolicy;
 import io.stargate.sdk.loadbalancer.LoadBalancedResource;
 import io.stargate.sdk.loadbalancer.Loadbalancer;

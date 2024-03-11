@@ -1,8 +1,7 @@
 package io.stargate.test.data;
 
-import io.stargate.sdk.data.domain.query.Filter;
-import io.stargate.sdk.data.domain.query.FilterBuilderList;
-import io.stargate.sdk.data.domain.query.SelectQuery;
+import io.stargate.sdk.v1.data.domain.query.Filter;
+import io.stargate.sdk.v1.data.domain.query.SelectQuery;
 import io.stargate.sdk.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 import static io.stargate.sdk.http.domain.FilterOperator.*;

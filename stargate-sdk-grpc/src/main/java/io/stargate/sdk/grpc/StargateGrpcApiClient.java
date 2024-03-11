@@ -3,17 +3,16 @@ package io.stargate.sdk.grpc;
 import com.evanlennick.retry4j.config.RetryConfig;
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.audit.ServiceCallObserver;
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.grpc.domain.BatchGrpc;
 import io.stargate.sdk.grpc.domain.QueryGrpc;
 import io.stargate.sdk.grpc.domain.RowGrpcMapper;
 import io.stargate.sdk.grpc.domain.ResultSetGrpc;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
+import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Assert;
-import org.apache.hc.core5.http.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -88,7 +87,7 @@ public class StargateGrpcApiClient {
         // Single instance running
         ServiceGrpc rest = new ServiceGrpc(DEFAULT_SERVICE_ID, endpoint, healthCheckUrl);
         // Api provider
-        TokenProvider tokenProvider = new TokenProviderHttpAuth();
+        TokenProvider tokenProvider = new StargateAuthenticationService();
         // DC with default auth and single node
         ServiceDatacenter<ServiceGrpc> sDc = new ServiceDatacenter<>(DEFAULT_DATACENTER, tokenProvider, Collections.singletonList(rest));
         // Deployment with a single dc

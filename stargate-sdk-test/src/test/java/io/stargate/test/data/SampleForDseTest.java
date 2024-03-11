@@ -2,10 +2,10 @@ package io.stargate.test.data;
 
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
-import io.stargate.sdk.api.TokenProvider;
-import io.stargate.sdk.data.DataApiClient;
+import io.stargate.sdk.auth.TokenProvider;
+import io.stargate.sdk.auth.StargateAuthenticationService;
+import io.stargate.sdk.v1.data.DataApiClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ class SampleForDseTest {
 
         // First you need credentials
         TokenProvider tokenProvider =
-                new TokenProviderHttpAuth(username, password, stargateAuthenticationUrl);
+                new StargateAuthenticationService(username, password, stargateAuthenticationUrl);
 
         // Single Stargate Node
         ServiceHttp rest =

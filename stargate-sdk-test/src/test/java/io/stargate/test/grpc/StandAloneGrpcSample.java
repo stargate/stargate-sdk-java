@@ -1,7 +1,5 @@
 package io.stargate.test.grpc;
 
-import io.stargate.sdk.grpc.utils.FuturesUtils;
-import io.stargate.sdk.grpc.utils.StreamObserverToReactivePublisher;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.StringValue;
@@ -10,7 +8,8 @@ import io.grpc.ManagedChannelBuilder;
 import io.stargate.grpc.StargateBearerToken;
 import io.stargate.proto.QueryOuterClass;
 import io.stargate.proto.StargateGrpc;
-import org.apache.hc.core5.http.HttpRequest;
+import io.stargate.sdk.grpc.utils.FuturesUtils;
+import io.stargate.sdk.grpc.utils.StreamObserverToReactivePublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;

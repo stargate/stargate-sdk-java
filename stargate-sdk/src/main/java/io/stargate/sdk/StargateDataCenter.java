@@ -1,9 +1,9 @@
 package io.stargate.sdk;
 
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.grpc.ServiceGrpc;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.data.DataApiClient;
+import io.stargate.sdk.v1.data.DataApiClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 
 import java.util.ArrayList;

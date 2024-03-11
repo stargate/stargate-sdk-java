@@ -2,14 +2,13 @@ package io.stargate.test.rest;
 
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
+import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.rest.KeyspaceClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.test.rest.AbstractRestClientKeyspacesTest;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
@@ -29,7 +28,7 @@ public class RestClientKeyspacesEndpointTest extends AbstractRestClientKeyspaces
         // Single Endpoint (dev)
         ServiceHttp rest = new ServiceHttp("rest1", "http://localhost:8082", "http://localhost:8082/stargate/health");
         // Default Authentication Endpoint (dev)
-        TokenProvider tokenProvider = new TokenProviderHttpAuth("cassandra", "cassandra", "http://localhost:8081");
+        TokenProvider tokenProvider = new StargateAuthenticationService("cassandra", "cassandra", "http://localhost:8081");
         // A Service Datacenter with a single Service
         ServiceDatacenter<ServiceHttp> sDc = new ServiceDatacenter<>("dc1", tokenProvider, Collections.singletonList(rest));
         // A service deployment with a single DC

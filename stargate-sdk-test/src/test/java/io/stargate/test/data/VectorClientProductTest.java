@@ -2,18 +2,18 @@ package io.stargate.test.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.data.CollectionClient;
-import io.stargate.sdk.data.CollectionRepository;
-import io.stargate.sdk.data.DataApiClient;
-import io.stargate.sdk.data.domain.CollectionDefinition;
-import io.stargate.sdk.data.domain.DocumentMutationResult;
-import io.stargate.sdk.data.domain.JsonDocument;
-import io.stargate.sdk.data.domain.JsonDocumentResult;
-import io.stargate.sdk.data.domain.NamespaceDefinition;
-import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.odm.DocumentResult;
-import io.stargate.sdk.data.domain.query.Filter;
-import io.stargate.sdk.data.domain.query.SelectQuery;
+import io.stargate.sdk.v1.data.CollectionClient;
+import io.stargate.sdk.v1.data.CollectionRepository;
+import io.stargate.sdk.v1.data.DataApiClient;
+import io.stargate.sdk.v1.data.domain.CollectionDefinition;
+import io.stargate.sdk.v1.data.domain.DocumentMutationResult;
+import io.stargate.sdk.v1.data.domain.JsonDocument;
+import io.stargate.sdk.v1.data.domain.JsonDocumentResult;
+import io.stargate.sdk.v1.data.domain.NamespaceDefinition;
+import io.stargate.sdk.v1.data.domain.odm.Document;
+import io.stargate.sdk.v1.data.domain.odm.DocumentResult;
+import io.stargate.sdk.v1.data.domain.query.Filter;
+import io.stargate.sdk.v1.data.domain.query.SelectQuery;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.stargate.sdk.data.domain.SimilarityMetric.cosine;
+import static io.stargate.sdk.v1.data.domain.SimilarityMetric.cosine;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class VectorClientProductTest {

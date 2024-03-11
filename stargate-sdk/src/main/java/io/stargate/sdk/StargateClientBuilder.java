@@ -2,20 +2,24 @@ package io.stargate.sdk;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.config.*;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.OptionsMap;
+import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
+import com.datastax.oss.driver.api.core.config.TypedDriverOption;
 import com.datastax.oss.driver.api.core.tracker.RequestTracker;
 import com.datastax.oss.driver.internal.core.auth.PlainTextAuthProvider;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
-import io.stargate.sdk.api.TokenProvider;
-import io.stargate.sdk.api.SimpleTokenProvider;
-import io.stargate.sdk.audit.ServiceCallObserver;
+import io.stargate.sdk.auth.FixedTokenAuthenticationService;
+import io.stargate.sdk.auth.TokenProvider;
+import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.grpc.ServiceGrpc;
+import io.stargate.sdk.http.HttpClientOptions;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
-import io.stargate.sdk.utils.Utils;
-import com.evanlennick.retry4j.config.RetryConfig;
 import io.stargate.sdk.utils.Assert;
-import org.apache.hc.client5.http.config.RequestConfig;
+import io.stargate.sdk.utils.Utils;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.Serializable;
@@ -27,11 +31,13 @@ import java.util.Map;
 
 /**
  * The Stargate SDK allows to connect to multiple APIS and provides a wide range of options. With the more advanced settings we
- * need an abtraction for the configuration. It can then be loaded from multiple sources like .. a builder, an application.yaml, a
+ * need an abstraction for the configuration. It can then be loaded from multiple sources like a builder, an application.yaml, a
  * service discovery with different configuration loader.
  * 
  * @author Cedrick LUNVEN (@clunven)
  */
+@Slf4j
+@Getter
 public class StargateClientBuilder implements Serializable {
 
     /** Serial. */
@@ -55,15 +61,6 @@ public class StargateClientBuilder implements Serializable {
 
     /** if an apiToken is provided it will be used for all nodes. */
     protected Map<String, StargateDataCenter> stargateNodesDC = new HashMap<>();
-
-    /**
-     * Gets stargateNodesDC
-     *
-     * @return value of stargateNodesDC
-     */
-    public Map<String, StargateDataCenter> getStargateNodesDC() {
-        return stargateNodesDC;
-    }
 
     /**
      * Fill username and password.
@@ -98,7 +95,7 @@ public class StargateClientBuilder implements Serializable {
         TokenProvider dcTokenProvider = null;
         // As a token is explicitly provided (e.g: ASTRA) no computation of token
         if (Utils.hasLength(appToken)) {
-            dcTokenProvider = new SimpleTokenProvider(appToken);
+            dcTokenProvider = new FixedTokenAuthenticationService(appToken);
         } else if (stargateNodesDC.containsKey(dc)) {
             // An ApiToken as been provided for the DC (can be different by DC, external config etc.)
             dcTokenProvider = stargateNodesDC.get(dc).getTokenProvider();
@@ -168,7 +165,7 @@ public class StargateClientBuilder implements Serializable {
         if (!Utils.hasLength(username)) {
             throw new IllegalStateException("Username is empty please .withAuthCredentials() before .withApiTokenProvider()");
         }
-        return withApiTokenProviderDC(dc, new TokenProviderHttpAuth(username, password, url));
+        return withApiTokenProviderDC(dc, new StargateAuthenticationService(username, password, url));
     }
     
     // ------------------------------------------------
@@ -330,33 +327,13 @@ public class StargateClientBuilder implements Serializable {
      */
     public StargateClientBuilder withLocalDatacenter(String localDc) {
         Assert.hasLength(localDc, "localDc");
-        setLocalDatacenter(localDc);
+        this.localDatacenter = localDc;
         // Only when you do not use SCB
         driverConfig.withString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER, localDc);
         driverConfig.withBoolean(DefaultDriverOption.LOAD_BALANCING_DC_FAILOVER_ALLOW_FOR_LOCAL_CONSISTENCY_LEVELS, true);
         cqlOptions.put(TypedDriverOption.LOAD_BALANCING_LOCAL_DATACENTER, localDc);
         cqlOptions.put(TypedDriverOption.LOAD_BALANCING_DC_FAILOVER_ALLOW_FOR_LOCAL_CONSISTENCY_LEVELS, true);
         return this;
-    }
-    
-    /**
-     * Getter accessor for attribute 'localDC'.
-     *
-     * @return
-     *       current value of 'localDC'
-     */
-    public String getLocalDatacenter() {
-        return this.localDatacenter;
-    }
-    
-    /**
-     * Update local datacenter without the cqlOptions. To also update the options please use withLocalDatacenter.
-     *
-     * @param localDc
-     *       current value of localDC
-     */
-    public void setLocalDatacenter(String localDc) {
-        this.localDatacenter = localDc;
     }
 
     // ------------------------------------------------
@@ -384,8 +361,8 @@ public class StargateClientBuilder implements Serializable {
     protected RequestTracker cqlRequestTracker;
     
     /**
-     * By default Cqlsession is not created, you can enable the flag or using any
-     * withCql* operations to enableit.
+     * By default, Cql session is not created, you can enable the flag or using any
+     * withCql* operations to enable.
      *
      * @return
      *      reference of current object
@@ -1058,46 +1035,6 @@ public class StargateClientBuilder implements Serializable {
         cqlOptions.put(dc, TypedDriverOption.CLOUD_SECURE_CONNECT_BUNDLE, cloudConfigUrl);
         return this;
     }
-
-    /**
-     * Getter accessor for attribute 'disableCqlSession'.
-     *
-     * @return
-     *       current value of 'disableCqlSession'
-     */
-    public boolean isEnabledCql() {
-        return this.enabledCql;
-    }
-
-    /**
-     * Getter accessor for attribute 'cqlSession'.
-     *
-     * @return
-     *       current value of 'cqlSession'
-     */
-    public CqlSession getCqlSession() {
-        return this.cqlSession;
-    }
-    
-    /**
-     * Getter accessor for attribute 'cqloptions'.
-     *
-     * @return
-     *      value for cql option
-     */
-    public OptionsMap getCqlOptions() {
-        return this.cqlOptions;
-    }
-
-    /**
-     * Getter accessor for attribute 'cqlRequestTracker'.
-     *
-     * @return
-     *       current value of 'cqlRequestTracker'
-     */
-    public RequestTracker getCqlRequestTracker() {
-        return this.cqlRequestTracker;
-    }
     
     /**
      * Accessor to driver config builder.
@@ -1108,17 +1045,7 @@ public class StargateClientBuilder implements Serializable {
     public ProgrammaticDriverConfigLoaderBuilder getCqlDriverConfigLoaderBuilder() {
         return driverConfig;
     }
-    
-    /**
-     * Getter accessor for attribute 'metricsRegistry'.
-     *
-     * @return
-     *       current value of 'metricsRegistry'
-     */
-    public Object getCqlMetricsRegistry() {
-        return this.cqlMetricsRegistry;
-    }
-    
+
     /**
      * When working with builder you do no want the Cqlsession provided ad hoc.
      */
@@ -1146,118 +1073,26 @@ public class StargateClientBuilder implements Serializable {
         this.enabledGrpc = true;
         return this;
     }
-    
-    /**
-     * Getter accessor for attribute 'disableCqlSession'.
-     *
-     * @return
-     *       current value of 'disableCqlSession'
-     */
-    public boolean isEnabledGrpc() {
-        return this.enabledGrpc;
-    }
 
     // ------------------------------------------------
     // ------------- HTTP Client ----------------------
     // ------------------------------------------------
-    
-    /** Override Retry configuration. */
-    protected RetryConfig httpRetryConfig;
-    
-    /** Override Request configuration. */
-    protected RequestConfig httpRequestConfig;
-    
-    /** Observers. */ 
-    protected Map<String, ServiceCallObserver> httpObservers = new HashMap<>();
-    
+
+
+    /** Observers. */
+    protected HttpClientOptions httpClientOptions = HttpClientOptions.builder().build();
+
     /**
      * Enable fine Grained configuration of the HTTP Client.
      *
-     * @param reqConfig
-     *            request configuration
+     * @param options
+     *            http client options
      * @return self reference
      */
-    public StargateClientBuilder withHttpRequestConfig(RequestConfig reqConfig) {
-        Assert.notNull(reqConfig, "RequestConfig");
-        this.httpRequestConfig = reqConfig;
+    public StargateClientBuilder withTttpClientOptions(HttpClientOptions options) {
+        Assert.notNull(options, "options");
+        this.httpClientOptions = options;
         return this;
-    }
-
-    /**
-     * Enable fine Grained configuration of the HTTP Retries.
-     *
-     * @param retryConfig
-     *            request configuration
-     * @return self reference
-     */
-    public StargateClientBuilder withHttpRetryConfig(RetryConfig retryConfig) {
-        Assert.notNull(retryConfig, "retryConfig");
-        this.httpRetryConfig = retryConfig;
-        return this;
-    }
-
-    /**
-     * Api Invocations trigger some events processed in observer.
-     * 
-     * @param name
-     *            unique identiier
-     * @param observer
-     *            instance of your Observer
-     * @return self reference
-     */
-    public StargateClientBuilder addHttpObserver(String name, ServiceCallObserver observer) {
-        Assert.hasLength(name, "Observer name");
-        Assert.notNull(observer, "observer");
-        if (this.httpObservers.containsKey(name)) {
-            throw new IllegalArgumentException("An observer with the same name already exists (type=" + 
-                        this.httpObservers.get(name).getClass().getName() + ")");
-        }
-        this.httpObservers.put(name, observer);
-        return this;
-    }
-
-    /**
-     * Api Invocations trigger some events processed in observer.
-     * 
-     * @param observers
-     *            instance of your Observer
-     * @return self reference
-     */
-    public StargateClientBuilder withHttpObservers(Map<String, ServiceCallObserver> observers) {
-        Assert.notNull(observers, "observers");
-        Assert.isTrue(observers.size()>0, "observers should not be empty");
-        this.httpObservers = observers;
-        return this;
-    }
-    
-    /**
-     * Getter accessor for attribute 'retryConfig'.
-     *
-     * @return
-     *       current value of 'retryConfig'
-     */
-    public RetryConfig getRetryConfig() {
-        return httpRetryConfig;
-    }
-
-    /**
-     * Getter accessor for attribute 'requestConfig'.
-     *
-     * @return
-     *       current value of 'requestConfig'
-     */
-    public RequestConfig getRequestConfig() {
-        return httpRequestConfig;
-    }
-
-    /**
-     * Getter accessor for attribute 'observers'.
-     *
-     * @return
-     *       current value of 'observers'
-     */
-    public Map<String, ServiceCallObserver> getObservers() {
-        return httpObservers;
     }
     
     // ------------------------------------------------

@@ -1,15 +1,25 @@
 package io.stargate.sdk.http;
 
 import io.stargate.sdk.Service;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * The target service is an HTTP Endpoint. This services can be used for
  * graphQL, rest, docs but not gRPC for instance.
  */
+@Slf4j
 public class ServiceHttp extends Service {
+
+    /** Simple Client. */
+    public static HttpClient healthCheckClient = HttpClient.newHttpClient();
 
     /**
      * Constructor.
@@ -29,13 +39,16 @@ public class ServiceHttp extends Service {
      */
     @Override
     public boolean isAlive() {
-        System.out.println("IS_ALIVE(" + endpoint + ")");
-        int code = RetryHttpClient
-                .getInstance()
-                .executeHttp(this, new HttpGet(healthCheckEndpoint), false)
-                .getCode();
-        System.out.println("CODE(" + healthCheckEndpoint + ")" + code);
-        return HttpURLConnection.HTTP_OK == code;
+        try {
+            log.debug("IS_ALIVE(" + endpoint + ")");
+            int code = healthCheckClient.send(HttpRequest.newBuilder(
+                    new URI(healthCheckEndpoint)).GET().build(),
+                    HttpResponse.BodyHandlers.discarding()).statusCode();
+            log.debug("CODE(" + healthCheckEndpoint + ")" + code);
+            return HttpURLConnection.HTTP_OK == code;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

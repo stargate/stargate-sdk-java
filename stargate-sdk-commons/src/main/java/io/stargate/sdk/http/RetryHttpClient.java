@@ -5,171 +5,87 @@ import com.evanlennick.retry4j.Status;
 import com.evanlennick.retry4j.config.RetryConfig;
 import com.evanlennick.retry4j.config.RetryConfigBuilder;
 import io.stargate.sdk.api.ApiConstants;
-import io.stargate.sdk.audit.ServiceCallObserver;
 import io.stargate.sdk.exception.AlreadyExistException;
 import io.stargate.sdk.exception.AuthenticationException;
-import io.stargate.sdk.http.audit.ServiceHttpCallEvent;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.loadbalancer.UnavailableResourceException;
-import io.stargate.sdk.utils.CompletableFutures;
-import org.apache.hc.client5.http.auth.StandardAuthScheme;
-import org.apache.hc.client5.http.classic.methods.HttpDelete;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpHead;
-import org.apache.hc.client5.http.classic.methods.HttpPatch;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.classic.methods.HttpPut;
-import org.apache.hc.client5.http.classic.methods.HttpTrace;
-import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.cookie.StandardCookieSpec;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.Method;
-import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.apache.hc.core5.util.TimeValue;
-import org.apache.hc.core5.util.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Wrapping the HttpClient and provide helpers
- * 
- * @author Cedrick LUNVEN (@clunven)
+ * Http Client using JDK11 client with a retry mechanism.
  */
+@Slf4j
 public class RetryHttpClient implements ApiConstants {
-    
-    /** Logger for our Client. */
-    private static final Logger LOGGER = LoggerFactory.getLogger(RetryHttpClient.class);
-    
-    /** Default settings in Request and Retry */
-    public static final int DEFAULT_TIMEOUT_REQUEST   = 20;
-    
-    /** Default settings in Request and Retry */
-    public static final int DEFAULT_TIMEOUT_CONNECT   = 20;
-    
-    /** Default settings in Request and Retry */
-    public static final int DEFAULT_RETRY_COUNT       = 3;
-    
-    /** Default settings in Request and Retry */
-    public static final Duration DEFAULT_RETRY_DELAY  = Duration.ofMillis(100);
 
-    /** Default settings in Request and Retry */
-    public static LinkedHashMap<String, String> userAgents = new LinkedHashMap<>();
-    
     // -------------------------------------------
     // ----------------   Settings  --------------
     // -------------------------------------------
-    
-    /** Singleton pattern. */
-    private static RetryHttpClient _instance = null;
-    
-    /** HttpComponent5. */
-    protected CloseableHttpClient httpClient = null;
-    
-    /** Observers. */
-    protected static Map<String, ServiceCallObserver<?,?,?>> apiInvocationsObserversMap = new ConcurrentHashMap<>();
 
-    /** Default request configuration. */
-    protected static RequestConfig requestConfig = RequestConfig.custom()
-            .setCookieSpec(StandardCookieSpec.STRICT)
-            .setExpectContinueEnabled(true)
-            .setConnectionRequestTimeout(Timeout.ofSeconds(DEFAULT_TIMEOUT_REQUEST))
-            .setResponseTimeout(Timeout.ofSeconds(DEFAULT_TIMEOUT_CONNECT))
-            .setTargetPreferredAuthSchemes(Arrays.asList(StandardAuthScheme.NTLM, StandardAuthScheme.DIGEST))
-            .build();
+    /** JDK11 Http client. */
+    protected HttpClient httpClient;
 
     /** Default retry configuration. */
-    protected static RetryConfig retryConfig = new RetryConfigBuilder()
-            //.retryOnSpecificExceptions(ConnectException.class, IOException.class)
-            .retryOnAnyException()
-            .withDelayBetweenTries(DEFAULT_RETRY_DELAY)
-            .withExponentialBackoff()
-            .withMaxNumberOfTries(DEFAULT_RETRY_COUNT)
-            .build();
+    protected RetryConfig retryConfig;
 
-    /**
-     * Update Retry configuration of the HTTPClient.
-     *
-     * @param conf
-     *      retryConfiguration
-     */
-    public static void withRetryConfig(RetryConfig conf) {
-        retryConfig= conf;
-    }
+    /** hold reference to set configuration in the requests. */
+    protected HttpClientOptions httpClientOptions;
 
-    /**
-     * Update RequestConfig configuration of the HTTPClient.
-     *
-     * @param conf
-     *      RequestConfig
-     */
-    public static void withRequestConfig(RequestConfig conf) {
-        requestConfig = conf;
-    }
+    /** Default settings in Request and Retry */
+    public LinkedHashMap<String, String> userAgents = new LinkedHashMap<>();
 
-    /**
-     * Register a new listener.
-     *
-     * @param name
-     *      current name
-     * @param listener
-     *      current listener
-     */
-    public static void registerListener(String name, ServiceCallObserver<?,?,?> listener) {
-        apiInvocationsObserversMap.put(name, listener);
-    }
-    
-    // -------------------------------------------
-    // ----------------- Singleton ---------------
-    // -------------------------------------------
-    
     /**
      * Hide default constructor
      */
-    private RetryHttpClient() {}
-    
+    public RetryHttpClient() {
+        this(HttpClientOptions.builder().build());
+    }
+
     /**
-     * Singleton Pattern.
-     * 
-     * @return
-     *      singleton for the class
+     * Initialize the instance with all items
+     *
+     * @param config
+     *      configuration of the HTTP CLIENT.
      */
-    public static synchronized RetryHttpClient getInstance() {
-        if (_instance == null) {
-            _instance = new RetryHttpClient();
-            final PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
-            connManager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
-            connManager.setMaxTotal(100);
-            connManager.setDefaultMaxPerRoute(10);
-            _instance.httpClient = HttpClients.custom().setConnectionManager(connManager).build();
+    public RetryHttpClient(HttpClientOptions config) {
+        this.httpClientOptions = config;
+
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        httpClientBuilder.version(config.getHttpVersion());
+        httpClientBuilder.followRedirects(config.getHttpRedirect());
+        httpClientBuilder.connectTimeout(Duration.ofSeconds(config.connectionRequestTimeoutInSeconds));
+        if (config.getProxy() != null) {
+            httpClientBuilder.proxy(ProxySelector.of(new InetSocketAddress(
+                    config.getProxy().getHostname(),
+                    config.getProxy().getPort())));
         }
-        return _instance;
+        httpClient = httpClientBuilder.build();
+
+        retryConfig = new RetryConfigBuilder()
+                .retryOnAnyException()
+                .withDelayBetweenTries(Duration.ofMillis(config.getRetryDelay()))
+                .withMaxNumberOfTries(config.getRetryCount())
+                .withExponentialBackoff()
+                .build();
+
+        pushUserAgent(config.userAgentCallerName, config.userAgentCallerVersion);
     }
 
     /**
@@ -211,12 +127,10 @@ public class RetryHttpClient implements ApiConstants {
     // -------------------------------------------
     // ---------- Working with HTTP --------------
     // -------------------------------------------
-    
+
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
@@ -224,15 +138,13 @@ public class RetryHttpClient implements ApiConstants {
      * @return
      *      http request
      */
-    public ApiResponseHttp GET(ServiceHttp sHttp, String url, String token) {
-        return executeHttp(sHttp, Method.GET, url, token, null, CONTENT_TYPE_JSON, false);
+    public ApiResponseHttp GET(String url, String token) {
+        return executeHttp("GET", url, token, null, CONTENT_TYPE_JSON, false);
     }
 
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
@@ -240,15 +152,13 @@ public class RetryHttpClient implements ApiConstants {
      * @return
      *      http request
      */
-    public ApiResponseHttp HEAD(ServiceHttp sHttp, String url, String token) {
-        return executeHttp(sHttp, Method.HEAD, url, token, null, CONTENT_TYPE_JSON, false);
+    public ApiResponseHttp HEAD(String url, String token) {
+        return executeHttp("HEAD", url, token, null, CONTENT_TYPE_JSON, false);
     }
-    
+
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
@@ -256,51 +166,45 @@ public class RetryHttpClient implements ApiConstants {
      * @return
      *      http request
      */
-    public ApiResponseHttp POST(ServiceHttp sHttp, String url, String token) {
-        return executeHttp(sHttp, Method.POST, url, token, null, CONTENT_TYPE_JSON, true);
+    public ApiResponseHttp POST(String url, String token) {
+        return executeHttp("POST", url, token, null, CONTENT_TYPE_JSON, true);
     }
-    
+
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
      *      authentication token
      * @param body
-     *      request body     
+     *      request body
      * @return
      *      http request
      */
-    public ApiResponseHttp POST(ServiceHttp sHttp, String url, String token, String body) {
-        return executeHttp(sHttp, Method.POST, url, token, body, CONTENT_TYPE_JSON, true);
+    public ApiResponseHttp POST(String url, String token, String body) {
+        return executeHttp("POST", url, token, body, CONTENT_TYPE_JSON, true);
     }
-    
+
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
      *      authentication token
      * @param body
-     *      request body     
+     *      request body
      * @return
      *      http request
      */
-    public ApiResponseHttp POST_GRAPHQL(ServiceHttp sHttp,  String url, String token, String body) {
-        return executeHttp(sHttp, Method.POST, url, token, body, CONTENT_TYPE_GRAPHQL, true);
+    public ApiResponseHttp POST_GRAPHQL(String url, String token, String body) {
+        return executeHttp("POST", url, token, body, CONTENT_TYPE_GRAPHQL, true);
     }
-    
+
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
@@ -308,51 +212,106 @@ public class RetryHttpClient implements ApiConstants {
      * @return
      *      http request
      */
-    public ApiResponseHttp DELETE(ServiceHttp sHttp,  String url, String token) {
-        return executeHttp(sHttp, Method.DELETE, url, token, null, CONTENT_TYPE_JSON, true);
+    public ApiResponseHttp DELETE(String url, String token) {
+        return executeHttp("DELETE", url, token, null, CONTENT_TYPE_JSON, true);
     }
-    
+
     /**
      * Helper to build the HTTP request.
      *
-     * @param sHttp
-     *      service http
-     * @param url
-     *      target url
-     * @param token
-     *      authentication token
-     * @param body
-     *      request body     
-     * @return
-     *      http request
-     */
-    public ApiResponseHttp PUT(ServiceHttp sHttp,  String url, String token, String body) {
-        return executeHttp(sHttp, Method.PUT, url, token, body, CONTENT_TYPE_JSON, false);
-    }
-    
-    /**
-     * Helper to build the HTTP request.
-     *
-     * @param sHttp
-     *      service http
      * @param url
      *      target url
      * @param token
      *      authentication token
      * @param body
-     *      request body     
+     *      request body
      * @return
      *      http request
      */
-    public ApiResponseHttp PATCH(ServiceHttp sHttp, String url, String token, String body) {
-        return executeHttp(sHttp, Method.PATCH, url, token, body, CONTENT_TYPE_JSON, true);
+    public ApiResponseHttp PUT(String url, String token, String body) {
+        return executeHttp("PUT", url, token, body, CONTENT_TYPE_JSON, false);
     }
-    
+
+    /**
+     * Helper to build the HTTP request.
+     *
+     * @param url
+     *      target url
+     * @param token
+     *      authentication token
+     * @param body
+     *      request body
+     * @return
+     *      http request
+     */
+    public ApiResponseHttp PATCH(String url, String token, String body) {
+        return executeHttp("PATCH", url, token, body, CONTENT_TYPE_JSON, true);
+    }
+
+    private HttpRequest builtHttpRequest(final String method,
+                                         final String url,
+                                         final String token,
+                                         String body,
+                                         String contentType) {
+        try {
+            return HttpRequest.newBuilder()
+                .uri(new URI(url))
+                .header(HEADER_CONTENT_TYPE, contentType)
+                .header(HEADER_ACCEPT, CONTENT_TYPE_JSON)
+                .header(HEADER_USER_AGENT, getUserAgentHeader())
+                .header(HEADER_REQUESTED_WITH, getUserAgentHeader())
+                .header(HEADER_REQUEST_ID, UUID.randomUUID().toString())
+                .header(HEADER_CASSANDRA, token)
+                .header(HEADER_AUTHORIZATION, "Bearer " + token)
+                .timeout(Duration.ofSeconds(httpClientOptions.responseTimeoutInSeconds))
+                .method(method, (body==null) ?
+                        HttpRequest.BodyPublishers.noBody() :
+                        HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        } catch(URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URL '" + url + "'", e);
+        }
+    }
+
+    private ApiResponseHttp parseHttpResponse(HttpResponse<String> response, boolean mandatory) {
+        try {
+            // Parsing result as expected bean
+            ApiResponseHttp res;
+            if (response == null) {
+                return new ApiResponseHttp("Response is empty, please check url",
+                        HttpURLConnection.HTTP_UNAVAILABLE, null);
+            }
+            res = new ApiResponseHttp(response.body(), response.statusCode(),
+                    response.headers().map().entrySet()
+                            .stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey,
+                                    entry -> entry.getValue().toString()))
+            );
+            // Error management
+            if (HttpURLConnection.HTTP_NOT_FOUND == res.getCode() && !mandatory) {
+                return res;
+            }
+            if (res.getCode() >= 300) {
+                log.error("Error for request url={}, method={}, code={}, body={}",
+                        response.request().uri().toString(), response.request().method(),
+                        res.getCode(), res.getBody());
+                processErrors(res, mandatory);
+            }
+            return res;
+        } catch (UnavailableResourceException e) {
+            log.error("Cannot find resource to execute query",e);
+            throw e;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid argument", e);
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Error in HTTP Request", e);
+        }
+    }
+
     /**
      * Main Method executing HTTP Request.
      *
-     * @param sHttp
-     *      service http
      * @param method
      *      http method
      * @param url
@@ -361,173 +320,38 @@ public class RetryHttpClient implements ApiConstants {
      *      authentication token
      * @param contentType
      *      request content type
-     * @param reqBody
+     * @param body
      *      request body
      * @param mandatory
      *      allow 404 errors
      * @return
      *      basic request
      */
-    public ApiResponseHttp executeHttp(ServiceHttp sHttp, final Method method, final String url, final String token, String reqBody, String contentType, boolean mandatory) {
-        return executeHttp(sHttp, buildRequest(method, url, token, reqBody, contentType), mandatory);
+    public ApiResponseHttp executeHttp(final String method,
+                                       final String url,
+                                       final String token,
+                                       String body,
+                                       String contentType, boolean mandatory) {
+            // Parse request
+            HttpRequest httpRequest = builtHttpRequest(method, url, token, body, contentType);
+
+            // Invoking the expected endpoint
+            Status<HttpResponse<String>> status = executeHttpRequest(httpRequest);
+
+            if (status.wasSuccessful()) {
+                return parseHttpResponse(status.getResult(), mandatory);
+            }
+            throw new RuntimeException(status.getLastExceptionThatCausedRetry());
     }
 
-    /**
-     * Execute a request coming from elsewhere.
-     *
-     * @param sHttp
-     *      service http
-     * @param req
-     *      current request
-     * @param mandatory
-     *      mandatory
-     * @return
-     *      api response
-     */
-    public ApiResponseHttp executeHttp(ServiceHttp sHttp, HttpUriRequestBase req, boolean mandatory) {
-        // Initializing the invocation event
-        ServiceHttpCallEvent event = new ServiceHttpCallEvent(sHttp, req);
+    public ApiResponseHttp executeHttp( HttpRequest httpRequest , boolean mandatory) {
         // Invoking the expected endpoint
-        Status<CloseableHttpResponse> status = executeWithRetries(req);
-        try {
-            // Parsing result as expected bean
-            ApiResponseHttp res = mapResponse(status, event);
-            // Error management
-            if (HttpURLConnection.HTTP_NOT_FOUND == res.getCode() && !mandatory) {
-                return res;
-            }
-            if (res.getCode() >= 300) {
-              LOGGER.error("Error for request [{}], url={}, method={}, code={}, body={}", 
-                      event.getRequestId(),
-                      req.getUri().toString(), req.getMethod(),
-                      res.getCode(), res.getBody());
-              processErrors(res, mandatory);
-              logHttpError(res);
-            }
-            return res;
-        } catch (UnavailableResourceException e) {
-            event.setErrorClass(e.getClass().getName());
-            event.setErrorMessage(e.getMessage());
-            throw e;
-        } catch (IllegalArgumentException e) {
-            event.setErrorClass(e.getClass().getName());
-            event.setErrorMessage(e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            event.setErrorClass(e.getClass().getName());
-            event.setErrorMessage(e.getMessage());
-            throw new RuntimeException("Error in HTTP Request", e);
-        } finally {
-            CompletableFuture.runAsync(()-> notifyAsync(listener->listener.onCall(event)));
-        }
-    }
-    
-    
-    
-    /**
-     * Mapping HTTP Response to framework HTTP BEAN.
-     *
-     * @param status
-     *      current result of the retries
-     * @param event
-     *      event to be sent
-     * @return
-     *      bean populated
-     * @throws ParseException
-     *      error in parsing
-     * @throws IOException
-     *      error in accessing payload
-     */
-    private ApiResponseHttp mapResponse(Status<CloseableHttpResponse> status, ServiceHttpCallEvent event)
-    throws ParseException, IOException {
-        ApiResponseHttp res;
-        event.setTotalTries(status.getTotalTries());
-        event.setLastException(status.getLastExceptionThatCausedRetry());
-        event.setResponseElapsedTime(status.getTotalElapsedDuration().toMillis());
-        try (CloseableHttpResponse response = status.getResult()) {
-            event.setResponseTimestamp(status.getEndTime());
-            if (response == null) {
-                event.setHttpResponseCode(HttpURLConnection.HTTP_UNAVAILABLE);
-                res = new ApiResponseHttp("Response is empty, please check url", 
-                        HttpURLConnection.HTTP_UNAVAILABLE, null);
-            } else {
-                event.setHttpResponseCode(response.getCode());
-                Map<String, String > headers = new HashMap<>();
-                Arrays.stream(response.getHeaders()).forEach(h -> headers.put(h.getName(), h.getValue()));
-                event.setHttpResponseHeaders(headers);
-    
-                // Parse body if present
-                String body = null;
-                if (null != response.getEntity()) {
-                     body = EntityUtils.toString(response.getEntity());
-                     EntityUtils.consume(response.getEntity());
-                }
-                event.setHttpResponseBody(body);
-            
-                // Mapping response
-                res = new ApiResponseHttp(body, response.getCode(), headers);
-            }
-        }
-        return res;
-    }
-    
-    /**
-     * Asynchronously send calls to listener for tracing.
-     *
-     * @param lambda
-     *      operations to execute
-     * @return
-     *      void
-     */
-    private CompletionStage<Void> notifyAsync(Consumer<ServiceCallObserver> lambda) {
-        return CompletableFutures.allDone(apiInvocationsObserversMap.values().stream()
-                .map(l -> CompletableFuture.runAsync(() -> lambda.accept(l)))
-                .collect(Collectors.toList()));
-    }
+        Status<HttpResponse<String>> status = executeHttpRequest(httpRequest);
 
-    /**
-     * Initialize an HTTP request against Stargate.
-     * 
-     * @param method
-     *      http Method
-     * @param url
-     *      target URL
-     * @param token
-     *      current token
-     * @return
-     *      default http with header
-     */
-    private HttpUriRequestBase buildRequest(final Method method, final String url, final String token, String body, String contentType) {
-        HttpUriRequestBase req;
-        switch(method) {
-            case GET:    req = new HttpGet(url);    break;
-            case POST:   req = new HttpPost(url);   break;
-            case PUT:    req = new HttpPut(url);    break;
-            case DELETE: req = new HttpDelete(url); break;
-            case PATCH:  req = new HttpPatch(url);  break;
-            case HEAD:   req = new HttpHead(url);   break;
-            case TRACE:  req = new HttpTrace(url);  break;
-            case OPTIONS:
-            case CONNECT:
-            default:throw new IllegalArgumentException("Invalid HTTP Method");
+        if (status.wasSuccessful()) {
+            return parseHttpResponse(status.getResult(), mandatory);
         }
-        req.addHeader(HEADER_CONTENT_TYPE, contentType);
-        req.addHeader(HEADER_ACCEPT, CONTENT_TYPE_JSON);
-
-        req.addHeader(HEADER_USER_AGENT, getUserAgentHeader());
-        req.addHeader(HEADER_REQUESTED_WITH, getUserAgentHeader());
-        req.addHeader(HEADER_REQUEST_ID, UUID.randomUUID().toString());
-        req.addHeader(HEADER_CASSANDRA, token);
-        req.addHeader(HEADER_AUTHORIZATION, "Bearer " + token);
-        req.setConfig(requestConfig);
-
-        if (null != body) {
-            // If you don't set a Charset the client will use ISO-8859-1
-            // preventing the use of UNICODE characters, and also the server assumes UTF-8
-            // that lead to decoding issues.
-            req.setEntity(new StringEntity(body, ContentType.TEXT_PLAIN.withCharset(StandardCharsets.UTF_8)));
-        }
-        return req;
+        throw new RuntimeException(status.getLastExceptionThatCausedRetry());
     }
 
     /**
@@ -539,36 +363,21 @@ public class RetryHttpClient implements ApiConstants {
      *      the closeable response
      */
     @SuppressWarnings("unchecked")
-    private Status<CloseableHttpResponse> executeWithRetries(ClassicHttpRequest req) {
-        Callable<CloseableHttpResponse> executeRequest = () -> {
-            return httpClient.execute(req);
-        };
+    private Status<HttpResponse<String>> executeHttpRequest(HttpRequest req) {
+        Callable<HttpResponse<String>> executeRequest = () ->
+                httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         return new CallExecutorBuilder<String>()
                 .config(retryConfig)
-                .onSuccessListener(s -> {
-                    CompletableFuture.runAsync(()-> notifyAsync(listener->listener.onSuccess(s)));
-                })
-                .onCompletionListener(s -> {
-                    CompletableFuture.runAsync(()-> notifyAsync(listener->listener.onCompletion(s)));
-                })
-                .onFailureListener(s -> {
-                    LOGGER.error("Calls failed after {} retries", s.getTotalTries());
-                    CompletableFuture.runAsync(()-> notifyAsync(listener->listener.onFailure(s)));
-                })
+                .onFailureListener(s -> log.error("Calls failed after {} retries", s.getTotalTries()))
                 .afterFailedTryListener(s -> {
-                    LOGGER.error("Failure on attempt {}/{} ", s.getTotalTries(), retryConfig.getMaxNumberOfTries());
-                    try {
-                        LOGGER.error("Failed request {} on {}", req.getMethod() , req.getUri() );
-                        LOGGER.error("+ Exception was ", s.getLastExceptionThatCausedRetry());
-                    } catch (URISyntaxException e) {
-                        LOGGER.error("Cannot display URI ", e);
-                    }
-                    CompletableFuture.runAsync(()-> notifyAsync(listener->listener.onFailedTry(s)));
+                    log.error("Failure on attempt {}/{} ", s.getTotalTries(), retryConfig.getMaxNumberOfTries());
+                    log.error("Failed request {} on {}", req.method() , req.uri().toString() );
+                    log.error("+ Exception was ", s.getLastExceptionThatCausedRetry());
                 })
                 .build()
                 .execute(executeRequest);
     }
-    
+
     /**
      * Process ERRORS.Anything above code 300 can be marked as an error Still something
      * 404 is expected and should not result in throwing exception (=not find)
@@ -576,68 +385,45 @@ public class RetryHttpClient implements ApiConstants {
      */
     private void processErrors(ApiResponseHttp res, boolean mandatory) {
         switch(res.getCode()) {
-                // 400
-                case HttpURLConnection.HTTP_BAD_REQUEST:
-                    throw new IllegalArgumentException("Error Code=" + res.getCode() + 
-                            " (HTTP_BAD_REQUEST) Invalid Parameters: " 
-                            + res.getBody());
+            // 400
+            case HttpURLConnection.HTTP_BAD_REQUEST:
+                throw new IllegalArgumentException("Error Code=" + res.getCode() +
+                        " (HTTP_BAD_REQUEST) Invalid Parameters: "
+                        + res.getBody());
                 // 401
-                case HttpURLConnection.HTTP_UNAUTHORIZED:
-                    throw new AuthenticationException("Error Code=" + res.getCode() + 
-                            ", (HTTP_UNAUTHORIZED) Invalid Credentials Check your token: " + 
-                            res.getBody());
+            case HttpURLConnection.HTTP_UNAUTHORIZED:
+                throw new AuthenticationException("Error Code=" + res.getCode() +
+                        ", (HTTP_UNAUTHORIZED) Invalid Credentials Check your token: " +
+                        res.getBody());
                 // 403
-                case HttpURLConnection.HTTP_FORBIDDEN:
-                    throw new AuthenticationException("Error Code=" + res.getCode() + 
-                            ", (HTTP_FORBIDDEN) Invalid permissions, check your token: " + 
-                            res.getBody());
-                // 404    
-                case HttpURLConnection.HTTP_NOT_FOUND:
-                    if (mandatory) {
-                        throw new IllegalArgumentException("Error Code=" + res.getCode() + 
-                                "(HTTP_NOT_FOUND) Object not found:  " 
-                                + res.getBody());
-                    }
-                break;
-                // 409
-                case HttpURLConnection.HTTP_CONFLICT:
-                    throw new AlreadyExistException("Error Code=" + res.getCode() +
-                            ", (HTTP_CONFLICT) Object may already exist with same identifiers: " +
-                            res.getBody());                
-                case 422:
-                    throw new IllegalArgumentException("Error Code=" + res.getCode() + 
-                            "(422) Invalid information provided to create DB: " 
+            case HttpURLConnection.HTTP_FORBIDDEN:
+                throw new AuthenticationException("Error Code=" + res.getCode() +
+                        ", (HTTP_FORBIDDEN) Invalid permissions, check your token: " +
+                        res.getBody());
+                // 404
+            case HttpURLConnection.HTTP_NOT_FOUND:
+                if (mandatory) {
+                    throw new IllegalArgumentException("Error Code=" + res.getCode() +
+                            "(HTTP_NOT_FOUND) Object not found:  "
                             + res.getBody());
-                default:
-                    if (res.getCode() == HttpURLConnection.HTTP_UNAVAILABLE) {
-                        throw new UnavailableResourceException(res.getBody() + " (http:" + res.getCode() + ")");
-                    }
-                    throw new RuntimeException(res.getBody() + " (http:" + res.getCode() + ")");
-            }
-    }
-    
-    private void logHttpError(ApiResponseHttp res) {
-        LOGGER.error("An HTTP Error occurred. The HTTP CODE Return is {}", res.getCode());
-    }
-
-    /**
-     * Getter accessor for attribute 'requestConfig'.
-     *
-     * @return
-     *       current value of 'requestConfig'
-     */
-    public static RequestConfig getRequestConfig() {
-        return requestConfig;
+                }
+                break;
+            // 409
+            case HttpURLConnection.HTTP_CONFLICT:
+                throw new AlreadyExistException("Error Code=" + res.getCode() +
+                        ", (HTTP_CONFLICT) Object may already exist with same identifiers: " +
+                        res.getBody());
+            case 422:
+                throw new IllegalArgumentException("Error Code=" + res.getCode() +
+                        "(422) Invalid information provided to create DB: "
+                        + res.getBody());
+            default:
+                if (res.getCode() == HttpURLConnection.HTTP_UNAVAILABLE) {
+                    throw new UnavailableResourceException(res.getBody() + " (http:" + res.getCode() + ")");
+                }
+                throw new RuntimeException(res.getBody() + " (http:" + res.getCode() + ")");
+        }
     }
 
-    /**
-     * Getter accessor for attribute 'retryConfig'.
-     *
-     * @return
-     *       current value of 'retryConfig'
-     */
-    public static RetryConfig getRetryConfig() {
-        return retryConfig;
-    }
 
 }

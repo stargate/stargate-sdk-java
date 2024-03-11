@@ -4,6 +4,18 @@
 
 This page is mean to help developer to release this the SDK.
 
+## Test commands
+
+- Generate Jacoco Report
+```json
+mvn clean test jacoco:report 
+```
+
+- Push to SONAR
+```json
+mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=clun_stargate-sdk-java
+```
+
 ## Prerequisites
 
 - You need to have `Java 8+` and Maven installed.

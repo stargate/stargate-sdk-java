@@ -4,16 +4,23 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.stargate.sdk.Service;
 import io.stargate.sdk.api.ApiConstants;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
+import lombok.Getter;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation.
  */
+@Getter
 public class ServiceGrpc extends Service {
+
+    /** Simple Client. */
+    public static HttpClient healthCheckClient = HttpClient.newHttpClient();
 
     /** Secured transport. */
     protected boolean securedTransport;
@@ -85,48 +92,12 @@ public class ServiceGrpc extends Service {
     @Override
     public boolean isAlive() {
         try {
-            return HttpURLConnection.HTTP_OK == HttpClients
-                    .createDefault()
-                    .execute(new HttpGet(healthCheckEndpoint))
-                    .getCode();
-        } catch(Exception re) {
+            return HttpURLConnection.HTTP_OK == healthCheckClient.send(
+                    HttpRequest.newBuilder(new URI(healthCheckEndpoint)).GET().build(),
+                    HttpResponse.BodyHandlers.discarding()).statusCode();
+        } catch (Exception e) {
             return false;
         }
     }
 
-    /**
-     * Set value for maxRetries
-     *
-     * @param maxRetries new value for maxRetries
-     */
-    public void setMaxRetries(int maxRetries) {
-        this.maxRetries = maxRetries;
-    }
-
-    /**
-     * Set value for keepAliveTimeout
-     *
-     * @param keepAliveTimeout new value for keepAliveTimeout
-     */
-    public void setKeepAliveTimeout(long keepAliveTimeout) {
-        this.keepAliveTimeout = keepAliveTimeout;
-    }
-
-    /**
-     * Set value for keepAliveTimeoutUnit
-     *
-     * @param keepAliveTimeoutUnit new value for keepAliveTimeoutUnit
-     */
-    public void setKeepAliveTimeoutUnit(TimeUnit keepAliveTimeoutUnit) {
-        this.keepAliveTimeoutUnit = keepAliveTimeoutUnit;
-    }
-
-    /**
-     * Gets channel
-     *
-     * @return value of channel
-     */
-    public ManagedChannel getChannel() {
-        return channel;
-    }
 }

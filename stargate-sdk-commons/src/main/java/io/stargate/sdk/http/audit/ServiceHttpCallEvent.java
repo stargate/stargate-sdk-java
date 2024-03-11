@@ -3,12 +3,11 @@ package io.stargate.sdk.http.audit;
 import io.stargate.sdk.api.ApiConstants;
 import io.stargate.sdk.audit.ServiceCallEvent;
 import io.stargate.sdk.http.ServiceHttp;
-import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 
+import java.net.http.HttpRequest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Event triggered for Api Invocation with input/output tracing.
@@ -50,27 +49,17 @@ public class ServiceHttpCallEvent extends ServiceCallEvent<ServiceHttp> implemen
      * @param req
      *      current http request
      */
-    public ServiceHttpCallEvent(ServiceHttp service, ClassicHttpRequest req) {
+    public ServiceHttpCallEvent(ServiceHttp service, HttpRequest req) {
         super();
         this.timestamp = System.currentTimeMillis();
         this.service  = service;
         try {
-            if (req.containsHeader(HEADER_REQUEST_ID)) {
-                this.requestId = req.getHeader(HEADER_REQUEST_ID).getValue();
-            }
-            this.httpRequestMethod = req.getMethod();
-            this.httpRequestUrl = req.getUri().toString();
-            for (Header h : req.getHeaders()) {
-                if (h.getName().equalsIgnoreCase(HEADER_AUTHORIZATION) ||
-                        h.getName().equalsIgnoreCase(HEADER_CASSANDRA)) {
-                    this.httpRequestHeaders.put(h.getName(), "***");
-                } else {
-                    this.httpRequestHeaders.put(h.getName(), h.getValue());
-                }
-            }
-            if (req.getEntity() != null) {
-                this.httpRequestBody = EntityUtils.toString(req.getEntity());
-            }
+            this.requestId          = req.headers().firstValue(HEADER_REQUEST_ID).orElse(null);
+            this.httpRequestMethod  = req.method();
+            this.httpRequestUrl     = req.uri().toString();
+            this.httpRequestHeaders = req.headers().map().entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey,entry -> entry.getValue().toString()));
         } catch (Exception pe) {
             // Ignore errors in the monitoring process
         }

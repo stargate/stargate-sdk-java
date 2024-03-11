@@ -1,6 +1,6 @@
 package io.stargate.sdk;
 
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 
 import java.util.Arrays;
 import java.util.HashMap;

@@ -4,39 +4,53 @@ import io.stargate.sdk.ManagedServiceDeployment;
 import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.api.ApiConstants;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
-
 import io.stargate.sdk.loadbalancer.LoadBalancedResource;
 import io.stargate.sdk.loadbalancer.NoneResourceAvailableException;
 import io.stargate.sdk.loadbalancer.UnavailableResourceException;
-import io.stargate.sdk.utils.AnsiUtils;
+import io.stargate.sdk.utils.Assert;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.core5.http.Method;
-
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.function.Function;
 
 /**
  * Rest API is an Http Service of Stargate
  */
 @Slf4j
+@Getter
 public class LoadBalancedHttpClient implements ApiConstants {
 
     /** Logger for our Client. */
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadBalancedHttpClient.class);
 
-    /**
-     * Hold the configuration of the cluster with list of dc and service instances.
-     */
+    /** Hold the configuration of the cluster with list of dc and service instances. */
     private final ManagedServiceDeployment<ServiceHttp> deployment;
+
+    /** Reference an http client with retry. */
+    private final RetryHttpClient retryHttpClient;
+
+    /**
+     * Complete configuration.
+     *
+     * @param conf
+     *      configuration
+     */
+    public LoadBalancedHttpClient(ServiceDeployment<ServiceHttp> conf) {
+        this(conf, HttpClientOptions.builder().build());
+    }
 
     /**
      * Complete configuration.
      * @param conf
      *      configuration
      */
-    public LoadBalancedHttpClient(ServiceDeployment<ServiceHttp> conf) {
-        this.deployment = new ManagedServiceDeployment<>(conf);
+    public LoadBalancedHttpClient(ServiceDeployment<ServiceHttp> conf, HttpClientOptions options) {
+        Assert.notNull(conf, "deployment");;
+        Assert.notNull(options, "http client options");;
+        this.deployment      = new ManagedServiceDeployment<>(conf);
+        this.retryHttpClient = new RetryHttpClient(options);
     }
 
     /**
@@ -62,11 +76,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp GET(Function<ServiceHttp, String> mapper, String suffix) {
-        return http(mapper, Method.GET, null, suffix, CONTENT_TYPE_JSON, false);
+        return http(mapper, "GET", null, suffix, CONTENT_TYPE_JSON, false);
     }
 
     /**
-     * Syntaxic sugar for a HEAD.
+     * Syntax sugar for a HEAD.
      *
      * @param mapper
      *       mapper for the URL
@@ -74,7 +88,7 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp HEAD(Function<ServiceHttp, String> mapper) {
-        return http(mapper, Method.PATCH, null, null, CONTENT_TYPE_JSON, false);
+        return http(mapper, "PATCH", null, null, CONTENT_TYPE_JSON, false);
     }
 
     /**
@@ -100,7 +114,7 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp POST(Function<ServiceHttp, String> mapper, String body) {
-        return http(mapper, Method.POST, body, null, CONTENT_TYPE_JSON, true);
+        return http(mapper, "POST", body, null, CONTENT_TYPE_JSON, true);
     }
 
     /**
@@ -114,11 +128,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp POST_GRAPHQL(Function<ServiceHttp, String> mapper, String body) {
-        return http(mapper, Method.POST, body, null, CONTENT_TYPE_GRAPHQL, true);
+        return http(mapper, "POST", body, null, CONTENT_TYPE_GRAPHQL, true);
     }
 
     /**
-     * Syntaxic sugar.
+     * Syntax sugar.
      *
      * @param mapper
      *       mapper for the URL
@@ -130,11 +144,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp POST(Function<ServiceHttp, String> mapper, String body, String suffix) {
-        return http(mapper, Method.POST, body, suffix, CONTENT_TYPE_JSON, true);
+        return http(mapper, "POST", body, suffix, CONTENT_TYPE_JSON, true);
     }
 
     /**
-     * Syntaxic sugar.
+     * Syntax sugar.
      *
      * @param mapper
      *      mapper for the URL
@@ -142,11 +156,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *       http response
      */
     public ApiResponseHttp DELETE(Function<ServiceHttp, String> mapper) {
-        return http(mapper, Method.DELETE, null, null, CONTENT_TYPE_JSON, true);
+        return http(mapper, "DELETE", null, null, CONTENT_TYPE_JSON, true);
     }
 
     /**
-     * Syntaxic sugar.
+     * Syntax sugar.
      *
      * @param mapper
      *      mapper for the URL
@@ -156,11 +170,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *       http response
      */
     public ApiResponseHttp DELETE(Function<ServiceHttp, String> mapper, String suffix) {
-        return http(mapper, Method.DELETE, null, suffix, CONTENT_TYPE_JSON, true);
+        return http(mapper, "DELETE", null, suffix, CONTENT_TYPE_JSON, true);
     }
 
     /**
-     * Syntaxic sugar.
+     * Syntax sugar.
      *
      * @param mapper
      *       mapper for the URL
@@ -170,11 +184,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp PUT(Function<ServiceHttp, String> mapper, String body) {
-        return http(mapper, Method.PUT, body, null, CONTENT_TYPE_JSON, false);
+        return http(mapper, "PUT", body, null, CONTENT_TYPE_JSON, false);
     }
 
     /**
-     * Syntaxic sugar.
+     * Syntax sugar.
      *
      * @param mapper
      *       mapper for the URL
@@ -186,7 +200,7 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp PUT(Function<ServiceHttp, String> mapper, String body, String suffix) {
-        return http(mapper, Method.PUT, body, suffix, CONTENT_TYPE_JSON, false);
+        return http(mapper, "PUT", body, suffix, CONTENT_TYPE_JSON, false);
     }
 
     /**
@@ -200,11 +214,11 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp PATCH(Function<ServiceHttp, String> mapper, String body) {
-        return http(mapper, Method.PATCH, body, null, CONTENT_TYPE_JSON, true);
+        return http(mapper, "PATCH", body, null, CONTENT_TYPE_JSON, true);
     }
 
     /**
-     * Syntaxic sugar.
+     * Syntax sugar.
      *
      * @param mapper
      *       mapper for the URL
@@ -216,7 +230,7 @@ public class LoadBalancedHttpClient implements ApiConstants {
      *      http response
      */
     public ApiResponseHttp PATCH(Function<ServiceHttp, String> mapper, String body, String suffix) {
-        return http(mapper, Method.PATCH, body, suffix, CONTENT_TYPE_JSON, true);
+        return http(mapper, "PATCH", body, suffix, CONTENT_TYPE_JSON, true);
     }
 
     /**
@@ -233,11 +247,14 @@ public class LoadBalancedHttpClient implements ApiConstants {
      * @param mandatory
      *      handling 404 error code, could raise exception or not
      * @return
+     *      http response
      */
     private ApiResponseHttp http(Function<ServiceHttp, String> mapper,
-                                 final Method method, String body,
+                                 final String method, String body,
                                  String suffix, String contentType,
                                  boolean mandatory) {
+        Assert.notNull(mapper, "function mapper");
+        Assert.hasLength(method, "method");
         LoadBalancedResource<ServiceHttp> lb = null;
         while (true) {
             try {
@@ -247,8 +264,7 @@ public class LoadBalancedHttpClient implements ApiConstants {
                 String targetEndPoint = mapper.apply(lb.getResource());
                 if (null != suffix) targetEndPoint+= suffix;
                 // Invoke request
-                return RetryHttpClient.getInstance()
-                        .executeHttp(lb.getResource(), method, targetEndPoint, deployment.lookupToken(), body, contentType, mandatory);
+                return retryHttpClient.executeHttp(method, targetEndPoint, deployment.lookupToken(), body, contentType, mandatory);
             } catch(UnavailableResourceException rex) {
                 LOGGER.warn("A stargate node is down [{}], falling back to another node...", lb.getResource().getId());
                 try {
@@ -262,18 +278,9 @@ public class LoadBalancedHttpClient implements ApiConstants {
                 LOGGER.warn("No node availables is DataCenter [{}], falling back to another DC if available ...",
                         deployment.getLocalDatacenterClient().getDatacenterName());
                 deployment.failOverDatacenter();
-
             }
         }
     }
 
-    /**
-     * Gets deployment
-     *
-     * @return value of deployment
-     */
-    public ManagedServiceDeployment<ServiceHttp> getDeployment() {
-        return deployment;
-    }
 }
 

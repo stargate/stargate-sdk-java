@@ -21,11 +21,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.api.ApiResponse;
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.doc.domain.Namespace;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
+import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.utils.AnsiUtils;
 import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
@@ -87,7 +87,7 @@ public class StargateDocumentApiClient {
     public StargateDocumentApiClient(String endpoint) {
         Assert.hasLength(endpoint, "stargate endpoint");
         ServiceHttp rest = new ServiceHttp(DEFAULT_SERVICE_ID, endpoint, endpoint + PATH_HEALTH_CHECK);
-        TokenProvider tokenProvider = new TokenProviderHttpAuth();
+        TokenProvider tokenProvider = new StargateAuthenticationService();
         ServiceDatacenter<ServiceHttp> sDc = new ServiceDatacenter<>(DEFAULT_DATACENTER, tokenProvider, Collections.singletonList(rest));
         ServiceDeployment<ServiceHttp> deploy = new ServiceDeployment<ServiceHttp>().addDatacenter(sDc);
         this.stargateHttpClient  = new LoadBalancedHttpClient(deploy);

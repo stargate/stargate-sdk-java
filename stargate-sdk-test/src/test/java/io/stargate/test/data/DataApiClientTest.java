@@ -1,16 +1,16 @@
 package io.stargate.test.data;
 
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.data.CollectionClient;
-import io.stargate.sdk.data.DataApiClient;
-import io.stargate.sdk.data.domain.JsonDocumentResult;
-import io.stargate.sdk.data.domain.JsonResultUpdate;
-import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.odm.DocumentResult;
-import io.stargate.sdk.data.domain.query.Filter;
-import io.stargate.sdk.data.domain.query.SelectQuery;
-import io.stargate.sdk.data.domain.query.UpdateQuery;
-import io.stargate.sdk.data.domain.query.UpdateQueryBuilder;
+import io.stargate.sdk.v1.data.CollectionClient;
+import io.stargate.sdk.v1.data.DataApiClient;
+import io.stargate.sdk.v1.data.domain.JsonDocumentResult;
+import io.stargate.sdk.v1.data.domain.JsonResultUpdate;
+import io.stargate.sdk.v1.data.domain.odm.Document;
+import io.stargate.sdk.v1.data.domain.odm.DocumentResult;
+import io.stargate.sdk.v1.data.domain.query.Filter;
+import io.stargate.sdk.v1.data.domain.query.SelectQuery;
+import io.stargate.sdk.v1.data.domain.query.UpdateQuery;
+import io.stargate.sdk.v1.data.domain.query.UpdateQueryBuilder;
 import io.stargate.sdk.http.domain.FilterOperator;
 import io.stargate.sdk.test.json.AbstractJsonClientNamespacesTest;
 import io.stargate.sdk.utils.JsonUtils;

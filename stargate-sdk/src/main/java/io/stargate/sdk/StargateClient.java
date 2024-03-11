@@ -21,7 +21,7 @@ import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.config.TypedDriverOption;
 import io.stargate.sdk.audit.ServiceCallObserver;
-import io.stargate.sdk.data.DataApiClient;
+import io.stargate.sdk.v1.data.DataApiClient;
 import io.stargate.sdk.doc.StargateDocumentApiClient;
 import io.stargate.sdk.gql.StargateGraphQLApiClient;
 import io.stargate.sdk.grpc.ServiceGrpc;
@@ -156,20 +156,6 @@ public class StargateClient implements Closeable {
                 this.apiGrpcClient = new StargateGrpcApiClient(grpcDeploy);
             }
         }
-
-        // ------------- HTTP ---------------------
-        
-        if (config.getRetryConfig() != null) {
-            RetryHttpClient.withRetryConfig(config.getRetryConfig());
-        }
-        if (config.getRequestConfig() != null) {
-            RetryHttpClient.withRequestConfig(config.getRequestConfig());
-        }
-        if (!config.getObservers().isEmpty()) {
-            for (Map.Entry<String, ServiceCallObserver> obs : config.getObservers().entrySet()) {
-                RetryHttpClient.registerListener(obs.getKey(), obs.getValue());
-            }
-        }
     }
 
     /**
@@ -240,7 +226,7 @@ public class StargateClient implements Closeable {
                     String scb = conf.getCqlOptions().get(this.currentDatacenter, TypedDriverOption.CLOUD_SECURE_CONNECT_BUNDLE);
                     if (Utils.hasLength(scb)) {
                         conf.withCqlCloudSecureConnectBundle(scb);
-                        conf.setLocalDatacenter(currentDatacenter);
+                        conf.localDatacenter  = currentDatacenter;
                     }
                     // Connectivity to local Cassandra with contact points
                     List<String> configContactPointsDC = conf.getCqlOptions().get(this.currentDatacenter, TypedDriverOption.CONTACT_POINTS);

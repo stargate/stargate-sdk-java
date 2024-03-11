@@ -2,9 +2,9 @@ package io.stargate.test.rest;
 
 import io.stargate.sdk.ServiceDatacenter;
 import io.stargate.sdk.ServiceDeployment;
-import io.stargate.sdk.api.TokenProvider;
+import io.stargate.sdk.auth.TokenProvider;
 import io.stargate.sdk.http.ServiceHttp;
-import io.stargate.sdk.http.auth.TokenProviderHttpAuth;
+import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.rest.KeyspaceClient;
 import io.stargate.sdk.rest.StargateRestApiClient;
 import io.stargate.sdk.test.rest.AbstractRestClientKeyspacesTest;
@@ -27,7 +27,7 @@ public class RestClientKeyspacesDeploymentTest extends AbstractRestClientKeyspac
         ServiceHttp s2 = new ServiceHttp("dc1-n2", endpoint, health);
 
         // One DC (with Auth endpoint), 2 nodess
-        TokenProvider auth = new TokenProviderHttpAuth("cassandra", "cassandra", "http://localhost:8081");
+        TokenProvider auth = new StargateAuthenticationService("cassandra", "cassandra", "http://localhost:8081");
         ServiceDatacenter<ServiceHttp> dc1 = new ServiceDatacenter<ServiceHttp>("dc1", auth, s1, s2);
 
         // Initialization

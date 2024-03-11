@@ -1,14 +1,14 @@
 package io.stargate.sdk.test.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.stargate.sdk.data.DataApiClient;
-import io.stargate.sdk.data.CollectionClient;
-import io.stargate.sdk.data.NamespaceClient;
-import io.stargate.sdk.data.domain.CollectionDefinition;
-import io.stargate.sdk.data.domain.JsonDocument;
-import io.stargate.sdk.data.domain.NamespaceDefinition;
-import io.stargate.sdk.data.domain.odm.Document;
-import io.stargate.sdk.data.domain.query.Filter;
+import io.stargate.sdk.v1.data.DataApiClient;
+import io.stargate.sdk.v1.data.CollectionClient;
+import io.stargate.sdk.v1.data.NamespaceClient;
+import io.stargate.sdk.v1.data.domain.CollectionDefinition;
+import io.stargate.sdk.v1.data.domain.JsonDocument;
+import io.stargate.sdk.v1.data.domain.NamespaceDefinition;
+import io.stargate.sdk.v1.data.domain.odm.Document;
+import io.stargate.sdk.v1.data.domain.query.Filter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
@@ -19,12 +19,10 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.stargate.sdk.data.domain.SimilarityMetric.cosine;
+import static io.stargate.sdk.v1.data.domain.SimilarityMetric.cosine;
 
 /**
  * This class test the data api for Keyspaces
