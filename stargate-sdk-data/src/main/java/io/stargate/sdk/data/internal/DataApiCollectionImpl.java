@@ -6,6 +6,9 @@ import io.stargate.sdk.data.client.exception.CollectionNotFoundException;
 import io.stargate.sdk.data.client.exception.TooManyDocumentsException;
 import io.stargate.sdk.data.client.model.BulkWriteOptions;
 import io.stargate.sdk.data.client.model.BulkWriteResult;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.CommandFindOne;
+import io.stargate.sdk.data.client.model.CommandInsertOne;
 import io.stargate.sdk.data.client.model.CreateCollectionOptions;
 import io.stargate.sdk.data.client.model.DeleteResult;
 import io.stargate.sdk.data.client.model.DistinctIterable;
@@ -20,25 +23,22 @@ import io.stargate.sdk.data.client.model.UpdateResult;
 import io.stargate.sdk.data.client.model.find.FindOneAndDeleteOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndReplaceOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndUpdateOptions;
-import io.stargate.sdk.data.client.model.find.FindOneCommand;
+import io.stargate.sdk.data.client.model.find.FindOneRequest;
 import io.stargate.sdk.data.client.model.find.FindOneOptions;
 import io.stargate.sdk.data.client.model.insert.InsertOneResult;
 import io.stargate.sdk.data.internal.model.ApiResponse;
-import io.stargate.sdk.data.internal.model.CollectionInformation;
+import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.utils.Assert;
-import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static io.stargate.sdk.data.internal.DataApiUtils.runCommand;
 import static io.stargate.sdk.utils.Assert.hasLength;
 import static io.stargate.sdk.utils.Assert.notNull;
 
@@ -94,7 +94,7 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
     /** {@inheritDoc} */
     @Override
     public CreateCollectionOptions getOptions() {
-        Optional<CollectionInformation> optCol = namespace
+        Optional<CollectionDefinition> optCol = namespace
                 .listCollections()
                 .filter(col -> col.getName().equals(collectionName))
                 .findFirst();
@@ -126,8 +126,7 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
     /** {@inheritDoc} */
     @Override
     public final InsertOneResult insertOne(DOC document) {
-        notNull(document, "document");
-        ApiResponse apiResponse = execute("insertOne", Map.of("document", document));
+        ApiResponse apiResponse = runCommand(new CommandInsertOne<>(document));
         if (apiResponse.getErrors() != null && !apiResponse.getErrors().isEmpty()) {
             apiResponse.getErrors().get(0).throwDataApiException();
         }
@@ -141,7 +140,7 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
     // --------------------------
 
     public Optional<Document> findOne(Filter filter, FindOneOptions options) {
-        ApiResponse apiResponse = execute("findOne", new FindOneCommand(filter, options));
+        ApiResponse apiResponse = runCommand(new CommandFindOne().withFilter(filter).withOptions(options));
         return Optional.ofNullable(apiResponse.getData().getDocument());
     }
 
@@ -222,7 +221,7 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
         DeleteResult res;
         boolean moreData = false;
         do {
-            ApiResponse apiResponse = execute("deleteMany", filter);
+            ApiResponse apiResponse = runCommand(new Command<>("deleteMany", filter));
             DataApiUtils.validate(apiResponse);
             Document status = apiResponse.getStatus();
             if (status != null) {
@@ -322,18 +321,6 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
     @Override
     public LoadBalancedHttpClient getHttpClient() {
         return getNamespace().getHttpClient();
-    }
-
-    /**
-     * Syntax sugar.
-     *
-     * @param operation
-     *      operation to run
-     * @param payload
-     *      payload returned
-     */
-    private ApiResponse execute(String operation, Object payload) {
-        return DataApiUtils.runCommand(getHttpClient(), collectionResource, operation, payload);
     }
 
 }

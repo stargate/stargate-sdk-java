@@ -1,6 +1,7 @@
 package io.stargate.sdk.data.internal;
 
 import io.stargate.sdk.data.client.exception.DataApiException;
+import io.stargate.sdk.data.client.model.Command;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.internal.model.ApiData;
 import io.stargate.sdk.data.internal.model.ApiError;
@@ -36,14 +37,14 @@ public class DataApiUtils {
      * @param rootResource
      *      rest resource
      * @param jsonCommand
-     *      json Command
+     *      command to execute as json
      * @return
      *      json Api response
      */
     public static ApiResponse runCommand(
-          @NonNull LoadBalancedHttpClient stargateHttpClient,
-          @NonNull Function<ServiceHttp, String> rootResource,
-          String jsonCommand) {
+            @NonNull LoadBalancedHttpClient stargateHttpClient,
+            @NonNull Function<ServiceHttp, String> rootResource,
+            @NonNull String jsonCommand) {
         log.debug(magenta("[request ]") + "=" + yellow("{}"), jsonCommand);
         ApiResponseHttp httpRes = stargateHttpClient.POST(rootResource, jsonCommand);
         log.debug(magenta("[response]") + "=" + yellow("{}"), httpRes.getBody());
@@ -71,58 +72,20 @@ public class DataApiUtils {
      *
      * @param stargateHttpClient
      *      http client
-     * @param operation
-     *      operation name
      * @param rootResource
      *      rest resource
-     * @param body
-     *      body to send
+     * @param command
+     *      command to execute
      * @return
      *      json Api response
      */
     public static ApiResponse runCommand(
-            @NonNull LoadBalancedHttpClient stargateHttpClient,
-            @NonNull Function<ServiceHttp, String> rootResource,
-            @NonNull String operation, Object body) {
-        String jsonCommand = buildJsonCommand(operation, body);
-        return runCommand(stargateHttpClient, rootResource, jsonCommand);
-    }
-
-    /**
-     * Build request Body as expect by the api
-     * { 'operation': { 'content': 'content' } }
-     *
-     * @param function
-     *      the function to call
-     * @param content
-     *      Object to serialize as json
-     * @return
-     *    request body
-     */
-    public static String buildJsonCommand(String function, Object content) {
-        String stringBody = "{\"" + function + "\":";
-        if (content == null) {
-            stringBody += "{}";
-        } else if (content instanceof String) {
-            stringBody += (String) content;
-        } else {
-            String obj = JsonUtils.marshallForDataApi(content);
-            stringBody += obj;
-        }
-        stringBody += "}";
-        return stringBody;
-    }
-
-    /**
-     * Body with no payload.
-     *
-     * @param function
-     *      current function
-     * @return
-     *      request
-     */
-    public static String buildJsonCommand(String function) {
-        return buildJsonCommand(function, null);
+          @NonNull LoadBalancedHttpClient stargateHttpClient,
+          @NonNull Function<ServiceHttp, String> rootResource,
+          @NonNull Command<?> command) {
+        return runCommand(stargateHttpClient,
+                rootResource,
+                JsonUtils.marshallForDataApi(command));
     }
 
     /**

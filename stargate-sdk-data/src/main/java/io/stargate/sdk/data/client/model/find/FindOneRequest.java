@@ -13,7 +13,7 @@ import static io.stargate.sdk.data.client.model.Filters.eq;
  */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FindOneCommand {
+public class FindOneRequest {
 
     /**
      * where clause
@@ -43,6 +43,9 @@ public class FindOneCommand {
         Boolean includeSimilarity;
     }
 
+    public FindOneRequest() {
+    }
+
     /**
      * Constructor with filter and options.
      * @param filter
@@ -50,7 +53,7 @@ public class FindOneCommand {
      * @param findOneOptions
      *      options for the request
      */
-    public FindOneCommand(Filter filter, FindOneOptions findOneOptions) {
+    public FindOneRequest(Filter filter, FindOneOptions findOneOptions) {
         if (filter != null) {
             this.filter = filter.getFilter();
         }

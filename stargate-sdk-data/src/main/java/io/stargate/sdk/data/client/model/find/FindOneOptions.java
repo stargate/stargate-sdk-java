@@ -26,7 +26,7 @@ public class FindOneOptions {
     /**
      * Options.
      */
-    private FindOneCommand.FindOneCommandOptions options;
+    private FindOneRequest.FindOneCommandOptions options;
 
     /**
      * Fluent api.
@@ -36,7 +36,7 @@ public class FindOneOptions {
      */
     public FindOneOptions includeSimilarity() {
         if (options != null) {
-            options = new FindOneCommand.FindOneCommandOptions();
+            options = new FindOneRequest.FindOneCommandOptions();
             options.setIncludeSimilarity(true);
         }
         return this;

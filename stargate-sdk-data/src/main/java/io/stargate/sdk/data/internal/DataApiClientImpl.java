@@ -3,6 +3,10 @@ package io.stargate.sdk.data.internal;
 import io.stargate.sdk.data.client.DataApiClient;
 import io.stargate.sdk.data.client.DataApiNamespace;
 import io.stargate.sdk.data.client.exception.NamespaceNotFoundException;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.CommandCreateNamespace;
+import io.stargate.sdk.data.client.model.CommandDropNamespace;
+import io.stargate.sdk.data.client.model.CommandFindNamespaces;
 import io.stargate.sdk.data.client.model.CreateNamespaceOptions;
 import io.stargate.sdk.data.internal.model.ApiResponse;
 import io.stargate.sdk.data.internal.model.NamespaceInformation;
@@ -75,7 +79,7 @@ public class DataApiClientImpl implements DataApiClient {
     /** {@inheritDoc} */
     @Override
     public Stream<String> listNamespaceNames() {
-        return execute("findNamespaces", null).getStatusKeyAsStringStream("namespaces");
+        return runCommand(new CommandFindNamespaces()).getStatusKeyAsStringStream("namespaces");
     }
 
     /** {@inheritDoc} */
@@ -95,33 +99,16 @@ public class DataApiClientImpl implements DataApiClient {
     @Override
     public DataApiNamespace createNamespace(String namespace, CreateNamespaceOptions options) {
         hasLength(namespace, "namespace");
-        NamespaceInformation request = new NamespaceInformation();
-        request.setName(namespace);
-        request.setOptions(options);
-        execute("createNamespace", request);
+        runCommand(new CommandCreateNamespace().withName(namespace).withOptions(options));
         log.info("Namespace  '" + green("{}") + "' has been created", namespace);
         return new DataApiNamespaceImpl(this, namespace);
     }
 
-
-
     /** {@inheritDoc} */
     public void dropNamespace(String namespace) {
         hasLength(namespace, "namespace");
-        execute("dropNamespace", Map.of("name", namespace));
+        runCommand(new CommandDropNamespace(namespace));
         log.info("Namespace  '" + green("{}") + "' has been deleted", namespace);
-    }
-
-    /**
-     * Syntax sugar.
-     *
-     * @param operation
-     *      operation to run
-     * @param payload
-     *      payload returned
-     */
-    private ApiResponse execute(String operation, Object payload) {
-        return DataApiUtils.runCommand(stargateHttpClient, rootResource, operation, payload);
     }
 
 }

@@ -8,7 +8,7 @@ import lombok.Data;
  * Represents the Collection definition with its name and metadata.
  */
 @Data
-public class CollectionInformation {
+public class CollectionDefinition {
 
     /**
      * Name of the collection.

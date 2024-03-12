@@ -1,7 +1,7 @@
 package io.stargate.sdk.data.client;
 
 import io.stargate.sdk.data.client.model.CreateCollectionOptions;
-import io.stargate.sdk.data.internal.model.CollectionInformation;
+import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import io.stargate.sdk.data.client.model.Document;
 
 import java.util.stream.Stream;
@@ -47,7 +47,7 @@ public interface DataApiNamespace extends ApiClient {
      * @return
      *  list of collection definitions
      */
-    Stream<CollectionInformation> listCollections();
+    Stream<CollectionDefinition> listCollections();
 
     /**
      * Evaluate if a collection exists.

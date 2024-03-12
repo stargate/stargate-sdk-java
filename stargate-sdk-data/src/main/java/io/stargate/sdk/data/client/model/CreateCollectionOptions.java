@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.client.model;
 
-import io.stargate.sdk.data.internal.model.CollectionInformation;
+import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -87,7 +87,7 @@ public class CreateCollectionOptions {
     }
 
     /**
-     * Builder for {@link CollectionInformation}.
+     * Builder for {@link CollectionDefinition}.
      */
     public static class CreateCollectionOptionsBuilder {
 

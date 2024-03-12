@@ -2,6 +2,8 @@ package io.stargate.sdk.data.test.integration;
 
 import io.stargate.sdk.data.client.DataApiCollection;
 import io.stargate.sdk.data.client.DataApiNamespace;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.CommandCreateCollection;
 import io.stargate.sdk.data.client.model.CreateCollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -142,11 +145,19 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Test
     @Order(7)
     public void shouldRunCommand() {
-        // Given
+        // Create From String
         String createCollectionCommand = "{\"createCollection\":{\"name\":\"collection_simple\"}}";
         ApiResponse res = getDataApiNamespace().runCommand(createCollectionCommand);
         assertThat(res).isNotNull();
         assertThat(res.getStatus().getInteger("ok")).isEqualTo(1);
+
+        // Create From Specialized command class
+        ApiResponse res2 = getDataApiNamespace().runCommand(new CommandCreateCollection("collection_simple"));
+        assertThat(res2.getStatusKeyAsInt("ok")).isEqualTo(1);
+
+        // Create From Generic command class
+        ApiResponse res3 = getDataApiNamespace().runCommand(new Command<>("createCollection", Map.of("name", "collection_simple")));
+        assertThat(res3.getStatusKeyAsInt("ok")).isEqualTo(1);
     }
 
     @Test
