@@ -1,23 +1,19 @@
 package io.stargate.sdk.data.internal;
 
+import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.data.client.DataApiClient;
 import io.stargate.sdk.data.client.DataApiNamespace;
-import io.stargate.sdk.data.client.exception.NamespaceNotFoundException;
-import io.stargate.sdk.data.client.model.Command;
-import io.stargate.sdk.data.client.model.CommandCreateNamespace;
-import io.stargate.sdk.data.client.model.CommandDropNamespace;
-import io.stargate.sdk.data.client.model.CommandFindNamespaces;
-import io.stargate.sdk.data.client.model.CreateNamespaceOptions;
-import io.stargate.sdk.data.internal.model.ApiResponse;
+import io.stargate.sdk.data.client.model.namespaces.CommandCreateNamespace;
+import io.stargate.sdk.data.client.model.namespaces.CommandDropNamespace;
+import io.stargate.sdk.data.client.model.namespaces.CommandFindNamespaces;
+import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
 import io.stargate.sdk.data.internal.model.NamespaceInformation;
-import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.http.HttpClientOptions;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -91,7 +87,6 @@ public class DataApiClientImpl implements DataApiClient {
     /** {@inheritDoc} */
     @Override
     public DataApiNamespace getNamespace(String namespaceName) {
-        if (listNamespaceNames().noneMatch(namespaceName::equals)) throw new NamespaceNotFoundException(namespaceName);
         return new DataApiNamespaceImpl(this, namespaceName);
     }
 

@@ -1,7 +1,8 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.find;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.http.domain.FilterKeyword;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,7 +16,7 @@ import java.util.Optional;
  */
 @Getter @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FindCommand {
+public class CommandFindMany {
 
     /**
      * Select.
@@ -40,7 +41,7 @@ public class FindCommand {
     /**
      * Default constructor.
      */
-    public FindCommand() {}
+    public CommandFindMany() {}
 
     /**
      * Build a SQL query with a filter (no projection).
@@ -48,10 +49,10 @@ public class FindCommand {
      * @param pFilter
      *      current filter
      */
-    public FindCommand(Filter pFilter) {
+    public CommandFindMany(Filter pFilter) {
         if (pFilter != null) {
             filter = new HashMap<>();
-            filter.putAll(pFilter.filter);
+            //filter.putAll(pFilter.filter);
         }
     }
 
@@ -63,14 +64,14 @@ public class FindCommand {
      * @param vector
      *      semantic search
      */
-    public FindCommand(float[] vector, Filter pFilter) {
+    public CommandFindMany(float[] vector, Filter pFilter) {
         if (vector != null) {
             sort = new HashMap<>();
             sort.put(FilterKeyword.VECTOR.getKeyword(), vector);
         }
         if (pFilter != null) {
             filter = new HashMap<>();
-            filter.putAll(pFilter.filter);
+            //filter.putAll(pFilter.filter);
         }
     }
 

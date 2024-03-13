@@ -3,11 +3,10 @@ package io.stargate.sdk.data.internal;
 import io.stargate.sdk.data.client.DataApiClient;
 import io.stargate.sdk.data.client.DataApiCollection;
 import io.stargate.sdk.data.client.DataApiNamespace;
-import io.stargate.sdk.data.client.model.Command;
-import io.stargate.sdk.data.client.model.CommandCreateCollection;
-import io.stargate.sdk.data.client.model.CommandDropCollection;
-import io.stargate.sdk.data.client.model.CommandFindCollections;
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
+import io.stargate.sdk.data.client.model.collections.CommandDropCollection;
+import io.stargate.sdk.data.client.model.collections.CommandFindCollections;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.data.internal.model.ApiResponse;
 import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
@@ -16,7 +15,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 

@@ -1,18 +1,17 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.collections;
 
+import io.stargate.sdk.data.client.model.Command;
 import io.stargate.sdk.utils.Assert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.Map;
-
-public class CommandDropNamespace extends Command<CommandDropNamespace.Payload>  {
+public class CommandDropCollection extends Command<CommandDropCollection.Payload> {
 
     /**
      * Default FindCollection
      */
-    public CommandDropNamespace(String name) {
-        super("dropNamespace");
+    public CommandDropCollection(String name) {
+        super("deleteCollection");
         Assert.hasLength(name, "name");
         this.payload = new Payload(name);
     }
@@ -22,6 +21,5 @@ public class CommandDropNamespace extends Command<CommandDropNamespace.Payload> 
     public static class Payload {
         String name;
     }
-
 
 }

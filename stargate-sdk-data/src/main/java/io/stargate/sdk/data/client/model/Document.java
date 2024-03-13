@@ -17,6 +17,7 @@
 package io.stargate.sdk.data.client.model;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import io.stargate.sdk.utils.Assert;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.NonNull;
 
@@ -66,6 +67,8 @@ public class Document implements Map<String, Object>, Serializable {
     public Document() {
         documentMap = new LinkedHashMap<>();
     }
+
+
 
     /**
      * Marshall as a document if needed.
@@ -173,14 +176,15 @@ public class Document implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Set value for the identiifer
+     * Set value for the identifier.
+     *
      * @param id
      *      id value
      * @param <T>
      *      type of id
      */
-    public <T> void setId(T id) {
-        append(ID, id);
+    public <T> Document id(T id) {
+        return append(ID, id);
     }
 
     /**
@@ -199,8 +203,8 @@ public class Document implements Map<String, Object>, Serializable {
      * @param vector
      *      vector value
      */
-    public void setVector(float[] vector) {
-        append(VECTOR, vector);
+    public Document vector(float[] vector) {
+        return append(VECTOR, vector);
     }
 
     /**

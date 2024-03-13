@@ -5,8 +5,7 @@ import io.stargate.sdk.data.client.DataApiClient;
 import io.stargate.sdk.data.client.DataApiClients;
 import io.stargate.sdk.data.client.DataApiNamespace;
 import io.stargate.sdk.data.client.exception.DataApiException;
-import io.stargate.sdk.data.client.exception.NamespaceNotFoundException;
-import io.stargate.sdk.data.client.model.CreateNamespaceOptions;
+import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
 import io.stargate.sdk.data.test.TestConstants;
 import io.stargate.sdk.http.HttpClientOptions;
 import lombok.extern.slf4j.Slf4j;
@@ -130,9 +129,6 @@ public class DataApiClientITTest implements TestConstants {
                 .anyMatch("ns2"::equals);
         assertThat(apiClient.isNamespaceExists("ns2")).isTrue();
 
-        assertThatExceptionOfType(NamespaceNotFoundException.class)
-                .isThrownBy(() -> apiClient.getNamespace("invalid"))
-                .withMessage("Namespace 'invalid' does not exist");
         DataApiNamespace ns2 = apiClient.getNamespace("ns2");
         assertThat(ns2).isNotNull();
 

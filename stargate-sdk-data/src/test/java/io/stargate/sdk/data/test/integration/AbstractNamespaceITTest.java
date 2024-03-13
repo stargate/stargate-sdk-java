@@ -2,9 +2,10 @@ package io.stargate.sdk.data.test.integration;
 
 import io.stargate.sdk.data.client.DataApiCollection;
 import io.stargate.sdk.data.client.DataApiNamespace;
+import io.stargate.sdk.data.client.exception.DataApiException;
 import io.stargate.sdk.data.client.model.Command;
-import io.stargate.sdk.data.client.model.CommandCreateCollection;
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.data.internal.model.ApiResponse;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Super Class to run Tests against Data API.
@@ -56,7 +58,7 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     public void shouldCreateCollectionSimple() {
         // When
         getDataApiNamespace().createCollection(COLLECTION_SIMPLE);
-        assertThat(getDataApiNamespace().isCollectionExists(COLLECTION_SIMPLE)).isTrue();
+        assertThat(getDataApiNamespace().existCollection(COLLECTION_SIMPLE)).isTrue();
         // When
         DataApiCollection<Document> collection_simple = getDataApiNamespace().getCollection(COLLECTION_SIMPLE);
         assertThat(collection_simple).isNotNull();
@@ -112,34 +114,35 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Test
     @Order(5)
     public void shouldListCollections() {
+        shouldCreateCollectionSimple();
         assertThat(getDataApiNamespace().listCollectionNames().collect(Collectors.toList())).isNotNull();
     }
 
     @Test
     @Order(6)
-    public void shouldDropCollections1() {
+    public void shouldDropCollectionAllow() {
         // Given
         shouldCreateCollectionsAllows();
-        assertThat(getDataApiNamespace().isCollectionExists(COLLECTION_ALLOW)).isTrue();
+        assertThat(getDataApiNamespace().existCollection(COLLECTION_ALLOW)).isTrue();
         // When
         getDataApiNamespace().dropCollection(COLLECTION_ALLOW);
         // Then
-        assertThat(getDataApiNamespace().isCollectionExists(COLLECTION_ALLOW)).isFalse();
+        assertThat(getDataApiNamespace().existCollection(COLLECTION_ALLOW)).isFalse();
     }
 
     @Test
     @Order(6)
-    public void shouldDropCollections2() {
+    public void shouldDropCollectionsDeny() {
         // Given
         DataApiCollection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
                 CreateCollectionOptions.builder()
                         .withIndexingDeny("a", "b", "c")
                         .build());
-        assertThat(getDataApiNamespace().isCollectionExists(COLLECTION_DENY)).isTrue();
+        assertThat(getDataApiNamespace().existCollection(COLLECTION_DENY)).isTrue();
         // When
         collectionDeny.drop();
         // Then
-        assertThat(getDataApiNamespace().isCollectionExists(COLLECTION_DENY)).isFalse();
+        assertThat(getDataApiNamespace().existCollection(COLLECTION_DENY)).isFalse();
     }
 
     @Test
@@ -168,6 +171,29 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
         Document doc = getDataApiNamespace().runCommand(listCollectionNames, Document.class);
         assertThat(doc).isNotNull();
         assertThat(doc.getList("collections", String.class)).isNotNull();
+    }
+
+    @Test
+    @Order(8)
+    public void shouldErrorGetIfCollectionDoesNotExists() {
+        // Given
+        DataApiCollection<Document> collection = getDataApiNamespace().getCollection("invalid");
+        assertThat(collection).isNotNull();
+        assertThat(getDataApiNamespace().existCollection("invalid")).isFalse();
+        assertThatThrownBy(collection::getOptions)
+                .isInstanceOf(DataApiException.class)
+                .hasMessageContaining("COLLECTION_NOT_EXIST");
+    }
+
+    @Test
+    @Order(9)
+    public void shouldErrorDropIfCollectionDoesNotExists() {
+        assertThat(getDataApiNamespace().existCollection("invalid")).isFalse();
+        DataApiCollection<Document> invalid = getDataApiNamespace().getCollection("invalid");
+        assertThat(invalid).isNotNull();
+        assertThatThrownBy(() -> invalid.insertOne(new Document().append("hello", "world")))
+                .isInstanceOf(DataApiException.class)
+                .hasMessageContaining("COLLECTION_NOT_EXIST");
     }
 
 }

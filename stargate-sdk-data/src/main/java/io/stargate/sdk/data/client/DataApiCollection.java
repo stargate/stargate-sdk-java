@@ -1,25 +1,24 @@
 package io.stargate.sdk.data.client;
 
 import io.stargate.sdk.data.client.exception.TooManyDocumentsException;
-import io.stargate.sdk.data.client.model.BulkWriteOptions;
-import io.stargate.sdk.data.client.model.BulkWriteResult;
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
-import io.stargate.sdk.data.client.model.DeleteResult;
+import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
+import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.delete.DeleteResult;
 import io.stargate.sdk.data.client.model.DistinctIterable;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.data.client.model.FindIterable;
-import io.stargate.sdk.data.client.model.InsertManyOptions;
-import io.stargate.sdk.data.client.model.InsertManyResult;
-import io.stargate.sdk.data.client.model.ReplaceOptions;
-import io.stargate.sdk.data.client.model.UpdateOptions;
-import io.stargate.sdk.data.client.model.UpdateResult;
+import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
+import io.stargate.sdk.data.client.model.insert.InsertManyResult;
+import io.stargate.sdk.data.client.model.update.ReplaceOptions;
+import io.stargate.sdk.data.client.model.update.UpdateOptions;
+import io.stargate.sdk.data.client.model.update.UpdateResult;
 import io.stargate.sdk.data.client.model.find.FindOneAndDeleteOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndReplaceOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndUpdateOptions;
 import io.stargate.sdk.data.client.model.find.FindOneOptions;
 import io.stargate.sdk.data.client.model.insert.InsertOneResult;
-import io.stargate.sdk.data.internal.model.ApiResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +27,9 @@ import static io.stargate.sdk.data.client.model.Filters.eq;
 
 /**
  * Definition of operation for an Astra Collection.
+ *
+ * @param <DOC>
+ *     Java bean mapping documents in the collections.
  */
 public interface DataApiCollection<DOC> extends ApiClient {
 
@@ -36,14 +38,14 @@ public interface DataApiCollection<DOC> extends ApiClient {
     // ----------------------------
 
     /**
-     * Gets the namespace of this collection.
+     * Gets the namespace for the collection.
      *
      * @return the namespace
      */
     DataApiNamespace getNamespace();
 
     /**
-     * Access Collection Options.
+     * Return the options of the collection (if any) with vector and indexing options.
      *
      * @return
      *      collection options
@@ -65,8 +67,23 @@ public interface DataApiCollection<DOC> extends ApiClient {
      */
     String getName();
 
+    /**
+     * Drops the collection from the namespace/Database.
+     */
+    void drop();
+
+    /**
+     * Validate if a collection exists.
+     *
+     * @return
+     *      if the collection exists
+     */
+    default boolean exists() {
+        return getNamespace().existCollection(getName());
+    }
+
     // --------------------------
-    // ---   Find One        ----
+    // ---      Find         ----
     // --------------------------
 
     /**
@@ -104,65 +121,6 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *      document
      */
     Optional<Document> findOne(Filter filter, FindOneOptions options);
-
-    /**
-     * Inserts the provided document. If the document is missing an identifier, the server will generate one.
-     *
-     * @param document
-     *      the document to insert
-     * @return
-     *      the insert one result
-     */
-    InsertOneResult insertOne(DOC document);
-
-    /**
-     * Counts the number of documents in the collection up to 1000 (api limit).
-     *
-     * @return
-     *      the number of documents in the collection
-     */
-    long countDocuments() throws TooManyDocumentsException;
-
-    /**
-     * Counts the number of documents in the collection up to 1000 (api limit).
-     *
-     * @param filter
-     *      the filter returned by the document
-     * @return
-     *      the number of documents in the collection
-     */
-    long countDocuments(Filter filter)  throws TooManyDocumentsException;
-
-    /**
-     * Gets the distinct values of the specified field name.
-     * The iteration is performed at CLIENT-SIDE and will exhaust all the collections elements.
-     *
-     * @param fieldName
-     *      the field name
-     * @param resultClass
-     *      the class to cast any distinct items into.
-     * @param <FIELD>
-     *      the target type of the iterable.
-     * @return
-     *      an iterable of distinct values
-     */
-    <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Class<FIELD> resultClass);
-
-    /**
-     * Gets the distinct values of the specified field name.
-     *
-     * @param fieldName
-     *      the field name
-     * @param filter
-     *      the query filter
-     * @param resultClass
-     *      the class to cast any distinct items into.
-     * @param <FIELD>
-     *      the target type of the iterable.
-     * @return
-     *      an iterable of distinct values
-     */
-    <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass);
 
     /**
      * Finds all documents in the collection.
@@ -209,28 +167,112 @@ public interface DataApiCollection<DOC> extends ApiClient {
     <T> FindIterable<T> find(Filter filter, Class<T> resultClass);
 
     /**
-     * Executes a mix of inserts, updates, replaces, and deletes.
+     * Gets the distinct values of the specified field name.
+     * The iteration is performed at CLIENT-SIDE and will exhaust all the collections elements.
      *
-     * @param requests
-     *      the jsonCommand to execute
+     * @param fieldName
+     *      the field name
+     * @param resultClass
+     *      the class to cast any distinct items into.
+     * @param <FIELD>
+     *      the target type of the iterable.
      * @return
-     *      the result of the bulk write
+     *      an iterable of distinct values
      */
-    BulkWriteResult bulkWrite(List<String> requests);
+    <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Class<FIELD> resultClass);
 
     /**
-     * Executes a mix of inserts, updates, replaces, and deletes.
+     * Gets the distinct values of the specified field name.
      *
-     * @param options
-     *      if requests must be ordered or not
-     * @param requests
-     *      the jsonCommand to execute
+     * @param fieldName
+     *      the field name
+     * @param filter
+     *      the query filter
+     * @param resultClass
+     *      the class to cast any distinct items into.
+     * @param <FIELD>
+     *      the target type of the iterable.
      * @return
-     *      the result of the bulk write
+     *      an iterable of distinct values
      */
-    BulkWriteResult bulkWrite(List<String> requests, BulkWriteOptions options);
+    <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass);
 
+    // --------------------------
+    // ---   Count           ----
+    // --------------------------
 
+    /**
+     * Counts the number of documents in the collection.
+     *
+     * <p>
+     * Takes in a `upperBound` option which dictates the maximum number of documents that may be present before a
+     * {@link TooManyDocumentsException} is thrown. If the limit is higher than the highest limit accepted by the
+     * Data API, a {@link TooManyDocumentsException} will be thrown anyway (i.e. `1000`).
+     * </p>
+     * <p>
+     * Count operations are expensive: for this reason, the best practice is to provide a reasonable `upperBound`
+     * according to the caller expectations. Moreover, indiscriminate usage of count operations for sizeable amounts
+     * of documents (i.e. in the thousands and more) is discouraged in favor of alternative application-specific
+     * solutions. Keep in mind that the Data API has a hard upper limit on the amount of documents it will count,
+     * and that an exception will be thrown by this method if this limit is encountered.
+     * </p>
+     *
+     * @param upperBound
+     *      The maximum number of documents to count.
+     * @return
+     *      The number of documents in the collection.
+     * @throws TooManyDocumentsException
+     *      If the number of documents counted exceeds the provided limit.
+     */
+    long countDocuments(int upperBound) throws TooManyDocumentsException;
+
+    /**
+     * Counts the number of documents in the collection with a filter.
+     *
+     * <p>
+     * Takes in a `upperBound` option which dictates the maximum number of documents that may be present before a
+     * {@link TooManyDocumentsException} is thrown. If the limit is higher than the highest limit accepted by the
+     * Data API, a {@link TooManyDocumentsException} will be thrown anyway (i.e. `1000`).
+     * </p>
+     * <p>
+     * Count operations are expensive: for this reason, the best practice is to provide a reasonable `upperBound`
+     * according to the caller expectations. Moreover, indiscriminate usage of count operations for sizeable amounts
+     * of documents (i.e. in the thousands and more) is discouraged in favor of alternative application-specific
+     * solutions. Keep in mind that the Data API has a hard upper limit on the amount of documents it will count,
+     * and that an exception will be thrown by this method if this limit is encountered.
+     * </p>
+     *
+     * @param filter
+     *      A filter to select the documents to count. If not provided, all documents will be counted.
+     * @param upperBound
+     *      The maximum number of documents to count.
+     * @return
+     *      The number of documents in the collection.
+     * @throws TooManyDocumentsException
+     *      If the number of documents counted exceeds the provided limit.
+     */
+    long countDocuments(Filter filter, int upperBound)  throws TooManyDocumentsException;
+
+    // --------------------------
+    // ---   Insert          ----
+    // --------------------------
+
+    /**
+     * Insert a single document in the collection in an atomic operation.
+     *
+     * <p>
+     * <blockquote><b>Note:</b>If an `_id` is explicitly provided, which corresponds to a document
+     * that exists already in the collection, an error is raised and the insertion fails.
+     * Inserts the provided document. If the document is missing an identifier, the server will generate one.
+     * </blockquote>
+     * </p>
+     *
+     * @param document
+     *     the document expressing the document to insert. The `_id` field of the document can be left out, in which case it will be created automatically.
+     * @return
+     *       an InsertOneResult object.
+     */
+    InsertOneResult insertOne(DOC document);
 
     /**
      * Inserts one or more documents.
@@ -257,6 +299,32 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *      if the documents list is null or empty, or any of the documents in the list are null
      */
    InsertManyResult insertMany(List<? extends DOC> documents, InsertManyOptions options);
+
+    /**
+     * Executes a mix of inserts, updates, replaces, and deletes.
+     *
+     * @param requests
+     *      the jsonCommand to execute
+     * @return
+     *      the result of the bulk write
+     */
+    BulkWriteResult bulkWrite(List<String> requests);
+
+    /**
+     * Executes a mix of inserts, updates, replaces, and deletes.
+     *
+     * @param options
+     *      if requests must be ordered or not
+     * @param requests
+     *      the jsonCommand to execute
+     * @return
+     *      the result of the bulk write
+     */
+    BulkWriteResult bulkWrite(List<String> requests, BulkWriteOptions options);
+
+    // --------------------------
+    // ---   Delete          ----
+    // --------------------------
 
     /**
      * Removes at most one document from the collection that matches the given filter.
@@ -287,6 +355,32 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *      the result of the remove many operation
      */
     DeleteResult deleteAll();
+
+    /**
+     * Atomically find a document and remove it.
+     *
+     * @param filter
+     *      the query filter to find the document with
+     * @return
+     *      the document that was removed.  If no documents matched the query filter, then null will be returned
+     */
+    Optional<DOC> findOneAndDelete(Filter filter);
+
+    /**
+     * Atomically find a document and remove it.
+     *
+     * @param filter
+     *      the query filter to find the document with
+     * @param options
+     *      the options to apply to the operation
+     * @return
+     *      the document that was removed.  If no documents matched the query filter, then null will be returned
+     */
+    Optional<DOC> findOneAndDelete(Filter filter, FindOneAndDeleteOptions options);
+
+    // --------------------------
+    // ---   Update/Replace  ----
+    // --------------------------
 
     /**
      * Replace a document in the collection according to the specified arguments.
@@ -341,7 +435,6 @@ public interface DataApiCollection<DOC> extends ApiClient {
      */
     UpdateResult updateOne(Filter filter, Object update, UpdateOptions updateOptions);
 
-
     /**
      * Update all documents in the collection according to the specified arguments.
      *
@@ -367,28 +460,6 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *      the result of the update many operation
      */
     UpdateResult updateMany(Filter filter, Object update, UpdateOptions updateOptions);
-
-    /**
-     * Atomically find a document and remove it.
-     *
-     * @param filter
-     *      the query filter to find the document with
-     * @return
-     *      the document that was removed.  If no documents matched the query filter, then null will be returned
-     */
-    Optional<DOC> findOneAndDelete(Filter filter);
-
-    /**
-     * Atomically find a document and remove it.
-     *
-     * @param filter
-     *      the query filter to find the document with
-     * @param options
-     *      the options to apply to the operation
-     * @return
-     *      the document that was removed.  If no documents matched the query filter, then null will be returned
-     */
-    Optional<DOC> findOneAndDelete(Filter filter, FindOneAndDeleteOptions options);
 
     /**
      * Atomically find a document and replace it.
@@ -419,7 +490,6 @@ public interface DataApiCollection<DOC> extends ApiClient {
      */
     Optional<DOC>  findOneAndReplace(Filter filter, DOC replacement, FindOneAndReplaceOptions options);
 
-
     /**
      * Atomically find a document and update it.
      *
@@ -449,10 +519,5 @@ public interface DataApiCollection<DOC> extends ApiClient {
      * returned
      */
     Optional<DOC> findOneAndUpdate(Filter filter, Object update, FindOneAndUpdateOptions options);
-
-    /**
-     * Drops this collection from the Database.
-     */
-    void drop();
 
 }

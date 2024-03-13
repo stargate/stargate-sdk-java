@@ -4,12 +4,11 @@ package io.stargate.sdk.http;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 
 import java.net.http.HttpClient;
 
 /**
- * Options to setup the HTTP CLIENT.
+ * Options to set up http Client.
  */
 @Data @Builder
 public class HttpClientOptions {

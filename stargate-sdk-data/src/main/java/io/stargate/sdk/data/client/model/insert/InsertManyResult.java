@@ -1,4 +1,4 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.insert;
 
 
 import lombok.Data;

@@ -1,0 +1,13 @@
+package io.stargate.sdk.data.client.model.namespaces;
+
+import io.stargate.sdk.data.client.model.Command;
+
+public class CommandFindNamespaces extends Command<Object> {
+
+    /**
+     * Default FindCollection
+     */
+    public CommandFindNamespaces() {
+        super("findNamespaces");
+    }
+}

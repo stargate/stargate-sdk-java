@@ -1,14 +1,13 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.collections;
 
+import io.stargate.sdk.data.client.model.Command;
 import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import io.stargate.sdk.utils.Assert;
-
-import java.util.Map;
 
 /**
  * Representation of a createCollection Command.
  */
-public class CommandCreateCollection extends Command<CollectionDefinition>  {
+public class CommandCreateCollection extends Command<CollectionDefinition> {
 
     /**
      * Specialization of the command.

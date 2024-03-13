@@ -11,6 +11,13 @@ public class TooManyDocumentsException extends Exception {
      * Default constructor.
      */
     public TooManyDocumentsException() {
-        super("Collection has too many documents to count them all must be less then '" + DataApiLimits.MAX_DOCUMENTS_COUNT);
+        super("Document count exceeds '" + DataApiLimits.MAX_DOCUMENTS_COUNT + ", the maximum allowed by the server");
+    }
+
+    /**
+     * Default constructor.
+     */
+    public TooManyDocumentsException(int upperLimit) {
+        super("Document count exceeds upper bound set in method call " + upperLimit);
     }
 }

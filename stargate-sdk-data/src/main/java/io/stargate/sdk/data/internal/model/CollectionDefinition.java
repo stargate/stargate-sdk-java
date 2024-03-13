@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.internal.model;
 
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
 

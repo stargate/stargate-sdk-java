@@ -1,10 +1,9 @@
 package io.stargate.sdk.data.test.unit;
 
-import io.stargate.sdk.data.client.model.CommandCreateCollection;
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
-import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import io.stargate.sdk.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 

@@ -1,14 +1,13 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.collections;
 
+import io.stargate.sdk.data.client.model.Command;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.Map;
 
 /**
  * Allow to list collections.
  */
-public class CommandFindCollections extends Command<CommandFindCollections.Payload>  {
+public class CommandFindCollections extends Command<CommandFindCollections.Payload> {
 
     /**
      * Default FindCollection

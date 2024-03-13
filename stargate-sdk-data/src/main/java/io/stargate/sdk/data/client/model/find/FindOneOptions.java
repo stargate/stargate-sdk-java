@@ -7,9 +7,15 @@ import lombok.Getter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * List Options for a FindOne command.
+ */
 @Getter
 public class FindOneOptions {
 
+    /**
+     * Default constructor.
+     */
     public FindOneOptions() {
     }
 
@@ -26,7 +32,7 @@ public class FindOneOptions {
     /**
      * Options.
      */
-    private FindOneRequest.FindOneCommandOptions options;
+    private CommandFindOne.FindOneCommandOptions options;
 
     /**
      * Fluent api.
@@ -35,10 +41,10 @@ public class FindOneOptions {
      *      add a filter
      */
     public FindOneOptions includeSimilarity() {
-        if (options != null) {
-            options = new FindOneRequest.FindOneCommandOptions();
-            options.setIncludeSimilarity(true);
+        if (options == null) {
+            options = new CommandFindOne.FindOneCommandOptions();
         }
+        options.setIncludeSimilarity(true);
         return this;
     }
 

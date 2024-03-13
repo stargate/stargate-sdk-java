@@ -1,5 +1,6 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.collections;
 
+import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import lombok.Data;
 import lombok.NonNull;

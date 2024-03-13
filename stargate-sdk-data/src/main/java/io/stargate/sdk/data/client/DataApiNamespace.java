@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.client;
 
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import io.stargate.sdk.data.client.model.Document;
 
@@ -57,7 +57,7 @@ public interface DataApiNamespace extends ApiClient {
      * @return
      *      if namespace exists
      */
-    default boolean isCollectionExists(String collection) {
+    default boolean existCollection(String collection) {
         return listCollectionNames().anyMatch(collection::equals);
     }
 

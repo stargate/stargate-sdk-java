@@ -20,10 +20,10 @@ import static io.stargate.sdk.utils.Assert.hasLength;
 public class Command<T> implements Serializable {
 
     /** Command Name. */
-    String name;
+    protected String name;
 
     /** Command payload.*/
-    T payload;
+    protected T payload;
 
     public Command(String name) {
         hasLength(name, "command name");

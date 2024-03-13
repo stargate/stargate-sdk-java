@@ -1,8 +1,7 @@
 package io.stargate.sdk.data.client;
 
 
-import io.stargate.sdk.data.client.exception.NamespaceNotFoundException;
-import io.stargate.sdk.data.client.model.CreateNamespaceOptions;
+import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
 import io.stargate.sdk.data.internal.model.NamespaceInformation;
 
 import java.util.concurrent.CompletableFuture;
@@ -54,8 +53,6 @@ public interface DataApiClient extends ApiClient {
      *      the name of the namespace to retrieve
      * @return
      *      a {@code DataApiNamespace} representing the specified database
-     * @throws NamespaceNotFoundException
-     *      error is namespace is not found.
      */
     DataApiNamespace getNamespace(String namespaceName);
 

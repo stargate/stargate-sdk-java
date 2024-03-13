@@ -1,29 +1,31 @@
 package io.stargate.sdk.data.internal;
 
 import io.stargate.sdk.data.client.DataApiCollection;
+import io.stargate.sdk.data.client.DataApiLimits;
 import io.stargate.sdk.data.client.DataApiNamespace;
-import io.stargate.sdk.data.client.exception.CollectionNotFoundException;
+import io.stargate.sdk.data.client.exception.DataApiException;
 import io.stargate.sdk.data.client.exception.TooManyDocumentsException;
-import io.stargate.sdk.data.client.model.BulkWriteOptions;
-import io.stargate.sdk.data.client.model.BulkWriteResult;
+import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
+import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
 import io.stargate.sdk.data.client.model.Command;
-import io.stargate.sdk.data.client.model.CommandFindOne;
-import io.stargate.sdk.data.client.model.CommandInsertOne;
-import io.stargate.sdk.data.client.model.CreateCollectionOptions;
-import io.stargate.sdk.data.client.model.DeleteResult;
+import io.stargate.sdk.data.client.model.find.CommandFindOne;
+import io.stargate.sdk.data.client.model.insert.CommandInsertOne;
+import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.delete.DeleteResult;
 import io.stargate.sdk.data.client.model.DistinctIterable;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.data.client.model.FindIterable;
-import io.stargate.sdk.data.client.model.InsertManyOptions;
-import io.stargate.sdk.data.client.model.InsertManyResult;
-import io.stargate.sdk.data.client.model.ReplaceOptions;
-import io.stargate.sdk.data.client.model.UpdateOptions;
-import io.stargate.sdk.data.client.model.UpdateResult;
+import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
+import io.stargate.sdk.data.client.model.insert.InsertManyResult;
+import io.stargate.sdk.data.client.model.misc.CommandCountDocuments;
+import io.stargate.sdk.data.client.model.misc.CountDocumentsResult;
+import io.stargate.sdk.data.client.model.update.ReplaceOptions;
+import io.stargate.sdk.data.client.model.update.UpdateOptions;
+import io.stargate.sdk.data.client.model.update.UpdateResult;
 import io.stargate.sdk.data.client.model.find.FindOneAndDeleteOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndReplaceOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndUpdateOptions;
-import io.stargate.sdk.data.client.model.find.FindOneRequest;
 import io.stargate.sdk.data.client.model.find.FindOneOptions;
 import io.stargate.sdk.data.client.model.insert.InsertOneResult;
 import io.stargate.sdk.data.internal.model.ApiResponse;
@@ -99,12 +101,13 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
                 .filter(col -> col.getName().equals(collectionName))
                 .findFirst();
         if (optCol.isEmpty()) {
-            throw new CollectionNotFoundException(collectionName);
+            throw new DataApiException("[COLLECTION_NOT_EXIST] - Collection does not exist, " +
+                    "collection name: '" + collectionName + "'", "COLLECTION_NOT_EXIST", null);
         }
-        if (optCol.get().getOptions() == null) {
-            return new CreateCollectionOptions();
-        }
-        return optCol.get().getOptions();
+        CollectionDefinition collectionDefinition = optCol.get();
+        return (collectionDefinition.getOptions() == null) ?
+                new CreateCollectionOptions() :
+                collectionDefinition.getOptions();
     }
 
     /** {@inheritDoc} */
@@ -139,33 +142,11 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
     // ---   Find One        ----
     // --------------------------
 
+    /** {@inheritDoc} */
+    @Override
     public Optional<Document> findOne(Filter filter, FindOneOptions options) {
         ApiResponse apiResponse = runCommand(new CommandFindOne().withFilter(filter).withOptions(options));
         return Optional.ofNullable(apiResponse.getData().getDocument());
-    }
-
-    // ----------------------------
-    // ---   Count Document    ----
-    // ----------------------------
-
-    @Override
-    public long countDocuments() throws TooManyDocumentsException {
-        return 0;
-    }
-
-    @Override
-    public long countDocuments(Filter filter) throws TooManyDocumentsException {
-        return 0;
-    }
-
-    @Override
-    public <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Class<FIELD> resultClass) {
-        return null;
-    }
-
-    @Override
-    public <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass) {
-        return null;
     }
 
     @Override
@@ -185,6 +166,44 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
 
     @Override
     public <T> FindIterable<T> find(Filter filter, Class<T> resultClass) {
+        return null;
+    }
+
+    // ----------------------------
+    // ---   Count Document    ----
+    // ----------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public long countDocuments(int upperBound) throws TooManyDocumentsException {
+        return countDocuments(null, upperBound);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long countDocuments(Filter filter, int upperBound) throws TooManyDocumentsException {
+        if (upperBound<1 || upperBound> DataApiLimits.MAX_DOCUMENTS_COUNT) {
+            throw new IllegalArgumentException("UpperBound limit should be in between 1 and " + DataApiLimits.MAX_DOCUMENTS_COUNT);
+        }
+        ApiResponse response = (filter == null) ?
+                runCommand(new CommandCountDocuments()) :
+                runCommand(new CommandCountDocuments(filter));
+        CountDocumentsResult res = response.getStatus().map(CountDocumentsResult.class);
+        if (res.getMoreData() != null && res.getMoreData()) {
+            throw new TooManyDocumentsException();
+        } else if (res.getCount() > upperBound) {
+            throw new TooManyDocumentsException(upperBound);
+        }
+        return res.getCount();
+    }
+
+    @Override
+    public <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Class<FIELD> resultClass) {
+        return null;
+    }
+
+    @Override
+    public <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass) {
         return null;
     }
 
@@ -236,6 +255,7 @@ public class DataApiCollectionImpl<DOC> implements DataApiCollection<DOC> {
         return new DeleteResult(totalCount.get());
     }
 
+    /** {@inheritDoc} */
     @Override
     public DeleteResult deleteAll() {
         return deleteMany(new Filter());
