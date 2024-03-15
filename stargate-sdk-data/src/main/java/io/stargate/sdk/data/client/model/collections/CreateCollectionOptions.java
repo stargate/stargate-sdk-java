@@ -1,12 +1,13 @@
 package io.stargate.sdk.data.client.model.collections;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
-import io.stargate.sdk.data.internal.model.CollectionDefinition;
 import lombok.Data;
 import lombok.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class CreateCollectionOptions {
@@ -64,7 +65,7 @@ public class CreateCollectionOptions {
         private String provider;
         private String modelName;
         private Authentication authentication;
-        private Parameters parameters;
+        private Map<String, Parameters> parameters;
     }
 
     @Data
@@ -75,7 +76,11 @@ public class CreateCollectionOptions {
 
     @Data
     public static class Parameters {
-        private String projectId;
+        private String type;
+        private boolean required;
+        @JsonProperty("default")
+        private Object defaultValue;
+        private String help;
     }
 
     /**

@@ -68,7 +68,28 @@ public class Document implements Map<String, Object>, Serializable {
         documentMap = new LinkedHashMap<>();
     }
 
+    /**
+     * Default Constructor.
+     *
+     * @param id
+     *      provide the unique identifier.
+     */
+    public Document(Object id) {
+        this();
+        id(id);
+    }
 
+    /**
+     * Create a document with an id.
+     *
+     * @param id
+     *      document identifier
+     * @return
+     *      instance of document
+     */
+    public static Document create(Object id) {
+        return new Document(id);
+    }
 
     /**
      * Marshall as a document if needed.

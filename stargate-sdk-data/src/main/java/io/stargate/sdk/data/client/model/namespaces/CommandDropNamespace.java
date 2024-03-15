@@ -1,11 +1,11 @@
 package io.stargate.sdk.data.client.model.namespaces;
 
-import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.utils.Assert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-public class CommandDropNamespace extends Command<CommandDropNamespace.Payload> {
+public class CommandDropNamespace extends DataApiCommand<CommandDropNamespace.Payload> {
 
     /**
      * Default FindCollection

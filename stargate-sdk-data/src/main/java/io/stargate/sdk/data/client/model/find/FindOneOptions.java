@@ -32,7 +32,7 @@ public class FindOneOptions {
     /**
      * Options.
      */
-    private CommandFindOne.FindOneCommandOptions options;
+    private Boolean includeSimilarity;
 
     /**
      * Fluent api.
@@ -41,10 +41,7 @@ public class FindOneOptions {
      *      add a filter
      */
     public FindOneOptions includeSimilarity() {
-        if (options == null) {
-            options = new CommandFindOne.FindOneCommandOptions();
-        }
-        options.setIncludeSimilarity(true);
+        includeSimilarity = true;
         return this;
     }
 

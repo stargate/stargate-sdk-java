@@ -1,11 +1,11 @@
 package io.stargate.sdk.data.client.model.insert;
 
-import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.utils.Assert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-public class CommandInsertOne<DOC> extends Command<CommandInsertOne.Payload<DOC>> {
+public class CommandInsertOne<DOC> extends DataApiCommand<CommandInsertOne.Payload<DOC>> {
 
     /**
      * Default FindCollection

@@ -1,13 +1,12 @@
 package io.stargate.sdk.data.client.model.collections;
 
-import io.stargate.sdk.data.client.model.Command;
-import io.stargate.sdk.data.internal.model.CollectionDefinition;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.utils.Assert;
 
 /**
  * Representation of a createCollection Command.
  */
-public class CommandCreateCollection extends Command<CollectionDefinition> {
+public class CommandCreateCollection extends DataApiCommand<CollectionDefinition> {
 
     /**
      * Specialization of the command.

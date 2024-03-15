@@ -1,4 +1,4 @@
-package io.stargate.sdk.data.internal.model;
+package io.stargate.sdk.data.client.model.collections;
 
 import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.utils.JsonUtils;

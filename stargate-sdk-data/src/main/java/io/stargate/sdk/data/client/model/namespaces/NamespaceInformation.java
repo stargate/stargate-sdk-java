@@ -1,4 +1,4 @@
-package io.stargate.sdk.data.internal.model;
+package io.stargate.sdk.data.client.model.namespaces;
 
 import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
 import io.stargate.sdk.utils.JsonUtils;

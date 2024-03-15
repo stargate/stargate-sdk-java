@@ -1,13 +1,12 @@
 package io.stargate.sdk.data.client.model.misc;
 
-import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.data.client.model.Filter;
-import lombok.Data;
 
 /**
  * Command to count Documents in a collection.
  */
-public class CommandCountDocuments extends Command<Filter> {
+public class CommandCountDocuments extends DataApiCommand<Filter> {
 
     /**
      * Specialization of the command.

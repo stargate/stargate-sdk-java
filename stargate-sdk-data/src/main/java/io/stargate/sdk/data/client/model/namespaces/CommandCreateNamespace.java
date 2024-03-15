@@ -1,12 +1,11 @@
 package io.stargate.sdk.data.client.model.namespaces;
 
-import io.stargate.sdk.data.client.model.Command;
-import io.stargate.sdk.data.internal.model.NamespaceInformation;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 
 /**
  * Create namespace command.
  */
-public class CommandCreateNamespace extends Command<NamespaceInformation> {
+public class CommandCreateNamespace extends DataApiCommand<NamespaceInformation> {
 
     /**
      * Specialization of the command.

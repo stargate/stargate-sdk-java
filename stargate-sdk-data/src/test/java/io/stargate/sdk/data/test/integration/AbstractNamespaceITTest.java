@@ -3,12 +3,12 @@ package io.stargate.sdk.data.test.integration;
 import io.stargate.sdk.data.client.DataApiCollection;
 import io.stargate.sdk.data.client.DataApiNamespace;
 import io.stargate.sdk.data.client.exception.DataApiException;
-import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
 import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
-import io.stargate.sdk.data.internal.model.ApiResponse;
+import io.stargate.sdk.data.client.model.DataApiResponse;
 import io.stargate.sdk.data.test.TestConstants;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -149,17 +149,19 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Order(7)
     public void shouldRunCommand() {
         // Create From String
-        String createCollectionCommand = "{\"createCollection\":{\"name\":\"collection_simple\"}}";
-        ApiResponse res = getDataApiNamespace().runCommand(createCollectionCommand);
+        DataApiResponse res = getDataApiNamespace().runCommand(
+                new CommandCreateCollection("collection_simple"));
         assertThat(res).isNotNull();
         assertThat(res.getStatus().getInteger("ok")).isEqualTo(1);
 
         // Create From Specialized command class
-        ApiResponse res2 = getDataApiNamespace().runCommand(new CommandCreateCollection("collection_simple"));
+        DataApiResponse res2 = getDataApiNamespace().runCommand(
+                new CommandCreateCollection("collection_simple"));
         assertThat(res2.getStatusKeyAsInt("ok")).isEqualTo(1);
 
         // Create From Generic command class
-        ApiResponse res3 = getDataApiNamespace().runCommand(new Command<>("createCollection", Map.of("name", "collection_simple")));
+        DataApiResponse res3 = getDataApiNamespace().runCommand(
+                new DataApiCommand<>("createCollection", Map.of("name", "collection_simple")));
         assertThat(res3.getStatusKeyAsInt("ok")).isEqualTo(1);
     }
 
@@ -167,7 +169,7 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Order(8)
     public void shouldRunCommandTyped() {
         // Given
-        String listCollectionNames = "{\"findCollections\":{}}";
+        DataApiCommand<?> listCollectionNames = new DataApiCommand<>("findCollections", null);
         Document doc = getDataApiNamespace().runCommand(listCollectionNames, Document.class);
         assertThat(doc).isNotNull();
         assertThat(doc.getList("collections", String.class)).isNotNull();

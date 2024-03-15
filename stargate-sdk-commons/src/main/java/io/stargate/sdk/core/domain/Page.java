@@ -16,6 +16,7 @@
 
 package io.stargate.sdk.core.domain;
 
+import lombok.Data;
 import lombok.Getter;
 
 import java.util.List;
@@ -29,22 +30,17 @@ import java.util.Optional;
  * @param <R>
  *      document type
  */
+@Getter
 public class Page<R> {
  
-    /** size of page asked.
-     * -- GETTER --
-     *  Getter accessor for attribute 'pageSize'.
-     *
-     * @return
-     *       current value of 'pageSize'
-     */
+    /** Size of the page */
     private final int pageSize;
     
     /** Of present there is a next page. */
     private final String pageState;
     
-    /** list of results matchin the request. */
-    private List< R > results;
+    /** list of results matching the request. */
+    private final List< R > results;
     
     /**
      * Default Constructor.
@@ -86,32 +82,6 @@ public class Page<R> {
         return results== null || results.isEmpty();
     }
 
-    /**
-     * Gets pageSize
-     *
-     * @return value of pageSize
-     */
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    /**
-     * Set value for results
-     *
-     * @param results new value for results
-     */
-    public void setResults(List<R> results) {
-        this.results = results;
-    }
-
-    /**
-     * Gets results
-     *
-     * @return value of results
-     */
-    public List<R> getResults() {
-        return results;
-    }
 
     /**
      * Expected from a stream of result.
@@ -119,7 +89,7 @@ public class Page<R> {
      * @return
      *      first result if exist
      */
-    public Optional<R> getFindFirst() {
+    public Optional<R> findFirst() {
         if (!isEmpty()) return Optional.ofNullable(results.get(0));
         return Optional.empty();
     }

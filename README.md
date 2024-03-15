@@ -74,7 +74,7 @@ mvn -version
 
 ### 2.2 Start Stargate
 
-- ✅ Use the script `start.sh` at root of the repository or start stargate with the following docker-compose command:
+- ✅ Use the script `start.sh` at root of the repository or start stargate with the following docker-compose dataApiCommand:
 
 ```bash
 docker-compose -f ./stargate-sdk-test/src/test/resources/docker-compose.yml up -d

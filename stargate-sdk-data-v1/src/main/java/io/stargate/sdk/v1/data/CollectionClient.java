@@ -580,8 +580,7 @@ public class CollectionClient {
 
             // Insert documents synchronously
             ApiResponse apiResponse = execute("insertMany",
-                    Map.of("documents", documents, "options",
-                    Map.of("ordered", insertManyOrdered)));
+                    Map.of("documents", documents, "options", Map.of("ordered", insertManyOrdered)));
 
             DataApiUtils.validate(apiResponse);
             if (apiResponse.getStatus() != null) {

@@ -1,4 +1,4 @@
-package io.stargate.sdk.data.internal.model;
+package io.stargate.sdk.data.client.model;
 
 import io.stargate.sdk.data.client.model.Document;
 import lombok.Data;
@@ -9,7 +9,7 @@ import java.util.List;
  * Subpart of the payload for json api response holding returned data.
  */
 @Data
-public class ApiData {
+public class DataApiData {
 
     /**
      * List of documents.
@@ -29,6 +29,6 @@ public class ApiData {
     /**
      * Default constructor.
      */
-    public ApiData() {
+    public DataApiData() {
     }
 }

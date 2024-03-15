@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Helper to parse the grpc output.
@@ -42,11 +41,11 @@ public class ResultSetGrpc extends Page<RowGrpc> {
             this.columnsNames.add(cs.getName());
         }
 
-        // Mapping Results
-        setResults(rs.getRowsList()
-                .stream()
-                .map(r -> new RowGrpc(this, r))
-                .collect(Collectors.toList()));
+// Mapping Results
+//        setResults(rs.getRowsList()
+//                .stream()
+//                .map(r -> new RowGrpc(this, r))
+//                .collect(Collectors.toList()));
     }
 
     /**

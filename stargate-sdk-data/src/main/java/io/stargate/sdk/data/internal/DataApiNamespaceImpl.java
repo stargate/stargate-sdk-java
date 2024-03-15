@@ -7,8 +7,7 @@ import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
 import io.stargate.sdk.data.client.model.collections.CommandDropCollection;
 import io.stargate.sdk.data.client.model.collections.CommandFindCollections;
 import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
-import io.stargate.sdk.data.internal.model.ApiResponse;
-import io.stargate.sdk.data.internal.model.CollectionDefinition;
+import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import lombok.Getter;
@@ -26,21 +25,15 @@ import static io.stargate.sdk.utils.Assert.notNull;
  * Default implementation of the {@link DataApiNamespace}.
  */
 @Slf4j @Getter
-public class DataApiNamespaceImpl implements DataApiNamespace {
+public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNamespace {
 
-    /**
-     * Reference to the Data APi client
-     */
+    /** Reference to the Data APi client. */
     private final DataApiClient apiClient;
 
-    /**
-     * Current Namespace information.
-     */
+    /** Current Namespace information. */
     private final String namespaceName;
 
-    /**
-     * Resource for namespace.
-     */
+    /** Resource for namespace. */
     public final Function<ServiceHttp, String> namespaceResource;
 
     /**
@@ -95,6 +88,14 @@ public class DataApiNamespaceImpl implements DataApiNamespace {
 
     /** {@inheritDoc} */
     @Override
+    public <DOC> DataApiCollection<DOC> getCollection(String collectionName, @NonNull Class<DOC> documentClass) {
+        hasLength(collectionName, "collectionName");
+        notNull(documentClass, "documentClass");
+        return new DataApiCollectionImpl<>(this, collectionName, documentClass);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public Stream<CollectionDefinition> listCollections() {
         return runCommand(new CommandFindCollections().withExplain(true))
                 .getStatusKeyAsList("collections", CollectionDefinition.class)
@@ -106,22 +107,9 @@ public class DataApiNamespaceImpl implements DataApiNamespace {
     public <DOC> DataApiCollection<DOC> createCollection(String collectionName, CreateCollectionOptions createCollectionOptions, Class<DOC> documentClass) {
         hasLength(collectionName, "collectionName");
         notNull(documentClass, "documentClass");
-        ApiResponse apiResponse = runCommand(new CommandCreateCollection()
-                .withName(collectionName)
-                .withOptions(createCollectionOptions));
-        if (apiResponse.getErrors() != null && !apiResponse.getErrors().isEmpty()) {
-            apiResponse.getErrors().get(0).throwDataApiException();
-        }
+        runCommand(new CommandCreateCollection().withName(collectionName).withOptions(createCollectionOptions));
         log.info("Collection  '" + green("{}") + "' has been created", collectionName);
         return getCollection(collectionName, documentClass);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public <DOC> DataApiCollection<DOC> getCollection(String collectionName, @NonNull Class<DOC> documentClass) {
-        hasLength(collectionName, "collectionName");
-        notNull(documentClass, "documentClass");
-        return new DataApiCollectionImpl<>(this, collectionName, documentClass);
     }
 
     /** {@inheritDoc} */

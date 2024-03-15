@@ -2,6 +2,8 @@ package io.stargate.sdk.data.client.model;
 
 import io.stargate.sdk.http.domain.FilterOperator;
 
+import java.util.Arrays;
+
 /**
  * Helper to create Filter
  */
@@ -104,6 +106,46 @@ public class Filters {
     }
 
     /**
+     * Build a filter with the `$hasSize` operator.
+     *
+     * @param fieldName
+     *      target field
+     * @param size
+     *      value for size (positive integer)
+     * @return
+     *      filter built
+     */
+    public static Filter hasSize(final String fieldName, final int size) {
+        return new Filter().where(fieldName).hasSize(size);
+    }
+
+    /**
+     * Build a filter with the `$exists` operator.
+     *
+     * @param fieldName
+     *      target field
+     * @return
+     *      filter built
+     */
+    public static Filter exists(final String fieldName) {
+        return new Filter().where(fieldName).exists();
+    }
+
+    /**
+     * Build a filter with the `$all` operator.
+     *
+     * @param fieldName
+     *      target field
+     * @param values
+     *     list of values for the condition
+     * @return
+     *      filter built
+     */
+    public static Filter all(final String fieldName, final Object... values) {
+        return new Filter().where(fieldName).isAnArrayExactlyEqualsTo(values);
+    }
+
+    /**
      * Creates a filter that matches all documents where the value of a field equals any value in the list of specified values.
      *
      * @param fieldName
@@ -133,6 +175,24 @@ public class Filters {
         return new Filter().where(fieldName).isNotInArray(values);
     }
 
+    /**
+     * Creates a filter that performs a logical AND of the provided list of filters.
+     *
+     * <blockquote><pre>
+     *    and(eq("x", 1), lt("y", 3))
+     * </pre></blockquote>
+     *
+     * will generate a MongoDB query like:
+     * <blockquote><pre>
+     *    { $and: [{x : 1}, {y : {$lt : 3}}]}
+     * </pre></blockquote>
+     *
+     * @param filters the list of filters to and together
+     * @return the filter
+     */
+    public static Filter and(final Filter... filters) {
+        return and(Arrays.asList(filters));
+    }
 
     /**
      * Creates a filter that performs a logical AND of the provided list of filters.
@@ -150,16 +210,70 @@ public class Filters {
      * @return the filter
      */
     public static Filter and(final Iterable<Filter> filters) {
-        return null;
-        /*
-        FilterBuilderList builderList = new Filter().and();
-        filters.forEach(builderList.where())
-                .where("product_price", FilterOperator.EQUALS_TO,12.99)
-                .where("product_name", FilterOperator.EQUALS_TO, "HealthyFresh - Beef raw dog food")
-                .end();
-                */
+        Filter andFilter = new Filter();
+        andFilter.getFilter().put("$and", filters);
+        return andFilter;
     }
 
+    /**
+     * Creates a filter that performs a logical OR of the provided list of filters.
+     *
+     * <blockquote><pre>
+     *    or(eq("x", 1), lt("y", 3))
+     * </pre></blockquote>
+     *
+     * will generate a query like:
+     * <blockquote><pre>
+     *    { $or: [{x : 1}, {y : {$lt : 3}}]}
+     * </pre></blockquote>
+     *
+     * @param filters the list of filters to and together
+     * @return the filter
+     */
+    public static Filter or(final Iterable<Filter> filters) {
+        Filter andFilter = new Filter();
+        andFilter.getFilter().put("$or", filters);
+        return andFilter;
+    }
 
+    /**
+     * Creates a filter that performs a logical OR of the provided list of filters.
+     *
+     * <blockquote><pre>
+     *    or(eq("x", 1), lt("y", 3))
+     * </pre></blockquote>
+     *
+     * will generate a query like:
+     * <blockquote><pre>
+     *    { $or: [{x : 1}, {y : {$lt : 3}}]}
+     * </pre></blockquote>
+     *
+     * @param filters the list of filters to and together
+     * @return the filter
+     */
+    public static Filter or(final Filter... filters) {
+        return or(Arrays.asList(filters));
+    }
+
+    /**
+     * Creates a filter that performs a logical NOT of the provided filter
+     *
+     * <blockquote><pre>
+     *    not(eq("x", 1))
+     * </pre></blockquote>
+     *
+     * will generate a query like:
+     * <blockquote><pre>
+     *    { $and: [{x : 1}, {y : {$lt : 3}}]}
+     * </pre></blockquote>
+     *
+     * @param filter the list of filters to and together
+     * @return the filter
+     */
+    public static Filter not(Filter filter) {
+        Filter andFilter = new Filter();
+        andFilter.getFilter().put("$not", filter);
+        return andFilter;
+    }
 
 }

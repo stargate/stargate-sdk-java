@@ -1,14 +1,17 @@
 package io.stargate.sdk.data.client;
 
-import io.stargate.sdk.data.client.exception.TooManyDocumentsException;
+import io.stargate.sdk.core.domain.Page;
+import io.stargate.sdk.data.client.exception.TooManyDocumentsToCountException;
+import io.stargate.sdk.data.client.model.DataApiCommand;
+import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
+import io.stargate.sdk.data.client.model.find.FindOptions;
 import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
 import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
 import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.data.client.model.delete.DeleteResult;
 import io.stargate.sdk.data.client.model.DistinctIterable;
-import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.Filter;
-import io.stargate.sdk.data.client.model.FindIterable;
+import io.stargate.sdk.data.client.model.find.FindIterable;
 import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
 import io.stargate.sdk.data.client.model.insert.InsertManyResult;
 import io.stargate.sdk.data.client.model.update.ReplaceOptions;
@@ -22,61 +25,153 @@ import io.stargate.sdk.data.client.model.insert.InsertOneResult;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static io.stargate.sdk.data.client.model.Filters.eq;
 
 /**
- * Definition of operation for an Astra Collection.
+ * A Data API collection, the main object to interact with the Data API, especially for DDL operations.
+ * This class has a synchronous and asynchronous signature for all operations.
+ * <p>
+ * A Collection is spawned from a DataApiNameSpace object, from which it inherits the details on how to reach the API server
+ * (endpoint, authentication). A Collection has a name, which is its unique identifier for a namespace and
+ * options to specialize the usage as vector collections or advanced indexing parameters.
+ * </p>
+ *
+ * <p>
+ * A Collection is typed object designed to work both with default @{@link io.stargate.sdk.data.client.model.Document} (wrapper for a Map) and application
+ * plain old java objects (pojo). The serialization is performed with Jackson and application beans can be annotated.
+ * </p>
+ *
+ * <p>Example usage:</p>
+ * <pre>
+ * {@code
+ * // Given a DataApisNamespace
+ * DataApiNamespace nameSpace = DataApiClients.create().getNamespace("demo");
+ *
+ * // Initialization with no POJO
+ * DataApiCollection<Document> collection = namespace.getCollection("collection1");
+ *
+ * // Initialization with POJO
+ * DataApiCollection<MyBean> collection = namespace.getCollection("collection1", MyBean.class);
+ * }
+ * </pre>
  *
  * @param <DOC>
- *     Java bean mapping documents in the collections.
+ *     Java bean to unmarshall documents for collection.
  */
-public interface DataApiCollection<DOC> extends ApiClient {
+public interface DataApiCollection<DOC> extends DataApiCommandRunner {
 
     // ----------------------------
     // --- Global Informations ----
     // ----------------------------
 
     /**
-     * Gets the namespace for the collection.
+     * Retrieves the parent {@link DataApiNamespace} instance.
+     * This parent namespace is used for performing CRUD (Create, Read, Update, Delete) operations on collections.
      *
-     * @return the namespace
+     * <p>Example usage:</p>
+     * <pre>
+     * {@code
+     * // Given a collection
+     * DataApiCollection<Document> collection;
+     *   // TODO
+     * }
+     * </pre>
+     *
+     * @return parent namespace client.
      */
     DataApiNamespace getNamespace();
 
     /**
-     * Return the options of the collection (if any) with vector and indexing options.
+     * Retrieves the configuration options for the collection, including vector and indexing settings.
+     * These options specify how the collection should be created and managed, potentially affecting
+     * performance, search capabilities, and data organization.
+     * <p></p>
+     * <p>Example usage:</p>
+     * <pre>
+     * {@code
+     * // Given a collection
+     * DataApiCollection<Document> collection;
+     * // Access its Options
+     * CreateCollectionOptions options = collection.getOptions();
+     * if (null != c.getVector()) {
+     *   System.out.println(c.getVector().getDimension());
+     *   System.out.println(c.getVector().getMetric());
+     * }
+     * if (null != c.getIndexing()) {
+     *   System.out.println(c.getIndexing().getAllow());
+     *   System.out.println(c.getIndexing().getDeny());
+     * }
+     * }
+     * </pre>
      *
-     * @return
-     *      collection options
+     * @return An instance of {@link CreateCollectionOptions} containing the collection's configuration settings,
+     *         such as vector and indexing options. Returns {@code null} if no options are set or applicable.
      */
     CreateCollectionOptions getOptions();
 
     /**
-     * Get the class of documents stored in this collection.
+     * Retrieves the full definition of the collection with its name and options.
+     * <p></p>
+     * <p>Example usage:</p>
+     * <pre>
+     * {@code
+     * // Given a collection
+     * DataApiCollection<Document> collection;
+     * // Access its Definition
+     * CollectionDefinition definition = collection.getDefinition();
+     * System.out.println("Name=" + definition.getName());
+     * CreateCollectionOptions options = definition.getOptions();
+     * i f (options != null) {
+     *   // omitte
+     * }
+     * }
+     * </pre>
      *
-     * @return the class
+     * @return the full collection definition.
+     *
+     * @see CollectionDefinition##getOptions()
+     */
+    CollectionDefinition getDefinition();
+
+    /**
+     * Retrieves the class type of the POJO (Plain Old Java Object) used for unmarshalling documents
+     * within the collection. This class type is crucial for converting the raw data from the collection
+     * into more manageable, object-oriented representations. By default, this method returns the
+     * {@link io.stargate.sdk.data.client.model.Document} class, which serves as the standard container
+     * for document data. Custom implementations can override this default to utilize a different POJO
+     * that better suits their data structure and requirements.
+     *
+     * @return The {@code Class<DOC>} type representing the POJO class used for unmarshalling documents
+     *         from the collection. This class facilitates the conversion from stored document formats
+     *         to Java object instances, allowing for more intuitive data manipulation and access within
+     *         the application.
      */
     Class<DOC> getDocumentClass();
 
     /**
-     * Return the name of the collection.
+     * Retrieves the name of the collection.
      *
-     * @return
-     *      the name of the collection
+     * @return The name of the collection
      */
     String getName();
 
     /**
-     * Drops the collection from the namespace/Database.
+     * Delete the collection from its namespace.
      */
     void drop();
 
     /**
-     * Validate if a collection exists.
+     * Checks if the specified collection exists within the current namespace.
      *
-     * @return
-     *      if the collection exists
+     * <p>
+     * This method delegates the existence check to the {@code existCollection} method of the associated
+     * namespace, determined by {@link #getNamespace()}, and evaluates the existence based on the
+     * collection's name, as retrieved by {@link #getName()}.
+     * </p>
+     *
+     * @return {@code true} if the collection exists within the namespace, {@code false} otherwise.
      */
     default boolean exists() {
         return getNamespace().existCollection(getName());
@@ -87,15 +182,43 @@ public interface DataApiCollection<DOC> extends ApiClient {
     // --------------------------
 
     /**
-     * Find one document from a filter.
+     * Attempts to find a single document within the collection that matches the given filter criteria.
+     * This method is designed to return the first document that satisfies the filter conditions,
+     * making it particularly useful for retrieving specific documents when unique identifiers or
+     * specific criteria are known. If no document matches the filter, the method will return an empty
+     * {@link java.util.Optional}, indicating the absence of a matching document. This approach
+     * avoids throwing exceptions for non-existent documents, thereby facilitating cleaner and more
+     * robust error handling in client code.
      *
-     * @param filter
-     *      filter
-     * @return
-     *      document if it exists
+     * @param filter The {@link Filter} instance containing the criteria used to identify the desired document.
+     *               It specifies the conditions that a document must meet to be considered a match.
+     * @return An {@link java.util.Optional<DOC>} that contains the found document if one exists that matches
+     *         the filter criteria. Returns an empty {@link java.util.Optional} if no matching document is found,
+     *         enabling safe retrieval operations without the risk of {@link java.util.NoSuchElementException}.
      */
-    default Optional<Document> findOne(Filter filter) {
+    default Optional<DOC> findOne(Filter filter) {
         return findOne(filter, new FindOneOptions());
+    }
+
+    /**
+     * Initiates an asynchronous search to find a single document that matches the given filter criteria.
+     * This method leverages the functionality of {@link DataApiCollection#findOne(Filter)} to perform the
+     * search, but it does so asynchronously, returning a {@link CompletableFuture}. This approach allows
+     * the calling thread to remain responsive and perform other tasks while the search operation completes.
+     * The result of the operation is wrapped in a {@link CompletableFuture} that, upon completion, will
+     * contain an {@link Optional} instance. This instance either holds the document that matches the filter
+     * criteria or is empty if no such document exists.
+     *
+     * @param filter The {@link Filter} specifying the conditions that the document must meet to be considered
+     *               a match. This parameter determines how the search is conducted and what criteria the
+     *               document must satisfy to be retrieved.
+     * @return A {@link CompletableFuture<Optional<DOC>>} that, when completed, will contain the result of
+     *         the search operation. If a matching document is found, the {@link Optional} is non-empty;
+     *         otherwise, it is empty to indicate the absence of a matching document. This future allows for
+     *         non-blocking operations and facilitates the integration of asynchronous programming patterns.
+     */
+    default CompletableFuture<Optional<DOC>> findOneASync(Filter filter) {
+        return CompletableFuture.supplyAsync(() -> findOne(filter));
     }
 
     /**
@@ -106,7 +229,7 @@ public interface DataApiCollection<DOC> extends ApiClient {
      * @return
      *      document if it exists
      */
-    default Optional<Document> findById(Object id) {
+    default Optional<DOC> findById(Object id) {
         return findOne(eq(id));
     }
 
@@ -120,7 +243,7 @@ public interface DataApiCollection<DOC> extends ApiClient {
      * @return
      *      document
      */
-    Optional<Document> findOne(Filter filter, FindOneOptions options);
+    Optional<DOC> findOne(Filter filter, FindOneOptions options);
 
     /**
      * Finds all documents in the collection.
@@ -128,19 +251,9 @@ public interface DataApiCollection<DOC> extends ApiClient {
      * @return
      *      the find iterable interface
      */
-    FindIterable<DOC> find();
-
-    /**
-     * Finds all documents in the collection.
-     *
-     * @param resultClass
-     *      the class to decode each document into
-     * @param <T>
-     *      the target document type of the iterable, different from default
-     * @return
-     *      the find iterable interface
-     */
-    <T> FindIterable<T> find(Class<T> resultClass);
+    default FindIterable<DOC> find() {
+        return find(null, new FindOptions());
+    }
 
     /**
      * Finds all documents in the collection.
@@ -150,21 +263,66 @@ public interface DataApiCollection<DOC> extends ApiClient {
      * @return
      *      the find iterable interface
      */
-    FindIterable<DOC> find(Filter filter);
+    default FindIterable<DOC> find(Filter filter) {
+        return find(filter, new FindOptions());
+    }
+
+    /**
+     * Finds all documents in the collection.
+     *
+     * @param options
+     *      options of find one
+     * @return
+     *      the find iterable interface
+     */
+    default FindIterable<DOC> find(FindOptions options) {
+        return find(null, options);
+    }
 
     /**
      * Finds all documents in the collection.
      *
      * @param filter
      *      the query filter
-     * @param resultClass
-     *      the class to decode each document into
-     * @param <T>
-     *      the target document type of the iterable.
+     * @param options
+     *      options of find one
      * @return
      *      the find iterable interface
      */
-    <T> FindIterable<T> find(Filter filter, Class<T> resultClass);
+    FindIterable<DOC> find(Filter filter, FindOptions options);
+
+    /**
+     * Mapping the 'find' operation of the Rest Endpoint this function returns up to MAX_PAGE_SIZE
+     * document as a page with the eventual {@code pageState}.
+     * <p>
+     * This method utilizes the {@link io.stargate.sdk.data.client.model.Filters} class to build filter
+     * predicates for querying the database. It is designed to filter results based on the provided
+     * {@code filter}.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * {@code
+     * // Assuming a document structure where 'age' and 'country' are fields within the document.
+     * Filters filters = Filters.and(
+     *      Filters.eq("age", 25),
+     *      Filters.eq("country", "US")
+     * );
+     *
+     * // Now, use the filters with the 'find' operation.
+     * List<Document> results = find(filters);
+     * }
+     * </pre>
+     *
+     * @param filter
+     *      a predicate to filter the results, use class {@link io.stargate.sdk.data.client.model.Filters} to help build those.
+     *
+     * @param options
+     *      options to retrieve page including a pagedState
+     * @return
+     *      a list of page
+     */
+    Page<DOC> findPage(Filter filter, FindOptions options);
 
     /**
      * Gets the distinct values of the specified field name.
@@ -206,8 +364,8 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *
      * <p>
      * Takes in a `upperBound` option which dictates the maximum number of documents that may be present before a
-     * {@link TooManyDocumentsException} is thrown. If the limit is higher than the highest limit accepted by the
-     * Data API, a {@link TooManyDocumentsException} will be thrown anyway (i.e. `1000`).
+     * {@link TooManyDocumentsToCountException} is thrown. If the limit is higher than the highest limit accepted by the
+     * Data API, a {@link TooManyDocumentsToCountException} will be thrown anyway (i.e. `1000`).
      * </p>
      * <p>
      * Count operations are expensive: for this reason, the best practice is to provide a reasonable `upperBound`
@@ -221,18 +379,18 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *      The maximum number of documents to count.
      * @return
      *      The number of documents in the collection.
-     * @throws TooManyDocumentsException
+     * @throws TooManyDocumentsToCountException
      *      If the number of documents counted exceeds the provided limit.
      */
-    long countDocuments(int upperBound) throws TooManyDocumentsException;
+    int countDocuments(int upperBound) throws TooManyDocumentsToCountException;
 
     /**
      * Counts the number of documents in the collection with a filter.
      *
      * <p>
      * Takes in a `upperBound` option which dictates the maximum number of documents that may be present before a
-     * {@link TooManyDocumentsException} is thrown. If the limit is higher than the highest limit accepted by the
-     * Data API, a {@link TooManyDocumentsException} will be thrown anyway (i.e. `1000`).
+     * {@link TooManyDocumentsToCountException} is thrown. If the limit is higher than the highest limit accepted by the
+     * Data API, a {@link TooManyDocumentsToCountException} will be thrown anyway (i.e. `1000`).
      * </p>
      * <p>
      * Count operations are expensive: for this reason, the best practice is to provide a reasonable `upperBound`
@@ -248,10 +406,10 @@ public interface DataApiCollection<DOC> extends ApiClient {
      *      The maximum number of documents to count.
      * @return
      *      The number of documents in the collection.
-     * @throws TooManyDocumentsException
+     * @throws TooManyDocumentsToCountException
      *      If the number of documents counted exceeds the provided limit.
      */
-    long countDocuments(Filter filter, int upperBound)  throws TooManyDocumentsException;
+    int countDocuments(Filter filter, int upperBound)  throws TooManyDocumentsToCountException;
 
     // --------------------------
     // ---   Insert          ----
@@ -303,24 +461,24 @@ public interface DataApiCollection<DOC> extends ApiClient {
     /**
      * Executes a mix of inserts, updates, replaces, and deletes.
      *
-     * @param requests
-     *      the jsonCommand to execute
+     * @param commands
+     *      list of commands to run
      * @return
      *      the result of the bulk write
      */
-    BulkWriteResult bulkWrite(List<String> requests);
+    BulkWriteResult bulkWrite(List<DataApiCommand<?>> commands);
 
     /**
      * Executes a mix of inserts, updates, replaces, and deletes.
      *
      * @param options
      *      if requests must be ordered or not
-     * @param requests
-     *      the jsonCommand to execute
+     * @param commands
+     *      list of commands to run
      * @return
      *      the result of the bulk write
      */
-    BulkWriteResult bulkWrite(List<String> requests, BulkWriteOptions options);
+    BulkWriteResult bulkWrite(List<DataApiCommand<?>> commands, BulkWriteOptions options);
 
     // --------------------------
     // ---   Delete          ----

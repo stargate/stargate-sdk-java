@@ -5,19 +5,19 @@ import io.stargate.sdk.data.client.DataApiLimits;
 /**
  * Error when too many documents in the collection
  */
-public class TooManyDocumentsException extends Exception {
+public class TooManyDocumentsToCountException extends Exception {
 
     /**
      * Default constructor.
      */
-    public TooManyDocumentsException() {
+    public TooManyDocumentsToCountException() {
         super("Document count exceeds '" + DataApiLimits.MAX_DOCUMENTS_COUNT + ", the maximum allowed by the server");
     }
 
     /**
      * Default constructor.
      */
-    public TooManyDocumentsException(int upperLimit) {
+    public TooManyDocumentsToCountException(int upperLimit) {
         super("Document count exceeds upper bound set in method call " + upperLimit);
     }
 }

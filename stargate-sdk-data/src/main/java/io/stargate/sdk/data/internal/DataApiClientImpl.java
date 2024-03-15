@@ -7,7 +7,7 @@ import io.stargate.sdk.data.client.model.namespaces.CommandCreateNamespace;
 import io.stargate.sdk.data.client.model.namespaces.CommandDropNamespace;
 import io.stargate.sdk.data.client.model.namespaces.CommandFindNamespaces;
 import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
-import io.stargate.sdk.data.internal.model.NamespaceInformation;
+import io.stargate.sdk.data.client.model.namespaces.NamespaceInformation;
 import io.stargate.sdk.http.HttpClientOptions;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
@@ -26,7 +26,7 @@ import static io.stargate.sdk.utils.Assert.notNull;
  */
 @Slf4j
 @Getter
-public class DataApiClientImpl implements DataApiClient {
+public class DataApiClientImpl extends AbstractApiClient implements DataApiClient {
 
     /** Function to compute the root. */
     public final Function<ServiceHttp, String> rootResource;
@@ -67,6 +67,8 @@ public class DataApiClientImpl implements DataApiClient {
     public LoadBalancedHttpClient getHttpClient() {
         return stargateHttpClient;
     }
+
+
 
     // ------------------------------------------
     // ----      Namespace operations        ----

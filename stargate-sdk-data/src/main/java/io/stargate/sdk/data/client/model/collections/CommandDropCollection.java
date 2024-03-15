@@ -1,11 +1,11 @@
 package io.stargate.sdk.data.client.model.collections;
 
-import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.utils.Assert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-public class CommandDropCollection extends Command<CommandDropCollection.Payload> {
+public class CommandDropCollection extends DataApiCommand<CommandDropCollection.Payload> {
 
     /**
      * Default FindCollection

@@ -1,7 +1,7 @@
 package io.stargate.sdk.data.client;
 
 import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
-import io.stargate.sdk.data.internal.model.CollectionDefinition;
+import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
 import io.stargate.sdk.data.client.model.Document;
 
 import java.util.stream.Stream;
@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 /**
  * Class to interact with a Namespace.
  */
-public interface DataApiNamespace extends ApiClient {
+public interface DataApiNamespace extends DataApiCommandRunner {
 
     // ------------------------------------------
     // ----   General Informations           ----

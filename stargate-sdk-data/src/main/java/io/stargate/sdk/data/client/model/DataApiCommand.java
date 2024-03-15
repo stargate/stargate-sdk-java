@@ -16,8 +16,8 @@ import static io.stargate.sdk.utils.Assert.hasLength;
  * Represent a command to be executed against the Data API.
  */
 @Data
-@JsonSerialize(using = Command.CommandSerializer.class)
-public class Command<T> implements Serializable {
+@JsonSerialize(using = DataApiCommand.CommandSerializer.class)
+public class DataApiCommand<T> implements Serializable {
 
     /** Command Name. */
     protected String name;
@@ -25,7 +25,7 @@ public class Command<T> implements Serializable {
     /** Command payload.*/
     protected T payload;
 
-    public Command(String name) {
+    public DataApiCommand(String name) {
         hasLength(name, "command name");
         this.name = name;
     }
@@ -36,7 +36,7 @@ public class Command<T> implements Serializable {
      * @param payload
      *      command payload
      */
-    public Command(String name, T payload) {
+    public DataApiCommand(String name, T payload) {
         this.name = name;
         this.payload = payload;
     }
@@ -44,20 +44,30 @@ public class Command<T> implements Serializable {
     /**
      * Custom serializer for Command class.
      */
-    public static class CommandSerializer extends StdSerializer<Command<?>> {
+    public static class CommandSerializer extends StdSerializer<DataApiCommand<?>> {
 
+        /**
+         * Default constructor.
+         */
         public CommandSerializer() {
             this(null);
         }
 
-        public CommandSerializer(Class<Command<?>> t) {
-            super(t);
+        /**
+         * Constructor with the class in used.
+         *
+         * @param clazz
+         *      type of command for serialization
+         */
+        public CommandSerializer(Class<DataApiCommand<?>> clazz) {
+            super(clazz);
         }
 
+        /** {@inheritDoc} */
         @Override
-        public void serialize(Command<?> command, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        public void serialize(DataApiCommand<?> dataApiCommand, JsonGenerator gen, SerializerProvider provider) throws IOException {
             LinkedHashMap<String, Object> commandMap = new LinkedHashMap<>();
-            commandMap.put(command.getName(), command.getPayload() == null ?  new Object() : command.getPayload());
+            commandMap.put(dataApiCommand.getName(), dataApiCommand.getPayload() == null ?  new Object() : dataApiCommand.getPayload());
             gen.writeObject(commandMap);
         }
     }

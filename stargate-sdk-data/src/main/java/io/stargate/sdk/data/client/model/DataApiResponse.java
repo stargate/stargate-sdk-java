@@ -1,7 +1,6 @@
-package io.stargate.sdk.data.internal.model;
+package io.stargate.sdk.data.client.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
 import lombok.NonNull;
@@ -14,7 +13,7 @@ import java.util.stream.Stream;
  * Represents the Api response.
  */
 @Data
-public class ApiResponse {
+public class DataApiResponse {
 
     /**
      * Return by all operations except find*()
@@ -26,17 +25,17 @@ public class ApiResponse {
      * List of errors, could be one per inserted items with reason.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<ApiError> errors;
+    private List<DataApiError> errors;
 
     /**
      * Data retrieve with operations find
      */
-    private ApiData data;
+    private DataApiData data;
 
     /**
      * Default constructor.
      */
-    public ApiResponse() {
+    public DataApiResponse() {
     }
 
     /**
