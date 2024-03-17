@@ -4,17 +4,19 @@ import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.client.exception.TooManyDocumentsToCountException;
 import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
+import io.stargate.sdk.data.client.model.delete.DeleteOneOptions;
+import io.stargate.sdk.data.client.model.find.FindOneAndReplaceResult;
 import io.stargate.sdk.data.client.model.find.FindOptions;
 import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
 import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.delete.DeleteResult;
-import io.stargate.sdk.data.client.model.DistinctIterable;
+import io.stargate.sdk.data.client.model.iterable.DistinctIterable;
 import io.stargate.sdk.data.client.model.Filter;
-import io.stargate.sdk.data.client.model.find.FindIterable;
+import io.stargate.sdk.data.client.model.iterable.FindIterable;
 import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
 import io.stargate.sdk.data.client.model.insert.InsertManyResult;
-import io.stargate.sdk.data.client.model.update.ReplaceOptions;
+import io.stargate.sdk.data.client.model.update.ReplaceOneOptions;
 import io.stargate.sdk.data.client.model.update.UpdateOptions;
 import io.stargate.sdk.data.client.model.update.UpdateResult;
 import io.stargate.sdk.data.client.model.find.FindOneAndDeleteOptions;
@@ -106,10 +108,10 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * }
      * </pre>
      *
-     * @return An instance of {@link CreateCollectionOptions} containing the collection's configuration settings,
+     * @return An instance of {@link CollectionOptions} containing the collection's configuration settings,
      *         such as vector and indexing options. Returns {@code null} if no options are set or applicable.
      */
-    CreateCollectionOptions getOptions();
+    CollectionOptions getOptions();
 
     /**
      * Retrieves the full definition of the collection with its name and options.
@@ -337,7 +339,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      an iterable of distinct values
      */
-    <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Class<FIELD> resultClass);
+    default <FIELD> DistinctIterable<DOC, FIELD> distinct(String fieldName, Class<FIELD> resultClass) {
+        return distinct(fieldName, null, resultClass);
+    }
 
     /**
      * Gets the distinct values of the specified field name.
@@ -353,7 +357,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      an iterable of distinct values
      */
-    <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass);
+    <FIELD> DistinctIterable<DOC, FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass);
 
     // --------------------------
     // ---   Count           ----
@@ -466,7 +470,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the bulk write
      */
-    BulkWriteResult bulkWrite(List<DataApiCommand<?>> commands);
+    default BulkWriteResult bulkWrite(List<DataApiCommand<?>> commands) {
+        return bulkWrite(commands, new BulkWriteOptions());
+    }
 
     /**
      * Executes a mix of inserts, updates, replaces, and deletes.
@@ -494,7 +500,23 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      *      the result of the remove one operation
      *
      */
-    DeleteResult deleteOne(Filter filter);
+    default DeleteResult deleteOne(Filter filter) {
+        return deleteOne(filter, new DeleteOneOptions());
+    }
+
+    /**
+     * Removes at most one document from the collection that matches the given filter.
+     * If no documents match, the collection is not modified.
+     *
+     * @param filter
+     *      the query filter to apply the delete operation
+     * @param options
+     *      the option to driver the deletes (here sort)
+     * @return
+     *      the result of the remove one operation
+     *
+     */
+    DeleteResult deleteOne(Filter filter, DeleteOneOptions options);
 
     /**
      * Removes all documents from the collection that match the given query filter. If no documents match, the collection is not modified.
@@ -522,7 +544,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the document that was removed.  If no documents matched the query filter, then null will be returned
      */
-    Optional<DOC> findOneAndDelete(Filter filter);
+    default Optional<DOC> findOneAndDelete(Filter filter) {
+        return findOneAndDelete(filter, new FindOneAndDeleteOptions());
+    }
 
     /**
      * Atomically find a document and remove it.
@@ -541,8 +565,8 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
     // --------------------------
 
     /**
-     * Replace a document in the collection according to the specified arguments.
-     * <p>Use this method to replace a document using the specified replacement argument.</p>
+     * Replace a single document on the collection with a new one,
+     * optionally inserting a new document if no match is found.
      *
      * @param filter
      *      the query filter to apply the replace operation
@@ -551,7 +575,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      result of the replace one operation
      */
-    UpdateResult replaceOne(Filter filter, DOC replacement);
+    default UpdateResult replaceOne(Filter filter, DOC replacement) {
+        return replaceOne(filter, replacement, new ReplaceOneOptions());
+    }
 
     /**
      * Replace a document in the collection according to the specified arguments.
@@ -560,12 +586,43 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      *      the query filter to apply the replace operation
      * @param replacement
      *      the replacement document
-     * @param replaceOptions
+     * @param replaceOneOptions
      *      the options to apply to the replace operation
      * @return
      *      the result of the replace one operation
      */
-    UpdateResult replaceOne(Filter filter, DOC replacement, ReplaceOptions replaceOptions);
+    UpdateResult replaceOne(Filter filter, DOC replacement, ReplaceOneOptions replaceOneOptions);
+
+    /**
+     * Atomically find a document and replace it.
+     *
+     * @param filter
+     *      the query filter to apply the replace operation
+     * @param replacement
+     *      the replacement document
+     * @return
+     *      the document that was replaced.  Depending on the value of the {@code returnOriginal} property, this will either be the document as it was before the update or as it is after the update.  If no documents matched the query filter, then null will be returned
+     */
+    default Optional<DOC> findOneAndReplace(Filter filter, DOC replacement) {
+        return findOneAndReplace(filter, replacement, new FindOneAndReplaceOptions());
+    }
+
+    /**
+     * Atomically find a document and replace it.
+     *
+     * <p>Note: Supports retryable writes on MongoDB server versions 3.6 or higher when the retryWrites setting is enabled.</p>
+     * @param filter
+     *      the query filter to apply the replace operation
+     * @param replacement
+     *      the replacement document
+     * @param options
+     *      the options to apply to the operation
+     * @return
+     *      the document that was replaced.  Depending on the value of the {@code returnOriginal} property, this will either be the
+     * document as it was before the update or as it is after the update.  If no documents matched the query filter, then null will be
+     * returned
+     */
+    Optional<DOC> findOneAndReplace(Filter filter, DOC replacement, FindOneAndReplaceOptions options);
 
     /**
      * Update a single document in the collection according to the specified arguments.
@@ -577,7 +634,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the update one operation
      */
-    UpdateResult updateOne(Filter filter, Object update);
+    default UpdateResult updateOne(Filter filter, Object update) {
+        return updateOne(filter, update, new UpdateOptions());
+    }
 
     /**
      * Update a single document in the collection according to the specified arguments.
@@ -603,7 +662,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the update many operation
      */
-    UpdateResult updateMany(Filter filter, Object update);
+    default UpdateResult updateMany(Filter filter, Object update) {
+        return updateMany(filter, update, new UpdateOptions());
+    }
 
     /**
      * Update all documents in the collection according to the specified arguments.
@@ -620,35 +681,6 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
     UpdateResult updateMany(Filter filter, Object update, UpdateOptions updateOptions);
 
     /**
-     * Atomically find a document and replace it.
-     *
-     * @param filter
-     *      the query filter to apply the replace operation
-     * @param replacement
-     *      the replacement document
-     * @return
-     *      the document that was replaced.  Depending on the value of the {@code returnOriginal} property, this will either be the document as it was before the update or as it is after the update.  If no documents matched the query filter, then null will be returned
-     */
-    Optional<DOC> findOneAndReplace(Filter filter, DOC replacement);
-
-    /**
-     * Atomically find a document and replace it.
-     *
-     * <p>Note: Supports retryable writes on MongoDB server versions 3.6 or higher when the retryWrites setting is enabled.</p>
-     * @param filter
-     *      the query filter to apply the replace operation
-     * @param replacement
-     *      the replacement document
-     * @param options
-     *      the options to apply to the operation
-     * @return
-     *      the document that was replaced.  Depending on the value of the {@code returnOriginal} property, this will either be the
-     * document as it was before the update or as it is after the update.  If no documents matched the query filter, then null will be
-     * returned
-     */
-    Optional<DOC>  findOneAndReplace(Filter filter, DOC replacement, FindOneAndReplaceOptions options);
-
-    /**
      * Atomically find a document and update it.
      *
      * <p>Note: Supports retryable writes on MongoDB server versions 3.6 or higher when the retryWrites setting is enabled.</p>
@@ -659,7 +691,9 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return the document that was updated before the update was applied.  If no documents matched the query filter, then null will be
      * returned
      */
-    Optional<DOC> findOneAndUpdate(Filter filter, Object update);
+    default Optional<DOC> findOneAndUpdate(Filter filter, Object update) {
+        return findOneAndUpdate(filter, update, new FindOneAndUpdateOptions());
+    }
 
     /**
      * Atomically find a document and update it.

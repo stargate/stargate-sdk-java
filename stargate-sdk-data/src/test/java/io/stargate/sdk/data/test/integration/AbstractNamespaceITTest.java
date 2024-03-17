@@ -5,7 +5,7 @@ import io.stargate.sdk.data.client.DataApiNamespace;
 import io.stargate.sdk.data.client.exception.DataApiException;
 import io.stargate.sdk.data.client.model.DataApiCommand;
 import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.data.client.model.DataApiResponse;
@@ -73,14 +73,14 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Order(2)
     public void shouldCreateCollectionsVector() {
         DataApiCollection<Document> collectionVector = getDataApiNamespace().createCollection(COLLECTION_VECTOR,
-                CreateCollectionOptions.builder()
+                CollectionOptions.builder()
                         .withVectorDimension(14)
                         .withVectorSimilarityMetric(SimilarityMetric.cosine)
                         .build());
         assertThat(collectionVector).isNotNull();
         assertThat(collectionVector.getName()).isEqualTo(COLLECTION_VECTOR);
 
-        CreateCollectionOptions options = collectionVector.getOptions();
+        CollectionOptions options = collectionVector.getOptions();
         assertThat(options.getVector()).isNotNull();
         assertThat(options.getVector().getDimension()).isEqualTo(14);
     }
@@ -89,11 +89,11 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Order(3)
     public void shouldCreateCollectionsAllows() {
         DataApiCollection<Document> collectionAllow = getDataApiNamespace().createCollection(COLLECTION_ALLOW,
-                CreateCollectionOptions.builder()
+                CollectionOptions.builder()
                         .withIndexingAllow("a", "b", "c")
                         .build());
         assertThat(collectionAllow).isNotNull();
-        CreateCollectionOptions options = collectionAllow.getOptions();
+        CollectionOptions options = collectionAllow.getOptions();
         assertThat(options.getIndexing()).isNotNull();
         assertThat(options.getIndexing().getAllow()).isNotNull();
     }
@@ -102,11 +102,11 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Order(4)
     public void shouldCreateCollectionsDeny() {
         DataApiCollection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
-                CreateCollectionOptions.builder()
+                CollectionOptions.builder()
                         .withIndexingDeny("a", "b", "c")
                         .build());
         assertThat(collectionDeny).isNotNull();
-        CreateCollectionOptions options = collectionDeny.getOptions();
+        CollectionOptions options = collectionDeny.getOptions();
         assertThat(options.getIndexing()).isNotNull();
         assertThat(options.getIndexing().getDeny()).isNotNull();
     }
@@ -135,7 +135,7 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     public void shouldDropCollectionsDeny() {
         // Given
         DataApiCollection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
-                CreateCollectionOptions.builder()
+                CollectionOptions.builder()
                         .withIndexingDeny("a", "b", "c")
                         .build());
         assertThat(getDataApiNamespace().existCollection(COLLECTION_DENY)).isTrue();

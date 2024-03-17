@@ -1,56 +1,29 @@
-package io.stargate.sdk.data.client.model.find;
+package io.stargate.sdk.data.client.model.iterable;
 
-import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.client.DataApiCollection;
-import io.stargate.sdk.data.client.model.DataApiPagedIterator;
-import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.Filter;
+import io.stargate.sdk.data.client.model.find.FindOptions;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
-import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  * @param <DOC>
  */
+@Slf4j
 @Getter
-public class FindIterable<DOC> implements Iterable<DOC>, Closeable {
+public class FindIterable<DOC> extends PageableIterable<DOC> implements Iterable<DOC> {
 
-    // -------- Inputs ---------
-
-    /** Reference to the collection in use. */
-    private final DataApiCollection<DOC> collection;
-
-    /** Original command, we will edit it to iterate on pages. */
-    private final Filter filter;
-
-    /** Original command, we will edit it to iterate on pages. */
-    private final FindOptions options;
-
-    // General Status
-
-    /** Check host many has been processed (skip & limit support) */
-    private final AtomicInteger totalItemProcessed = new AtomicInteger(0);
-
-    /** The iterable is active and progressing on the results. */
-    boolean active = false;
-
-    /** the Iterator is exhausted */
-    boolean exhausted = false;
-
-    // ----- Page Informations ----
-
-    Page<DOC> currentPage;
-
-    int currentPageAvailable;
-
-    DataApiPagedIterator<DOC> currentPageIterator;
+    /**
+     * Iterator on documents.
+     */
+    protected FindIterator<DOC> currentPageIterator;
 
     /**
      * Constructor for a cursor over the elements of the find.
@@ -65,41 +38,6 @@ public class FindIterable<DOC> implements Iterable<DOC>, Closeable {
         this.collection  = collection;
         this.filter       = filter;
         this.options      = options;
-    }
-
-    /** {@inheritDoc} */
-    @Override @NonNull
-    public DataApiPagedIterator<DOC> iterator() {
-        if (currentPageIterator == null) {
-            active = fetchNextPage();
-            this.currentPageIterator = new DataApiPagedIterator<DOC>(this);
-        }
-        return currentPageIterator;
-    }
-
-    /**
-     * Fetch the next page if the result.
-     *
-     * @return
-     *      if a new page has been found.
-     */
-    public boolean fetchNextPage() {
-        if (currentPage == null || currentPage.getPageState().isPresent()) {
-            if (currentPage != null) {
-                options.withPageState(currentPage.getPageState().get());
-            }
-            this.currentPage  = collection.findPage(filter, options);
-        }
-        return false;
-    }
-
-    /**
-     * When no more items available.
-     */
-    @Override
-    public void close() {
-        active    = false;
-        exhausted = true;
     }
 
     /**
@@ -132,6 +70,16 @@ public class FindIterable<DOC> implements Iterable<DOC>, Closeable {
      public Optional<DOC> first() {
          return getItem(0);
      }
+
+    /** {@inheritDoc} */
+    @Override @NonNull
+    public FindIterator<DOC> iterator() {
+        if (currentPageIterator == null) {
+            active = fetchNextPage();
+            this.currentPageIterator = new FindIterator<>(this);
+        }
+        return currentPageIterator;
+    }
 
     /**
      * Will exhaust the list and put all value in memory.

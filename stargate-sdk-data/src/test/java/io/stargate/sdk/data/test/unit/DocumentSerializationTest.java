@@ -1,7 +1,7 @@
 package io.stargate.sdk.data.test.unit;
 
 import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.utils.JsonUtils;
@@ -24,7 +24,7 @@ public class DocumentSerializationTest {
     public void shouldSerializeCommand() {
         CommandCreateCollection ccc = new CommandCreateCollection()
                 .withName("demo")
-                .withOptions(CreateCollectionOptions.builder()
+                .withOptions(CollectionOptions.builder()
                     .withVectorDimension(14)
                     .withVectorSimilarityMetric(SimilarityMetric.cosine)
                     .build());

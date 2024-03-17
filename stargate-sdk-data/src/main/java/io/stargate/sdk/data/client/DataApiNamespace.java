@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.client;
 
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
 import io.stargate.sdk.data.client.model.Document;
 
@@ -119,11 +119,11 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      *
      * @param collectionName
      *      the name for the new collection to create
-     * @param createCollectionOptions
+     * @param collectionOptions
      *      various options for creating the collection
      */
-    default DataApiCollection<Document> createCollection(String collectionName, CreateCollectionOptions createCollectionOptions) {
-        return createCollection(collectionName, createCollectionOptions, Document.class);
+    default DataApiCollection<Document> createCollection(String collectionName, CollectionOptions collectionOptions) {
+        return createCollection(collectionName, collectionOptions, Document.class);
     }
 
     /**
@@ -131,10 +131,10 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      *
      * @param collectionName
      *      the name for the new collection to create
-     * @param createCollectionOptions
+     * @param collectionOptions
      *      various options for creating the collection
      */
-    <DOC> DataApiCollection<DOC> createCollection(String collectionName, CreateCollectionOptions createCollectionOptions, Class<DOC> documentClass);
+    <DOC> DataApiCollection<DOC> createCollection(String collectionName, CollectionOptions collectionOptions, Class<DOC> documentClass);
 
     /**
      * Delete a collection.

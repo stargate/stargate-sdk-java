@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class CreateCollectionOptions {
+public class CollectionOptions {
 
     /**
      * Vector options.
@@ -192,8 +192,8 @@ public class CreateCollectionOptions {
          *
          * @return collection definition
          */
-        public CreateCollectionOptions build() {
-            CreateCollectionOptions req = new CreateCollectionOptions();
+        public CollectionOptions build() {
+            CollectionOptions req = new CollectionOptions();
             req.vector = this.vector;
             req.indexing = this.indexing;
             return req;

@@ -1,7 +1,6 @@
-package io.stargate.sdk.data.client.model;
+package io.stargate.sdk.data.client.model.iterable;
 
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.data.client.model.find.FindIterable;
 import lombok.Getter;
 
 import java.util.Iterator;
@@ -14,9 +13,10 @@ import java.util.NoSuchElementException;
  *     working document
  */
 @Getter
-public class DataApiPagedIterator<DOC> implements Iterator<DOC> {
+public class FindIterator<DOC> implements Iterator<DOC> {
 
-    private final FindIterable<DOC> parentIterable;
+    /** Iterable for both find and distinct. */
+    private final PageableIterable<DOC> parentIterable;
 
     /** Progress on the current page. */
     private int availableWithoutFetch;
@@ -30,26 +30,10 @@ public class DataApiPagedIterator<DOC> implements Iterator<DOC> {
      * @param findIterable
      *      iterable
      */
-    public DataApiPagedIterator(FindIterable<DOC> findIterable) {
+    public FindIterator(PageableIterable<DOC> findIterable) {
         this.parentIterable        = findIterable;
         this.availableWithoutFetch = findIterable.getCurrentPage().getResults().size();
         this.resultsIterator       = findIterable.getCurrentPage().getResults().iterator();
-    }
-
-    /**
-     * Trigger the load of the next page.
-     *
-     * @return
-     *     fetch next page
-     */
-    private boolean fetchNextPage() {
-        if (parentIterable.fetchNextPage()) {
-            Page<DOC> newPage = parentIterable.getCurrentPage();
-            this.availableWithoutFetch = newPage.getResults().size();
-            this.resultsIterator = newPage.getResults().iterator();
-            return true;
-        }
-        return false;
     }
 
     /** {@inheritDoc} */
@@ -83,6 +67,8 @@ public class DataApiPagedIterator<DOC> implements Iterator<DOC> {
             this.resultsIterator = parentIterable.getCurrentPage().getResults().iterator();
             return next();
         }
+        parentIterable.active    = false;
+        parentIterable.exhausted = true;
         throw new NoSuchElementException("Current page is exhausted and no new page available");
     }
 

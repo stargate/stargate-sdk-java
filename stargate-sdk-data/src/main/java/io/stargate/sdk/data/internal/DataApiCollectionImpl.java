@@ -5,15 +5,22 @@ import io.stargate.sdk.data.client.DataApiCollection;
 import io.stargate.sdk.data.client.DataApiLimits;
 import io.stargate.sdk.data.client.DataApiNamespace;
 import io.stargate.sdk.data.client.exception.DataApiException;
+import io.stargate.sdk.data.client.exception.DataApiFaultyResponseException;
+import io.stargate.sdk.data.client.exception.DataApiResponseException;
 import io.stargate.sdk.data.client.exception.TooManyDocumentsToCountException;
 import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.find.FindIterable;
+import io.stargate.sdk.data.client.model.delete.CommandDeleteMany;
+import io.stargate.sdk.data.client.model.delete.CommandDeleteOne;
+import io.stargate.sdk.data.client.model.delete.DeleteOneOptions;
+import io.stargate.sdk.data.client.model.find.FindOneAndReplaceCommand;
+import io.stargate.sdk.data.client.model.find.FindOneAndReplaceResult;
+import io.stargate.sdk.data.client.model.iterable.FindIterable;
 import io.stargate.sdk.data.client.model.DataApiResponse;
-import io.stargate.sdk.data.client.model.DistinctIterable;
+import io.stargate.sdk.data.client.model.iterable.DistinctIterable;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.delete.DeleteResult;
 import io.stargate.sdk.data.client.model.find.CommandFind;
 import io.stargate.sdk.data.client.model.find.CommandFindOne;
@@ -31,13 +38,15 @@ import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
 import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
 import io.stargate.sdk.data.client.model.misc.CommandCountDocuments;
 import io.stargate.sdk.data.client.model.misc.CountDocumentsResult;
-import io.stargate.sdk.data.client.model.update.ReplaceOptions;
+import io.stargate.sdk.data.client.model.update.ReplaceOneOptions;
 import io.stargate.sdk.data.client.model.update.UpdateOptions;
 import io.stargate.sdk.data.client.model.update.UpdateResult;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
 import io.stargate.sdk.utils.Assert;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -124,11 +133,11 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
 
     /** {@inheritDoc} */
     @Override
-    public CreateCollectionOptions getOptions() {
+    public CollectionOptions getOptions() {
         return Optional
                 .ofNullable(getDefinition()
                 .getOptions())
-                .orElse(new CreateCollectionOptions());
+                .orElse(new CollectionOptions());
     }
 
     /** {@inheritDoc} */
@@ -188,7 +197,8 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
             for (Future<InsertManyResult> future : futures) {
                 finalResult.getInsertedIds().addAll(future.get().getInsertedIds());
             }
-            if (executor.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
+
+            if (executor.awaitTermination(options.getTimeout(), TimeUnit.MILLISECONDS)) {
                 log.debug(magenta(".[total insertMany.responseTime]") + "=" + yellow("{}") + " millis.",
                         System.currentTimeMillis() - start);
             } else {
@@ -214,13 +224,12 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
      */
     private Callable<InsertManyResult> getInsertManyResultCallable(List<? extends DOC> documents, InsertManyOptions options, int start) {
         int end = Math.min(start + options.getChunkSize(), documents.size());
-        Callable<InsertManyResult> task = () -> {
+        return () -> {
             log.debug("Insert block (" + cyan("size={}") + ") in collection {}", end - start, green(getCollectionName()));
-            return new InsertManyResult(
-                    runCommand(new CommandInsertMany<DOC>(documents.subList(start, end), options.isOrdered()))
-                            .getStatusKeyAsList("insertedIds", Object.class));
+            return new InsertManyResult(runCommand(new CommandInsertMany<DOC>(
+                    documents.subList(start, end), options.isOrdered()))
+                        .getStatusKeyAsList("insertedIds", Object.class));
         };
-        return task;
     }
 
     // --------------------------
@@ -258,20 +267,10 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
                         .collect(Collectors.toList()));
     }
 
+    /** {@inheritDoc} */
     @Override
-    public <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Class<FIELD> resultClass) {
-
-        find(and(
-                eq("_id", 1),
-                eq("product", "ok"))
-        );
-
-        return null;
-    }
-
-    @Override
-    public <FIELD> DistinctIterable<FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass) {
-        return null;
+    public <FIELD> DistinctIterable<DOC, FIELD> distinct(String fieldName, Filter filter, Class<FIELD> resultClass) {
+        return new DistinctIterable<>(this, fieldName, filter, resultClass);
     }
 
     // ----------------------------
@@ -306,9 +305,21 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
     // ---   Delete            ----
     // ----------------------------
 
+    public static final String DELETED_COUNT = "deletedCount";
+
+    public static final String MATCHED_COUNT = "matchedCount";
+    public static final String MODIFIED_COUNT = "modifiedCount";
+    public static final String MORE_DATA = "moreData";
+
+
+
+    /** {@inheritDoc} */
     @Override
-    public DeleteResult deleteOne(Filter filter) {
-        return null;
+    public DeleteResult deleteOne(Filter filter, DeleteOneOptions deleteOneOptions) {
+        CommandDeleteOne deleteOne = new CommandDeleteOne().withFilter(filter).withOptions(deleteOneOptions);
+        DataApiResponse dataApiResponse = runCommand(deleteOne);
+        int deletedCount = dataApiResponse.getStatus().getInteger(DELETED_COUNT);
+        return new DeleteResult(deletedCount);
     }
 
     /** {@inheritDoc} */
@@ -319,15 +330,15 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
         DeleteResult res;
         boolean moreData = false;
         do {
-            DataApiResponse dataApiResponse = runCommand(new DataApiCommand<>("deleteMany", filter));
-
+            CommandDeleteMany deleteMany = new CommandDeleteMany().withFilter(filter);
+            DataApiResponse dataApiResponse = runCommand(deleteMany);
             Document status = dataApiResponse.getStatus();
             if (status != null) {
-                if (status.containsKey("deletedCount")) {
-                    totalCount.addAndGet(status.getInteger("deletedCount"));
+                if (status.containsKey(DELETED_COUNT)) {
+                    totalCount.addAndGet(status.getInteger(DELETED_COUNT));
                 }
-                if (status.containsKey("moreData")) {
-                    moreData = status.getBoolean("moreData");
+                if (status.containsKey(MORE_DATA)) {
+                    moreData = status.getBoolean(MORE_DATA);
                 }
             }
         } while(moreData);
@@ -350,76 +361,107 @@ public class DataApiCollectionImpl<DOC> extends AbstractApiClient implements Dat
     // ---  Update             ----
     // ----------------------------
 
+    /** {@inheritDoc} */
     @Override
-    public UpdateResult replaceOne(Filter filter, DOC replacement) {
-        return null;
+    public Optional<DOC> findOneAndReplace(Filter filter, DOC replacement, FindOneAndReplaceOptions options) {
+        return Optional.ofNullable(executeFindOneAndReplace(
+                new FindOneAndReplaceCommand<DOC>()
+                    .withFilter(filter)
+                    .withReplacement(replacement)
+                    .withOptions(options))
+                .getDocument());
     }
 
-    @Override
-    public UpdateResult replaceOne(Filter filter, DOC replacement, ReplaceOptions replaceOptions) {
-        return null;
+    /** {@inheritDoc} */@Override
+    public UpdateResult replaceOne(Filter filter, DOC replacement, ReplaceOneOptions replaceOneOptions) {
+
+        // Build options for a replace
+        FindOneAndReplaceOptions options = new FindOneAndReplaceOptions()
+                .upsert(replaceOneOptions.getUpsert())
+                .returnDocument(FindOneAndReplaceOptions.ReturnDocument.before);
+
+        // Execute the `findOneAndReplace`
+        FindOneAndReplaceResult<DOC> res = executeFindOneAndReplace(new FindOneAndReplaceCommand<DOC>()
+                .withFilter(filter)
+                .withReplacement(replacement)
+                .withOptions(options));
+
+        // Parse the result for a replace one
+        UpdateResult result = new UpdateResult();
+        result.setMatchedCount(res.getMatchedCount());
+        result.setModifiedCount(res.getModifiedCount());
+        if (res.getDocument() != null) {
+            Document doc = JsonUtils.convertValueForDataApi(res.getDocument(), Document.class);
+            if (doc.getId(Object.class) != null) {
+                result.setUpsertedId(doc.getId(Object.class));
+            }
+        }
+        return result;
     }
 
-    @Override
-    public UpdateResult updateOne(Filter filter, Object update) {
-        return null;
+    /**
+     * Mutualisation of the code for replaceOne() and findOneAndReplaceOne().
+     *
+     * @param cmd
+     *      command
+     * @return
+     *      command result
+     */
+    private FindOneAndReplaceResult<DOC> executeFindOneAndReplace(FindOneAndReplaceCommand<DOC> cmd) {
+        // Run Command
+        DataApiResponse dataApiResponse = runCommand(cmd);
+        // Parse Command Result
+        FindOneAndReplaceResult<DOC> result = new FindOneAndReplaceResult<DOC>();
+        if (dataApiResponse.getData() == null) {
+            throw new DataApiFaultyResponseException(cmd, dataApiResponse ,"Faulty response from find_one_and_replace API command.");
+        }
+        if (dataApiResponse.getData().getDocument() != null) {
+            result.setDocument(dataApiResponse
+                    .getData()
+                    .getDocument()
+                    .map(getDocumentClass()));
+        }
+        Document status = dataApiResponse.getStatus();
+        if (status != null) {
+            if (status.containsKey(MATCHED_COUNT)) {
+                result.setMatchedCount(status.getInteger(MATCHED_COUNT));
+            }
+            if (status.containsKey(MODIFIED_COUNT)) {
+                result.setModifiedCount(status.getInteger(MODIFIED_COUNT));
+            }
+        }
+        return result;
     }
 
-    @Override
-    public UpdateResult updateOne(Filter filter, Object update, UpdateOptions updateOptions) {
-        return null;
-    }
-
-    @Override
-    public UpdateResult updateMany(Filter filter, Object update) {
-        return null;
-    }
-
-    @Override
-    public UpdateResult updateMany(Filter filter, Object update, UpdateOptions updateOptions) {
-        return null;
-    }
-
-    @Override
-    public Optional<DOC> findOneAndDelete(Filter filter) {
-        return Optional.empty();
-    }
-
+    /** {@inheritDoc} */
     @Override
     public Optional<DOC> findOneAndDelete(Filter filter, FindOneAndDeleteOptions options) {
         return Optional.empty();
     }
 
-    @Override
-    public Optional<DOC> findOneAndReplace(Filter filter, DOC replacement) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<DOC> findOneAndReplace(Filter filter, DOC replacement, FindOneAndReplaceOptions options) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<DOC> findOneAndUpdate(Filter filter, Object update) {
-        return Optional.empty();
-    }
-
+    /** {@inheritDoc} */
     @Override
     public Optional<DOC> findOneAndUpdate(Filter filter, Object update, FindOneAndUpdateOptions options) {
         return Optional.empty();
     }
 
-    // ----------------------------
-    // ---   Bulk Write        ----
-    // ----------------------------
-
     /** {@inheritDoc} */
     @Override
-    public BulkWriteResult bulkWrite(List<DataApiCommand<?>> requests) {
+    public UpdateResult updateOne(Filter filter, Object update, UpdateOptions updateOptions) {
         return null;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public UpdateResult updateMany(Filter filter, Object update, UpdateOptions updateOptions) {
+        return null;
+    }
+
+
+
+    // ----------------------------
+    // ---   Bulk Write        ----
+    // ----------------------------
 
     /** {@inheritDoc} */
     @Override

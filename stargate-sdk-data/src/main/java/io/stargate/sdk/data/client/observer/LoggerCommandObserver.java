@@ -79,28 +79,28 @@ public class LoggerCommandObserver implements DataApiCommandObserver {
         if (executionInfo != null) {
             String req = UUID.randomUUID().toString().substring(30);
             // Log Command
-            log("Command [" + cyan(executionInfo.getCommand().getName()) + "] at [" + cyan(executionInfo.getExecutionDate().toString()) + "]");
-            log(magenta(".[request_" + req + "]") + "=" + yellow("{}"),
+            log("Command [" + cyan(executionInfo.getCommand().getName()) + "] with id [" + cyan(req) + "]");
+            log(magenta("[" + req + "][request]") + "=" + yellow("{}"),
                     JsonUtils.marshallForDataApi(executionInfo.getCommand()));
-            log(magenta(".[response_" + req + "]") + "=" + yellow("{}"),
+            log(magenta("[" + req + "][response]") + "=" + yellow("{}"),
                     JsonUtils.marshallForDataApi(executionInfo.getResponse()));
-            log(magenta(".[responseTime_" + req + "]") + "=" + yellow("{}") + " millis.",
+            log(magenta("[" + req + "][responseTime]") + "=" + yellow("{}") + " millis.",
                     executionInfo.getExecutionTime());
             // Log Data
             DataApiData data = executionInfo.getResponse().getData();
             if (data != null && data.getDocument() != null) {
-                log(magenta(".[apiData/document_" + req + "]") + "=" + yellow("1 document retrieved, id='{}'"), data.getDocument().get(Document.ID));
+                log(magenta("[" + req + "][apiData/document]") + "=" + yellow("1 document retrieved, id='{}'"), data.getDocument().get(Document.ID));
             }
             if (data != null && data.getDocuments() != null) {
-                log(magenta(".[apiData/documents_" + req + "]") + "=" + yellow("{} document(s)."), data.getDocuments().size());
+                log(magenta("[" + req + "][apiData/documents]") + "=" + yellow("{} document(s)."), data.getDocuments().size());
             }
 
             // Log Errors
             List<DataApiError> errors = executionInfo.getResponse().getErrors();
             if (errors != null) {
-                log(magenta(".[errors_" + req + "]") + "="+ yellow("{}") +" errors detected.", errors.size());
+                log(magenta("[" + req + "][errors]") + "="+ yellow("{}") +" errors detected.", errors.size());
                 for (DataApiError error : errors) {
-                    log(magenta(".[errors_" + req + "]") + "="+ yellow("{} [code={}]"), error.getErrorMessage(), error.getErrorCode());
+                    log(magenta("[" + req + "][errors]")+ "="+ yellow("{} [code={}]"), error.getErrorMessage(), error.getErrorCode());
                 }
             }
         }

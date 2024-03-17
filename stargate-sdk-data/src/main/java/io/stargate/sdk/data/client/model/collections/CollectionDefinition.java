@@ -1,6 +1,5 @@
 package io.stargate.sdk.data.client.model.collections;
 
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
 import io.stargate.sdk.utils.JsonUtils;
 import lombok.Data;
 
@@ -18,7 +17,7 @@ public class CollectionDefinition {
     /**
      * Options for the collection.
      */
-    private CreateCollectionOptions options;
+    private CollectionOptions options;
 
     /** {@inheritDoc} */
     @Override

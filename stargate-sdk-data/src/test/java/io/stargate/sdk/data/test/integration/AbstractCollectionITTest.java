@@ -10,11 +10,16 @@ import io.stargate.sdk.data.client.model.DataApiResponse;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.data.client.model.SortOrder;
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
+import io.stargate.sdk.data.client.model.delete.DeleteOneOptions;
+import io.stargate.sdk.data.client.model.find.FindOneAndReplaceOptions;
 import io.stargate.sdk.data.client.model.find.FindOneOptions;
 import io.stargate.sdk.data.client.model.find.FindOptions;
 import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
 import io.stargate.sdk.data.client.model.insert.InsertOneResult;
+import io.stargate.sdk.data.client.model.iterable.DistinctIterable;
+import io.stargate.sdk.data.client.model.iterable.FindIterable;
+import io.stargate.sdk.data.client.model.update.UpdateResult;
 import io.stargate.sdk.data.client.observer.LoggerCommandObserver;
 import io.stargate.sdk.data.test.TestConstants;
 import lombok.AllArgsConstructor;
@@ -25,9 +30,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -90,7 +98,7 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
     protected DataApiCollection<Product> getCollectionVector() {
         if (collectionVector == null) {
             collectionVector = getDataApiNamespace().createCollection(COLLECTION_VECTOR,
-                    CreateCollectionOptions
+                    CollectionOptions
                             .builder()
                             .withVectorDimension(14)
                             .withVectorSimilarityMetric(SimilarityMetric.cosine)
@@ -219,12 +227,25 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
     }
 
     @Test
-    public void testFind() {
+    public void testFindAll() {
         // Populate the Collection
         getCollectionSimple().deleteAll();
         for(int i=0;i<25;i++) getCollectionSimple().insertOne(Document.create(i).append("indice", i));
 
-        // Retrieve
+        FindIterable<Document> findIterable  = getCollectionSimple().find();
+        for (Document document : findIterable) assertThat(document).isNotNull();
+
+        List<Document> documents = getCollectionSimple().find().all();
+        assertThat(documents.size()).isEqualTo(25);
+    }
+
+    @Test
+    public void testFindSkipLimit() {
+        // Populate the Collection
+        getCollectionSimple().deleteAll();
+        for(int i=0;i<25;i++) getCollectionSimple().insertOne(Document.create(i).append("indice", i));
+
+        // Sort = no paging
         FindOptions options = new FindOptions().sortingBy("indice", SortOrder.ASCENDING).skip(11).limit(2);
         List<Document> documents = getCollectionSimple().find(options).all();
         assertThat(documents.size()).isEqualTo(2);
@@ -256,6 +277,134 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
         assertThat(getCollectionSimple().countDocuments(100)).isEqualTo(55);
     }
 
+    @Test
+    public void testDistinct() {
+        // Given a collection with 25 items
+        getCollectionSimple().deleteAll();
+        for(int i=0;i<25;i++) getCollectionSimple().insertOne(Document.create(i).append("indice", i%7));
+        // Look for
+        DistinctIterable<Document, Integer> dis = getCollectionSimple().distinct("indice", Integer.class);
+        List<Integer> distinctList = dis.all();
+        assertThat(distinctList).hasSize(7);
+    }
 
+    @Test
+    public void testDistinctIter() {
+        // Given a collection with 25 items
+        int distinct = 22;
+        getCollectionSimple().deleteAll();
+        getCollectionSimple().insertMany(IntStream
+                .range(0,25)
+                .mapToObj(i -> Document.create(i).append("indice", i%distinct))
+                .collect(Collectors.toList()));
+        // Iterate over the collection distinct
+        List<Integer> values = new ArrayList<>();
+        for (Integer integer : getCollectionSimple().distinct("indice", Integer.class)) {
+            values.add(integer);
+        }
+        assertThat(values).hasSize(distinct);
+
+        int smallDistinct = 7;
+        getCollectionSimple().deleteAll();
+        getCollectionSimple().insertMany(IntStream
+                .range(0,25)
+                .mapToObj(i -> Document.create(i).append("indice", i%smallDistinct))
+                .collect(Collectors.toList()));
+        // Iterate over the collection distinct
+        values = new ArrayList<>();
+        try {
+            for (Integer integer : getCollectionSimple().distinct("indice", Integer.class)) {
+                values.add(integer);
+            }
+        } catch(NoSuchElementException e) {
+        }
+        assertThat(values).hasSize(smallDistinct);
+    }
+
+    @Test
+    public void testDeleteOne() {
+        // Insert 3 items
+        getCollectionSimple().deleteAll();
+        getCollectionSimple().insertMany(IntStream
+                .range(0, 3)
+                .mapToObj(i -> Document.create(i).append("indice", i).append("test", "test"))
+                .collect(Collectors.toList()));
+
+        // Delete exactly one
+        getCollectionSimple().deleteOne(eq("indice", 1));
+        Map<Integer, Document> results = getCollectionSimple()
+                .find().all()
+                .stream().collect(Collectors
+                        .toMap(doc-> doc.getId(Integer.class), Function.identity()));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsKey(0);
+        assertThat(results).containsKey(2);
+        assertThat(results).doesNotContainKey(1);
+
+        // Delete one with a filter as 3 matches
+        // Insert 3 items
+        getCollectionSimple().deleteAll();
+        getCollectionSimple().insertMany(IntStream
+                .range(0, 3)
+                .mapToObj(i -> Document.create(i).append("indice", i).append("test", "test"))
+                .collect(Collectors.toList()));
+        getCollectionSimple().deleteOne(eq("test", "test"),
+                new DeleteOneOptions().sortingBy("indice", SortOrder.DESCENDING));
+        results = getCollectionSimple()
+                .find().all()
+                .stream().collect(Collectors
+                        .toMap(doc-> doc.getId(Integer.class), Function.identity()));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsKey(0);
+        assertThat(results).containsKey(1);
+        assertThat(results).doesNotContainKey(2);
+
+    }
+
+    // FindOneAndReplace
+    @Test
+    public void testFindOneAndReplace() {
+        getCollectionSimple().deleteAll();
+        getCollectionSimple().insertOne(new Document().id(1).append("hello", "world"));
+        getCollectionSimple().insertOne(new Document().id(2).append("bonjour", "monde"));
+
+        // Matched 1, modified 1, document is present
+        Optional<Document> opt1 = getCollectionSimple()
+                .findOneAndReplace(eq(1), new Document().id(1).append("hello", "world2"));
+        assertThat(opt1.isPresent()).isTrue();
+        assertThat(opt1.get().get("hello")).isEqualTo("world2");
+
+        // Matched 1, modified 0, document is present
+        Optional<Document> opt2 = getCollectionSimple()
+                .findOneAndReplace(eq(1), new Document().id(1).append("hello", "world2"));
+        assertThat(opt2.isPresent()).isTrue();
+        assertThat(opt2.get().get("hello")).isEqualTo("world2");
+
+        // Matched 0, modified 0, no document returned
+        Optional<Document> opt3 = getCollectionSimple()
+                .findOneAndReplace(eq(3), new Document().id(3).append("hello", "world2"),
+                        new FindOneAndReplaceOptions().upsert(false));
+        assertThat(opt3.isPresent()).isFalse();
+    }
+
+    @Test
+    public void testReplaceOne() {
+        getCollectionSimple().deleteAll();
+        getCollectionSimple().insertOne(new Document().id(1).append("hello", "world"));
+        getCollectionSimple().insertOne(new Document().id(2).append("bonjour", "monde"));
+
+        UpdateResult u1 = getCollectionSimple()
+                .replaceOne(eq(1), new Document().id(1).append("hello", "world2"));
+        assertThat(u1.getMatchedCount()).isEqualTo(1);
+        assertThat(u1.getModifiedCount()).isEqualTo(1);
+        assertThat(u1.getUpsertedId()).isEqualTo(1);
+
+        UpdateResult u2 = getCollectionSimple()
+                .replaceOne(eq(3), new Document().id(3).append("hello", "world2"));
+        assertThat(u2.getMatchedCount()).isEqualTo(0);
+        assertThat(u2.getModifiedCount()).isEqualTo(0);
+        assertThat(u2.getUpsertedId()).isNull();
+
+    }
 
 }

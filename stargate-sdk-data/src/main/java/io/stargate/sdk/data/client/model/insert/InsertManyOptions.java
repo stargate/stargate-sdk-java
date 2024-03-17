@@ -34,7 +34,7 @@ public class InsertManyOptions {
      * If the flag is set to true the command is failing on first error
      */
     @Builder.Default
-    private int timeout = DEFAULT_REQUEST_TIMEOUT_SECONDS;
+    private int timeout = DEFAULT_REQUEST_TIMEOUT_SECONDS * 1000;
 
 
 

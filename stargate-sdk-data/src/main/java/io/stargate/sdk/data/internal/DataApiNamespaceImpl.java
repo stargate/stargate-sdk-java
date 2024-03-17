@@ -6,7 +6,7 @@ import io.stargate.sdk.data.client.DataApiNamespace;
 import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
 import io.stargate.sdk.data.client.model.collections.CommandDropCollection;
 import io.stargate.sdk.data.client.model.collections.CommandFindCollections;
-import io.stargate.sdk.data.client.model.collections.CreateCollectionOptions;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
@@ -104,10 +104,10 @@ public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNa
 
     /** {@inheritDoc} */
     @Override
-    public <DOC> DataApiCollection<DOC> createCollection(String collectionName, CreateCollectionOptions createCollectionOptions, Class<DOC> documentClass) {
+    public <DOC> DataApiCollection<DOC> createCollection(String collectionName, CollectionOptions collectionOptions, Class<DOC> documentClass) {
         hasLength(collectionName, "collectionName");
         notNull(documentClass, "documentClass");
-        runCommand(new CommandCreateCollection().withName(collectionName).withOptions(createCollectionOptions));
+        runCommand(new CommandCreateCollection().withName(collectionName).withOptions(collectionOptions));
         log.info("Collection  '" + green("{}") + "' has been created", collectionName);
         return getCollection(collectionName, documentClass);
     }

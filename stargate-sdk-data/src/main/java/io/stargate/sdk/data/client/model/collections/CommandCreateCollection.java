@@ -49,7 +49,7 @@ public class CommandCreateCollection extends DataApiCommand<CollectionDefinition
      * @return
      *      current object
      */
-    public CommandCreateCollection withOptions(CreateCollectionOptions options) {
+    public CommandCreateCollection withOptions(CollectionOptions options) {
         payload.setOptions(options);
         return this;
     }
