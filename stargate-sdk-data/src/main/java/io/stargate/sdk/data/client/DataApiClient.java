@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 /**
  * Defines the core client interface for interacting with the Data API, focusing on CRUD (Create, Read, Update, Delete)
- * operations for namespaces. This interface extends the {@link DataApiCommandRunner}, incorporating methods that
+ * operations for namespaces. This interface extends the {@link CommandRunner}, incorporating methods that
  * allow for the execution of various data manipulation and query commands within the scope of a namespace.
  * <p>
  * Implementations of this interface should provide concrete methods for namespace management, including the
@@ -35,7 +35,16 @@ import java.util.stream.Stream;
  * }
  * </pre>
  */
-public interface DataApiClient extends DataApiCommandRunner {
+public interface DataApiClient extends CommandRunner {
+
+    /** Number of documents for a count. */
+    int MAX_DOCUMENTS_COUNT = 1000;
+
+    /** Maximum number of documents in a page. */
+    int MAX_PAGE_SIZE = 20;
+
+    /** Maximum number of documents when you insert. */
+    int MAX_DOCUMENTS_IN_INSERT = 20;
 
     /**
      * Retrieves a stream of namespace names available in the current database. This method is essential for
@@ -153,7 +162,7 @@ public interface DataApiClient extends DataApiCommandRunner {
     }
 
     /**
-     * Retrieves a {@link DataApiNamespace} instance that represents a specific database (or namespace) based on the
+     * Retrieves a {@link Database} instance that represents a specific database (or namespace) based on the
      * provided namespace name.
      *
      * @param namespaceName The name of the namespace (or keyspace) to retrieve. This parameter should match the
@@ -178,7 +187,7 @@ public interface DataApiClient extends DataApiCommandRunner {
      * which then enables the execution of various database operations within that namespace. It highlights the
      * method's role in facilitating direct interaction with different parts of the database.
      */
-    DataApiNamespace getNamespace(String namespaceName);
+    Database getNamespace(String namespaceName);
 
     /**
      * Drops (deletes) the specified namespace from the database. This operation is idempotent; it will not
@@ -248,7 +257,7 @@ public interface DataApiClient extends DataApiCommandRunner {
      * detailed configuration of the namespace properties, such as replication factors, datacenter specifics,
      * and other relevant settings encapsulated within {@link CreateNamespaceOptions}. It is designed for flexible
      * namespace creation, accommodating various database schemas and replication strategies to suit different
-     * application requirements and environments. Upon successful creation, this method returns a {@link DataApiNamespace}
+     * application requirements and environments. Upon successful creation, this method returns a {@link Database}
      * client instance, which can be used to interact with the newly created namespace, performing operations such
      * as data manipulation, schema modifications, and namespace management.
      *
@@ -278,7 +287,7 @@ public interface DataApiClient extends DataApiCommandRunner {
      * flexibility and control offered by the method. It highlights the method's utility in preparing the database
      * environment to suit particular application needs or data distribution requirements.
      */
-    DataApiNamespace createNamespace(String namespace, CreateNamespaceOptions options);
+    Database createNamespace(String namespace, CreateNamespaceOptions options);
 
     /**
      * Create a Namespace asynchronously
@@ -290,7 +299,7 @@ public interface DataApiClient extends DataApiCommandRunner {
      * @return
      *      client for namespace
      */
-    default CompletableFuture<DataApiNamespace> createNamespaceAsync(String namespace, CreateNamespaceOptions options) {
+    default CompletableFuture<Database> createNamespaceAsync(String namespace, CreateNamespaceOptions options) {
         return CompletableFuture.supplyAsync(() -> createNamespace(namespace, options));
     }
 
@@ -302,7 +311,7 @@ public interface DataApiClient extends DataApiCommandRunner {
      * @return
      *      client for namespace
      */
-    default DataApiNamespace createNamespace(String namespace) {
+    default Database createNamespace(String namespace) {
         return createNamespace(namespace, CreateNamespaceOptions.simpleStrategy(1));
     }
 
@@ -314,7 +323,7 @@ public interface DataApiClient extends DataApiCommandRunner {
      * @return
      *      client for namespace
      */
-    default CompletableFuture<DataApiNamespace> createNamespaceAsync(String namespace) {
+    default CompletableFuture<Database> createNamespaceAsync(String namespace) {
         return CompletableFuture.supplyAsync(() -> createNamespace(namespace, CreateNamespaceOptions.simpleStrategy(1)));
     }
 

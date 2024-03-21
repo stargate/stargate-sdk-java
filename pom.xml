@@ -36,6 +36,7 @@
 		<httpclient.version>5.3.1</httpclient.version>
 		<httpcore.version>5.2.4</httpcore.version>
 		<retry4j.version>0.15.0</retry4j.version>
+		<java-uuid-generator.version>5.0.0</java-uuid-generator.version>
 		<!-- Junit -->
 		<junit-platform.version>1.10.2</junit-platform.version>
 		<junit-jupiter.version>5.10.2</junit-jupiter.version>
@@ -109,6 +110,12 @@
 				<version>${jackson.version}</version>
 				<scope>import</scope>
 				<type>pom</type>
+			</dependency>
+
+			<dependency>
+				<groupId>com.fasterxml.uuid</groupId>
+				<artifactId>java-uuid-generator</artifactId>
+				<version>${java-uuid-generator.version}</version>
 			</dependency>
 
 			<!-- Java Drivers -->

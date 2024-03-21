@@ -211,7 +211,7 @@ public class Filters {
      */
     public static Filter and(final Iterable<Filter> filters) {
         Filter andFilter = new Filter();
-        andFilter.getFilter().put("$and", filters);
+        andFilter.documentMap.put("$and", filters);
         return andFilter;
     }
 
@@ -232,7 +232,7 @@ public class Filters {
      */
     public static Filter or(final Iterable<Filter> filters) {
         Filter andFilter = new Filter();
-        andFilter.getFilter().put("$or", filters);
+        andFilter.documentMap.put("$or", filters);
         return andFilter;
     }
 
@@ -272,7 +272,7 @@ public class Filters {
      */
     public static Filter not(Filter filter) {
         Filter andFilter = new Filter();
-        andFilter.getFilter().put("$not", filter);
+        andFilter.documentMap.put("$not", filter);
         return andFilter;
     }
 

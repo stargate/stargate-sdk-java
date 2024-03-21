@@ -1,21 +1,19 @@
 package io.stargate.sdk.data.test.integration;
 
-import io.stargate.sdk.data.client.DataApiCollection;
-import io.stargate.sdk.data.client.DataApiNamespace;
+import io.stargate.sdk.data.client.Collection;
+import io.stargate.sdk.data.client.Database;
 import io.stargate.sdk.data.client.exception.DataApiException;
-import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
+import io.stargate.sdk.data.client.model.Command;
 import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
-import io.stargate.sdk.data.client.model.DataApiResponse;
+import io.stargate.sdk.data.client.model.ApiResponse;
 import io.stargate.sdk.data.test.TestConstants;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,12 +23,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Super Class to run Tests against Data API.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public abstract class AbstractNamespaceITTest implements TestConstants {
+public abstract class AbstractDatabaseITTest implements TestConstants {
 
     /**
      * Reference to working DataApiNamespace
      */
-    public static DataApiNamespace namespace;
+    public static Database namespace;
 
     /**
      * Initialization of the working Namespace.
@@ -38,9 +36,9 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
      * @return
      *      current Namespace
      */
-    public DataApiNamespace getDataApiNamespace() {
+    public Database getDataApiNamespace() {
         if (namespace == null) {
-            AbstractNamespaceITTest.namespace = initNamespace();
+            AbstractDatabaseITTest.namespace = initNamespace();
         }
         return namespace;
     }
@@ -51,20 +49,20 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
      * @return
      *      the instance of Data ApiNamespace
      */
-    protected abstract DataApiNamespace initNamespace();
+    protected abstract Database initNamespace();
 
     @Test
     @Order(1)
     public void shouldCreateCollectionSimple() {
         // When
         getDataApiNamespace().createCollection(COLLECTION_SIMPLE);
-        assertThat(getDataApiNamespace().existCollection(COLLECTION_SIMPLE)).isTrue();
+        assertThat(getDataApiNamespace().collectionExists(COLLECTION_SIMPLE)).isTrue();
         // When
-        DataApiCollection<Document> collection_simple = getDataApiNamespace().getCollection(COLLECTION_SIMPLE);
+        Collection<Document> collection_simple = getDataApiNamespace().getCollection(COLLECTION_SIMPLE);
         assertThat(collection_simple).isNotNull();
         assertThat(collection_simple.getName()).isEqualTo(COLLECTION_SIMPLE);
 
-        DataApiCollection<Document> c1 = getDataApiNamespace().createCollection(COLLECTION_SIMPLE, Document.class);
+        Collection<Document> c1 = getDataApiNamespace().createCollection(COLLECTION_SIMPLE, Document.class);
         assertThat(c1).isNotNull();
         assertThat(c1.getName()).isEqualTo(COLLECTION_SIMPLE);
     }
@@ -72,7 +70,7 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Test
     @Order(2)
     public void shouldCreateCollectionsVector() {
-        DataApiCollection<Document> collectionVector = getDataApiNamespace().createCollection(COLLECTION_VECTOR,
+        Collection<Document> collectionVector = getDataApiNamespace().createCollection(COLLECTION_VECTOR,
                 CollectionOptions.builder()
                         .withVectorDimension(14)
                         .withVectorSimilarityMetric(SimilarityMetric.cosine)
@@ -88,7 +86,7 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Test
     @Order(3)
     public void shouldCreateCollectionsAllows() {
-        DataApiCollection<Document> collectionAllow = getDataApiNamespace().createCollection(COLLECTION_ALLOW,
+        Collection<Document> collectionAllow = getDataApiNamespace().createCollection(COLLECTION_ALLOW,
                 CollectionOptions.builder()
                         .withIndexingAllow("a", "b", "c")
                         .build());
@@ -101,7 +99,7 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Test
     @Order(4)
     public void shouldCreateCollectionsDeny() {
-        DataApiCollection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
+        Collection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
                 CollectionOptions.builder()
                         .withIndexingDeny("a", "b", "c")
                         .build());
@@ -123,53 +121,43 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     public void shouldDropCollectionAllow() {
         // Given
         shouldCreateCollectionsAllows();
-        assertThat(getDataApiNamespace().existCollection(COLLECTION_ALLOW)).isTrue();
+        assertThat(getDataApiNamespace().collectionExists(COLLECTION_ALLOW)).isTrue();
         // When
         getDataApiNamespace().dropCollection(COLLECTION_ALLOW);
         // Then
-        assertThat(getDataApiNamespace().existCollection(COLLECTION_ALLOW)).isFalse();
+        assertThat(getDataApiNamespace().collectionExists(COLLECTION_ALLOW)).isFalse();
     }
 
     @Test
     @Order(6)
     public void shouldDropCollectionsDeny() {
         // Given
-        DataApiCollection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
+        Collection<Document> collectionDeny = getDataApiNamespace().createCollection(COLLECTION_DENY,
                 CollectionOptions.builder()
                         .withIndexingDeny("a", "b", "c")
                         .build());
-        assertThat(getDataApiNamespace().existCollection(COLLECTION_DENY)).isTrue();
+        assertThat(getDataApiNamespace().collectionExists(COLLECTION_DENY)).isTrue();
         // When
         collectionDeny.drop();
         // Then
-        assertThat(getDataApiNamespace().existCollection(COLLECTION_DENY)).isFalse();
+        assertThat(getDataApiNamespace().collectionExists(COLLECTION_DENY)).isFalse();
     }
 
     @Test
     @Order(7)
     public void shouldRunCommand() {
         // Create From String
-        DataApiResponse res = getDataApiNamespace().runCommand(
-                new CommandCreateCollection("collection_simple"));
+        ApiResponse res = getDataApiNamespace().runCommand(
+               Command.create("createCollection").append("name", "collection_simple"));
         assertThat(res).isNotNull();
         assertThat(res.getStatus().getInteger("ok")).isEqualTo(1);
-
-        // Create From Specialized command class
-        DataApiResponse res2 = getDataApiNamespace().runCommand(
-                new CommandCreateCollection("collection_simple"));
-        assertThat(res2.getStatusKeyAsInt("ok")).isEqualTo(1);
-
-        // Create From Generic command class
-        DataApiResponse res3 = getDataApiNamespace().runCommand(
-                new DataApiCommand<>("createCollection", Map.of("name", "collection_simple")));
-        assertThat(res3.getStatusKeyAsInt("ok")).isEqualTo(1);
     }
 
     @Test
     @Order(8)
     public void shouldRunCommandTyped() {
         // Given
-        DataApiCommand<?> listCollectionNames = new DataApiCommand<>("findCollections", null);
+        Command listCollectionNames = Command.create("findCollections");
         Document doc = getDataApiNamespace().runCommand(listCollectionNames, Document.class);
         assertThat(doc).isNotNull();
         assertThat(doc.getList("collections", String.class)).isNotNull();
@@ -179,9 +167,9 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Order(8)
     public void shouldErrorGetIfCollectionDoesNotExists() {
         // Given
-        DataApiCollection<Document> collection = getDataApiNamespace().getCollection("invalid");
+        Collection<Document> collection = getDataApiNamespace().getCollection("invalid");
         assertThat(collection).isNotNull();
-        assertThat(getDataApiNamespace().existCollection("invalid")).isFalse();
+        assertThat(getDataApiNamespace().collectionExists("invalid")).isFalse();
         assertThatThrownBy(collection::getOptions)
                 .isInstanceOf(DataApiException.class)
                 .hasMessageContaining("COLLECTION_NOT_EXIST");
@@ -190,8 +178,8 @@ public abstract class AbstractNamespaceITTest implements TestConstants {
     @Test
     @Order(9)
     public void shouldErrorDropIfCollectionDoesNotExists() {
-        assertThat(getDataApiNamespace().existCollection("invalid")).isFalse();
-        DataApiCollection<Document> invalid = getDataApiNamespace().getCollection("invalid");
+        assertThat(getDataApiNamespace().collectionExists("invalid")).isFalse();
+        Collection<Document> invalid = getDataApiNamespace().getCollection("invalid");
         assertThat(invalid).isNotNull();
         assertThatThrownBy(() -> invalid.insertOne(new Document().append("hello", "world")))
                 .isInstanceOf(DataApiException.class)

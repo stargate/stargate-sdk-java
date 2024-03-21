@@ -2,28 +2,28 @@ package io.stargate.sdk.data.client;
 
 import io.stargate.sdk.core.domain.Page;
 import io.stargate.sdk.data.client.exception.TooManyDocumentsToCountException;
-import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
-import io.stargate.sdk.data.client.model.delete.DeleteOneOptions;
-import io.stargate.sdk.data.client.model.find.FindOneAndReplaceResult;
-import io.stargate.sdk.data.client.model.find.FindOptions;
-import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
-import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
-import io.stargate.sdk.data.client.model.collections.CollectionOptions;
-import io.stargate.sdk.data.client.model.delete.DeleteResult;
-import io.stargate.sdk.data.client.model.iterable.DistinctIterable;
+import io.stargate.sdk.data.client.model.Command;
 import io.stargate.sdk.data.client.model.Filter;
-import io.stargate.sdk.data.client.model.iterable.FindIterable;
-import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
-import io.stargate.sdk.data.client.model.insert.InsertManyResult;
-import io.stargate.sdk.data.client.model.update.ReplaceOneOptions;
-import io.stargate.sdk.data.client.model.update.UpdateOptions;
-import io.stargate.sdk.data.client.model.update.UpdateResult;
+import io.stargate.sdk.data.client.model.update.Update;
+import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
+import io.stargate.sdk.data.client.model.delete.DeleteOneOptions;
+import io.stargate.sdk.data.client.model.delete.DeleteResult;
 import io.stargate.sdk.data.client.model.find.FindOneAndDeleteOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndReplaceOptions;
 import io.stargate.sdk.data.client.model.find.FindOneAndUpdateOptions;
 import io.stargate.sdk.data.client.model.find.FindOneOptions;
+import io.stargate.sdk.data.client.model.find.FindOptions;
+import io.stargate.sdk.data.client.model.insert.InsertManyOptions;
+import io.stargate.sdk.data.client.model.insert.InsertManyResult;
 import io.stargate.sdk.data.client.model.insert.InsertOneResult;
+import io.stargate.sdk.data.client.model.iterable.DistinctIterable;
+import io.stargate.sdk.data.client.model.iterable.FindIterable;
+import io.stargate.sdk.data.client.model.misc.BulkWriteOptions;
+import io.stargate.sdk.data.client.model.misc.BulkWriteResult;
+import io.stargate.sdk.data.client.model.update.ReplaceOneOptions;
+import io.stargate.sdk.data.client.model.update.UpdateOneOptions;
+import io.stargate.sdk.data.client.model.update.UpdateResult;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,14 +62,14 @@ import static io.stargate.sdk.data.client.model.Filters.eq;
  * @param <DOC>
  *     Java bean to unmarshall documents for collection.
  */
-public interface DataApiCollection<DOC> extends DataApiCommandRunner {
+public interface Collection<DOC> extends CommandRunner {
 
     // ----------------------------
     // --- Global Informations ----
     // ----------------------------
 
     /**
-     * Retrieves the parent {@link DataApiNamespace} instance.
+     * Retrieves the parent {@link Database} instance.
      * This parent namespace is used for performing CRUD (Create, Read, Update, Delete) operations on collections.
      *
      * <p>Example usage:</p>
@@ -83,7 +83,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      *
      * @return parent namespace client.
      */
-    DataApiNamespace getNamespace();
+    Database getNamespace();
 
     /**
      * Retrieves the configuration options for the collection, including vector and indexing settings.
@@ -176,7 +176,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return {@code true} if the collection exists within the namespace, {@code false} otherwise.
      */
     default boolean exists() {
-        return getNamespace().existCollection(getName());
+        return getNamespace().collectionExists(getName());
     }
 
     // --------------------------
@@ -204,7 +204,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
 
     /**
      * Initiates an asynchronous search to find a single document that matches the given filter criteria.
-     * This method leverages the functionality of {@link DataApiCollection#findOne(Filter)} to perform the
+     * This method leverages the functionality of {@link Collection#findOne(Filter)} to perform the
      * search, but it does so asynchronously, returning a {@link CompletableFuture}. This approach allows
      * the calling thread to remain responsive and perform other tasks while the search operation completes.
      * The result of the operation is wrapped in a {@link CompletableFuture} that, upon completion, will
@@ -436,6 +436,10 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      */
     InsertOneResult insertOne(DOC document);
 
+    InsertOneResult insertOne(DOC document, float[] embeddings);
+
+    InsertOneResult insertOne(DOC document, String vectorize);
+
     /**
      * Inserts one or more documents.
 
@@ -470,7 +474,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the bulk write
      */
-    default BulkWriteResult bulkWrite(List<DataApiCommand<?>> commands) {
+    default BulkWriteResult bulkWrite(List<Command> commands) {
         return bulkWrite(commands, new BulkWriteOptions());
     }
 
@@ -484,7 +488,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the bulk write
      */
-    BulkWriteResult bulkWrite(List<DataApiCommand<?>> commands, BulkWriteOptions options);
+    BulkWriteResult bulkWrite(List<Command> commands, BulkWriteOptions options);
 
     // --------------------------
     // ---   Delete          ----
@@ -634,8 +638,8 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the update one operation
      */
-    default UpdateResult updateOne(Filter filter, Object update) {
-        return updateOne(filter, update, new UpdateOptions());
+    default UpdateResult updateOne(Filter filter, Update update) {
+        return updateOne(filter, update, new UpdateOneOptions());
     }
 
     /**
@@ -650,7 +654,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the update one operation
      */
-    UpdateResult updateOne(Filter filter, Object update, UpdateOptions updateOptions);
+    UpdateResult updateOne(Filter filter, Update update, UpdateOneOptions updateOptions);
 
     /**
      * Update all documents in the collection according to the specified arguments.
@@ -662,8 +666,8 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the update many operation
      */
-    default UpdateResult updateMany(Filter filter, Object update) {
-        return updateMany(filter, update, new UpdateOptions());
+    default UpdateResult updateMany(Filter filter, Update update) {
+        return updateMany(filter, update, new UpdateOneOptions());
     }
 
     /**
@@ -678,7 +682,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return
      *      the result of the update many operation
      */
-    UpdateResult updateMany(Filter filter, Object update, UpdateOptions updateOptions);
+    UpdateResult updateMany(Filter filter, Update update, UpdateOneOptions updateOptions);
 
     /**
      * Atomically find a document and update it.
@@ -691,7 +695,7 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * @return the document that was updated before the update was applied.  If no documents matched the query filter, then null will be
      * returned
      */
-    default Optional<DOC> findOneAndUpdate(Filter filter, Object update) {
+    default Optional<DOC> findOneAndUpdate(Filter filter, Update update) {
         return findOneAndUpdate(filter, update, new FindOneAndUpdateOptions());
     }
 
@@ -710,6 +714,6 @@ public interface DataApiCollection<DOC> extends DataApiCommandRunner {
      * document as it was before the update or as it is after the update.  If no documents matched the query filter, then null will be
      * returned
      */
-    Optional<DOC> findOneAndUpdate(Filter filter, Object update, FindOneAndUpdateOptions options);
+    Optional<DOC> findOneAndUpdate(Filter filter, Update update, FindOneAndUpdateOptions options);
 
 }

@@ -13,6 +13,11 @@ import java.util.Map;
 public class CollectionOptions {
 
     /**
+     * Defaulting to Object I
+     */
+    private CollectionIdTypes defaultId;
+
+    /**
      * Vector options.
      */
     private VectorOptions vector;
@@ -104,6 +109,8 @@ public class CollectionOptions {
 
         IndexingOptions indexing;
 
+        CollectionIdTypes defaultId;
+
         private VectorOptions getVector() {
             if (vector == null) {
                 vector = new VectorOptions();
@@ -122,6 +129,19 @@ public class CollectionOptions {
          * Default constructor.
          */
         public CreateCollectionOptionsBuilder() {
+        }
+
+        /**
+         * Builder Pattern with the Identifiers.
+         *
+         * @param idType
+         *      type of ids
+         * @return
+         *      self reference
+         */
+        public CreateCollectionOptionsBuilder withDefaultId(CollectionIdTypes idType) {
+            this.defaultId = idType;
+            return this;
         }
 
         /**
@@ -194,8 +214,9 @@ public class CollectionOptions {
          */
         public CollectionOptions build() {
             CollectionOptions req = new CollectionOptions();
-            req.vector = this.vector;
-            req.indexing = this.indexing;
+            req.vector    = this.vector;
+            req.indexing  = this.indexing;
+            req.defaultId = this.defaultId;
             return req;
         }
     }

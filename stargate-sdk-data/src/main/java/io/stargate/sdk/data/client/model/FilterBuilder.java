@@ -41,7 +41,7 @@ public class FilterBuilder {
      *      builder
      */
     private Filter simpleOperator(FilterOperator cond, Object value) {
-        filter.filter.put(fieldName, Map.of(cond.getOperator(), value));
+        filter.documentMap.put(fieldName, Map.of(cond.getOperator(), value));
         return filter;
     }
 
@@ -56,7 +56,7 @@ public class FilterBuilder {
      *      builder
      */
     private Filter simpleKeyword(FilterKeyword key, Object value) {
-        filter.filter.put(fieldName, Map.of(key.getKeyword(), value));
+        filter.documentMap.put(fieldName, Map.of(key.getKeyword(), value));
         return filter;
     }
 
@@ -69,7 +69,7 @@ public class FilterBuilder {
      *      self reference
      */
     public Filter isEqualsTo(Object value) {
-        filter.filter.put(fieldName, value);
+        filter.documentMap.put(fieldName, value);
         return filter;
     }
 
@@ -119,7 +119,7 @@ public class FilterBuilder {
      *      self reference
      */
     public Filter isAnArrayExactlyEqualsTo(Object[] value) {
-        filter.filter.put(fieldName, Map.of(FilterKeyword.ALL.getKeyword(), value));
+        filter.documentMap.put(fieldName, Map.of(FilterKeyword.ALL.getKeyword(), value));
         return filter;
     }
 

@@ -1,13 +1,12 @@
 package io.stargate.sdk.data.client.model;
 
-import io.stargate.sdk.data.client.exception.DataApiException;
 import lombok.Data;
 
 /**
  * Subpart of the payload for json api response holding error information.
  */
 @Data
-public class DataApiError {
+public class ApiError {
 
     /**
      * Error message.
@@ -27,7 +26,7 @@ public class DataApiError {
     /**
      * Default constructor.
      */
-    public DataApiError() {}
+    public ApiError() {}
 
     /**
      * Build error message.

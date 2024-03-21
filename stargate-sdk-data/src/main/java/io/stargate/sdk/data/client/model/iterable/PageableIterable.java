@@ -1,7 +1,7 @@
 package io.stargate.sdk.data.client.model.iterable;
 
 import io.stargate.sdk.core.domain.Page;
-import io.stargate.sdk.data.client.DataApiCollection;
+import io.stargate.sdk.data.client.Collection;
 import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.data.client.model.find.FindOptions;
 import lombok.Getter;
@@ -18,7 +18,7 @@ public abstract class PageableIterable<DOC> implements Closeable {
     // -------- Inputs ---------
 
     /** Reference to the collection in use. */
-    protected DataApiCollection<DOC> collection;
+    protected Collection<DOC> collection;
 
     /** Check host many has been processed (skip & limit support) */
     protected final AtomicInteger totalItemProcessed = new AtomicInteger(0);

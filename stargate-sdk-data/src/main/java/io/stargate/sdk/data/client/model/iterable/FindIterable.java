@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.client.model.iterable;
 
-import io.stargate.sdk.data.client.DataApiCollection;
+import io.stargate.sdk.data.client.Collection;
 import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.data.client.model.find.FindOptions;
 import lombok.Getter;
@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -34,7 +33,7 @@ public class FindIterable<DOC> extends PageableIterable<DOC> implements Iterable
      * @param options
      *      list of options like the pageState, limit of skip
      */
-    public FindIterable(DataApiCollection<DOC> collection, Filter filter, FindOptions options) {
+    public FindIterable(Collection<DOC> collection, Filter filter, FindOptions options) {
         this.collection  = collection;
         this.filter       = filter;
         this.options      = options;

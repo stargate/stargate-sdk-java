@@ -4,6 +4,8 @@ import lombok.Data;
 
 @Data
 public final class BulkWriteOptions {
+
     private boolean ordered = true;
-    private Boolean bypassDocumentValidation;
+
+    private Integer concurrency = 5;
 }

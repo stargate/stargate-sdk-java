@@ -4,6 +4,7 @@ import io.stargate.sdk.http.domain.FilterOperator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +32,8 @@ public class FilterBuilderList extends Filter {
     public FilterBuilderList(Filter parentFilter, String key) {
         this.keyword = key;
         this.parentFilter = parentFilter;
-        this.filter = new HashMap<>();
-        filter.put(key, new ArrayList<Map<String, Object>>());
+        this.documentMap = new LinkedHashMap<>();
+        documentMap.put(key, new ArrayList<Map<String, Object>>());
     }
 
     /**
@@ -67,9 +68,9 @@ public class FilterBuilderList extends Filter {
                 throw new IllegalArgumentException(keyword + " should have more than 1 condition");
             }
             if (parentFilter instanceof FilterBuilderList) {
-                ((FilterBuilderList) parentFilter).getConditions().add(filter);
+                ((FilterBuilderList) parentFilter).getConditions().add(documentMap);
             } else {
-                parentFilter.getFilter().putAll(filter);
+                parentFilter.documentMap.putAll(documentMap);
             }
         }
 
@@ -83,7 +84,7 @@ public class FilterBuilderList extends Filter {
             if (parentFilter instanceof FilterBuilderList) {
                 ((FilterBuilderList) parentFilter).getConditions().add(val);
             } else {
-                parentFilter.getFilter().putAll(val);
+                parentFilter.documentMap.putAll(val);
             }
         }
         return parentFilter;
@@ -97,6 +98,6 @@ public class FilterBuilderList extends Filter {
      */
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> getConditions() {
-        return ((List<Map<String, Object>>) filter.get(keyword));
+        return ((List<Map<String, Object>>) documentMap.get(keyword));
     }
 }

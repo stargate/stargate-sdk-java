@@ -2,11 +2,11 @@ package io.stargate.sdk.data.test.integration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.stargate.sdk.data.client.DataApiClient;
-import io.stargate.sdk.data.client.DataApiCollection;
-import io.stargate.sdk.data.client.DataApiNamespace;
+import io.stargate.sdk.data.client.Collection;
+import io.stargate.sdk.data.client.Database;
 import io.stargate.sdk.data.client.exception.TooManyDocumentsToCountException;
-import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.DataApiResponse;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.ApiResponse;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.data.client.model.SortOrder;
@@ -39,7 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static io.stargate.sdk.data.client.DataApiLimits.MAX_DOCUMENTS_COUNT;
+import static io.stargate.sdk.data.client.DataApiClient.MAX_DOCUMENTS_COUNT;
 import static io.stargate.sdk.data.client.model.Filters.eq;
 import static io.stargate.sdk.data.client.model.Filters.gt;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,16 +49,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class AbstractCollectionITTest  implements TestConstants {
 
     /** Tested Store. */
-    static DataApiClient apiClient;
+    static DataApiClient apiDataApiClient;
 
     /** Tested Namespace. */
-    static DataApiNamespace namespace;
+    static Database namespace;
 
     /** Tested collection1. */
-    protected static DataApiCollection<Document> collectionSimple;
+    protected static Collection<Document> collectionSimple;
 
     /** Tested collection2. */
-    protected static DataApiCollection<Product> collectionVector;
+    protected static Collection<Product> collectionVector;
 
     @Data
     @NoArgsConstructor
@@ -87,15 +87,15 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
                 .collect(Collectors.toList());
     }
 
-    protected DataApiCollection<Document> getCollectionSimple() {
+    protected Collection<Document> getCollectionSimple() {
         if (collectionSimple == null) {
             collectionSimple = getDataApiNamespace().createCollection(COLLECTION_SIMPLE);
-            collectionSimple.registerListener("logger", new LoggerCommandObserver(DataApiCollection.class));
+            collectionSimple.registerListener("logger", new LoggerCommandObserver(Collection.class));
         }
         return collectionSimple;
     }
 
-    protected DataApiCollection<Product> getCollectionVector() {
+    protected Collection<Product> getCollectionVector() {
         if (collectionVector == null) {
             collectionVector = getDataApiNamespace().createCollection(COLLECTION_VECTOR,
                     CollectionOptions
@@ -103,20 +103,20 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
                             .withVectorDimension(14)
                             .withVectorSimilarityMetric(SimilarityMetric.cosine)
                             .build(), Product.class);
-            collectionVector.registerListener("logger", new LoggerCommandObserver(DataApiCollection.class));
+            collectionVector.registerListener("logger", new LoggerCommandObserver(Collection.class));
         }
 
         return collectionVector;
     }
 
-    protected synchronized DataApiNamespace getDataApiNamespace() {
+    protected synchronized Database getDataApiNamespace() {
         if (namespace == null) {
             AbstractCollectionITTest.namespace = initNamespace();
         }
         return namespace;
     }
 
-    protected abstract DataApiNamespace initNamespace();
+    protected abstract Database initNamespace();
 
     @Test
     @Order(1)
@@ -168,13 +168,13 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
     public void testRunCommand() {
         getCollectionSimple().deleteAll();
 
-        DataApiResponse res = getCollectionSimple().runCommand(
-                new DataApiCommand<>("insertOne",
-                Map.of("document", new Document().id(1).append("product_name", "hello"))));
+        ApiResponse res = getCollectionSimple().runCommand(Command
+                .create("insertOne")
+                .withDocument(new Document().id(1).append("product_name", "hello")));
         assertThat(res).isNotNull();
         assertThat(res.getStatus().getList("insertedIds", Object.class).get(0)).isEqualTo(1);
 
-        DataApiCommand<?> findOne = new DataApiCommand<>("findOne",Map.of("filter", new Document().id(1)));
+        Command findOne = Command.create("findOne").withFilter(eq(1));
         res = getCollectionSimple().runCommand(findOne);
         assertThat(res).isNotNull();
         assertThat(res.getData()).isNotNull();
@@ -404,6 +404,10 @@ public abstract class AbstractCollectionITTest  implements TestConstants {
         assertThat(u2.getMatchedCount()).isEqualTo(0);
         assertThat(u2.getModifiedCount()).isEqualTo(0);
         assertThat(u2.getUpsertedId()).isNull();
+    }
+
+    @Test
+    public void testUpdateOne() {
 
     }
 

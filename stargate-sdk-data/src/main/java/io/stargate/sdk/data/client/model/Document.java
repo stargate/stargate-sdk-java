@@ -51,6 +51,11 @@ public class Document implements Map<String, Object>, Serializable {
     public static final String VECTOR = "$vector";
 
     /**
+     * Attribute for vector.
+     */
+    public static final String VECTORIZE = "vectorize";
+
+    /**
      * Attribute for similarity
      */
     public static final String SIMILARITY = "$similarity";
@@ -59,7 +64,7 @@ public class Document implements Map<String, Object>, Serializable {
      * Data to be used in the document.
      */
     @JsonUnwrapped
-    private final LinkedHashMap<String, Object> documentMap;
+    protected LinkedHashMap<String, Object> documentMap;
 
     /**
      * Default Constructor.
@@ -153,6 +158,22 @@ public class Document implements Map<String, Object>, Serializable {
     }
 
     /**
+     * Put the given key/value pair into this Document and return this only if the value is not null
+     * <pre>
+     * doc.append("a", 1).append("b", 2)}
+     * </pre>
+     * @param key   key
+     * @param value value
+     * @return this
+     */
+    public Document appendIfNotNull(final String key, final Object value) {
+        if (value != null) {
+            return append(key, value);
+        }
+        return this;
+    }
+
+    /**
      * Gets the value of the given key, casting it to the given {@code Class<T>}.  This is useful to avoid having casts in client code,
      * though the effect is the same.  So to get the value of a key that is of type String, you would write {@code String name =
      * doc.get("name", String.class)} instead of {@code String name = (String) doc.get("x") }.
@@ -205,7 +226,15 @@ public class Document implements Map<String, Object>, Serializable {
      *      type of id
      */
     public <T> Document id(T id) {
-        return append(ID, id);
+        return appendIfNotNull(ID, id);
+    }
+
+    public <T> Document vectorize(String text) {
+        return appendIfNotNull(VECTORIZE, text);
+    }
+
+    public Optional<String> getVectorize() {
+        return Optional.ofNullable(get(VECTORIZE, String.class));
     }
 
     /**

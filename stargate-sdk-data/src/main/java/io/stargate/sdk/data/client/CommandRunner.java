@@ -1,8 +1,8 @@
 package io.stargate.sdk.data.client;
 
 import io.stargate.sdk.data.client.exception.DataApiResponseException;
-import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.DataApiResponse;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.ApiResponse;
 import io.stargate.sdk.data.client.observer.DataApiCommandObserver;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
@@ -12,7 +12,7 @@ import java.util.function.Function;
 /**
  * Use to initialize the HTTPClient.
  */
-public interface DataApiCommandRunner {
+public interface CommandRunner {
 
     /**
      * Lookup for an endpoint (Load balancing)
@@ -37,19 +37,19 @@ public interface DataApiCommandRunner {
     /**
      * Command to return the payload as a Map.
      *
-     * @param dataApiCommand
+     * @param command
      *     command to execute
      * @throws DataApiResponseException
      *     if the returned object contains error response is encapsulated in a DataApiResponseException.
      * @return
      *     result as a document map
      */
-    DataApiResponse runCommand(DataApiCommand<?> dataApiCommand)
+    ApiResponse runCommand(Command command)
     throws DataApiResponseException;
 
     /**
      * Extension point to run any command with typing constraints.
-     * @param dataApiCommand
+     * @param command
      *      command as a json Payload
      * @param documentClass
      *      document class to use for marshalling
@@ -60,7 +60,7 @@ public interface DataApiCommandRunner {
      * @param <DOC>
      *      document type to use
      */
-    <DOC> DOC runCommand(DataApiCommand<?> dataApiCommand, Class<DOC> documentClass)
+    <DOC> DOC runCommand(Command command, Class<DOC> documentClass)
     throws DataApiResponseException;
 
     /**

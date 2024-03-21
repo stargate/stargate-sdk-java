@@ -26,7 +26,7 @@ public class CommandFindMany {
     /**
      * where clause
      */
-    private Map<String, Object> filter;
+    private Filter filter;
 
     /**
      * Order by.
@@ -51,8 +51,8 @@ public class CommandFindMany {
      */
     public CommandFindMany(Filter pFilter) {
         if (pFilter != null) {
-            filter = new HashMap<>();
-            //filter.putAll(pFilter.filter);
+            filter = new Filter();
+            filter.putAll(pFilter);
         }
     }
 
@@ -70,8 +70,8 @@ public class CommandFindMany {
             sort.put(FilterKeyword.VECTOR.getKeyword(), vector);
         }
         if (pFilter != null) {
-            filter = new HashMap<>();
-            //filter.putAll(pFilter.filter);
+            filter = new Filter();
+            filter.putAll(pFilter);
         }
     }
 

@@ -2,10 +2,8 @@ package io.stargate.sdk.data.internal;
 
 import io.stargate.sdk.ServiceDeployment;
 import io.stargate.sdk.data.client.DataApiClient;
-import io.stargate.sdk.data.client.DataApiNamespace;
-import io.stargate.sdk.data.client.model.namespaces.CommandCreateNamespace;
-import io.stargate.sdk.data.client.model.namespaces.CommandDropNamespace;
-import io.stargate.sdk.data.client.model.namespaces.CommandFindNamespaces;
+import io.stargate.sdk.data.client.Database;
+import io.stargate.sdk.data.client.model.Command;
 import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
 import io.stargate.sdk.data.client.model.namespaces.NamespaceInformation;
 import io.stargate.sdk.http.HttpClientOptions;
@@ -77,7 +75,8 @@ public class DataApiClientImpl extends AbstractApiClient implements DataApiClien
     /** {@inheritDoc} */
     @Override
     public Stream<String> listNamespaceNames() {
-        return runCommand(new CommandFindNamespaces()).getStatusKeyAsStringStream("namespaces");
+        Command cmd = Command.create("findNamespaces");
+        return runCommand(cmd).getStatusKeyAsStringStream("namespaces");
     }
 
     /** {@inheritDoc} */
@@ -88,23 +87,31 @@ public class DataApiClientImpl extends AbstractApiClient implements DataApiClien
 
     /** {@inheritDoc} */
     @Override
-    public DataApiNamespace getNamespace(String namespaceName) {
-        return new DataApiNamespaceImpl(this, namespaceName);
+    public Database getNamespace(String namespaceName) {
+        return new DatabaseImpl(this, namespaceName);
     }
 
     /** {@inheritDoc} */
     @Override
-    public DataApiNamespace createNamespace(String namespace, CreateNamespaceOptions options) {
+    public Database createNamespace(String namespace, CreateNamespaceOptions options) {
         hasLength(namespace, "namespace");
-        runCommand(new CommandCreateNamespace().withName(namespace).withOptions(options));
+        notNull(options, "options");
+        Command createNamespace = Command
+                        .create("createNamespace")
+                        .append("name", namespace)
+                        .withOptions(options);
+        runCommand(createNamespace);
         log.info("Namespace  '" + green("{}") + "' has been created", namespace);
-        return new DataApiNamespaceImpl(this, namespace);
+        return new DatabaseImpl(this, namespace);
     }
 
     /** {@inheritDoc} */
     public void dropNamespace(String namespace) {
         hasLength(namespace, "namespace");
-        runCommand(new CommandDropNamespace(namespace));
+        Command dropNamespace = Command
+                .create("dropNamespace")
+                .append("name", namespace);
+        runCommand(dropNamespace);
         log.info("Namespace  '" + green("{}") + "' has been deleted", namespace);
     }
 

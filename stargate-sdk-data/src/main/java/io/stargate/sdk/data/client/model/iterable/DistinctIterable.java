@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.client.model.iterable;
 
-import io.stargate.sdk.data.client.DataApiCollection;
+import io.stargate.sdk.data.client.Collection;
 import io.stargate.sdk.data.client.model.Filter;
 import io.stargate.sdk.data.client.model.find.FindOptions;
 import lombok.NonNull;
@@ -38,7 +38,7 @@ public class DistinctIterable<DOC, FIELD> extends PageableIterable<DOC> implemen
      * @param fieldClass
      *      type some the value
      */
-    public DistinctIterable(DataApiCollection<DOC> collection, String fieldName, Filter filter, Class<FIELD> fieldClass) {
+    public DistinctIterable(Collection<DOC> collection, String fieldName, Filter filter, Class<FIELD> fieldClass) {
         this.collection  = collection;
         this.filter      = filter;
         this.fieldName   = fieldName;

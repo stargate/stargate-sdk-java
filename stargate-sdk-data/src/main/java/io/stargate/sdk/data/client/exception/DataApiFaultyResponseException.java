@@ -1,7 +1,7 @@
 package io.stargate.sdk.data.client.exception;
 
-import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.DataApiResponse;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.ApiResponse;
 
 /**
  * Error when API reply unexpected results
@@ -9,10 +9,10 @@ import io.stargate.sdk.data.client.model.DataApiResponse;
 public class DataApiFaultyResponseException extends DataApiException {
 
     /** Command which trigger the error. */
-    private final DataApiCommand<?> command;
+    private final Command command;
 
     /** Data Api response for the error. */
-    private final DataApiResponse response;
+    private final ApiResponse response;
 
     /**
      * Constructor with command and respond.
@@ -23,7 +23,7 @@ public class DataApiFaultyResponseException extends DataApiException {
      * @param msg
      *      error nmessage
      */
-    public DataApiFaultyResponseException(DataApiCommand<?> cmd, DataApiResponse res, String msg) {
+    public DataApiFaultyResponseException(Command cmd, ApiResponse res, String msg) {
         super(DEFAULT_ERROR_CODE, msg);
         this.command  = cmd;
         this.response = res;

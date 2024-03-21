@@ -1,10 +1,10 @@
 package io.stargate.sdk.data.internal;
 
-import io.stargate.sdk.data.client.DataApiCommandRunner;
+import io.stargate.sdk.data.client.CommandRunner;
 import io.stargate.sdk.data.client.exception.DataApiResponseException;
-import io.stargate.sdk.data.client.model.DataApiCommand;
-import io.stargate.sdk.data.client.model.DataApiCommandExecutionInfos;
-import io.stargate.sdk.data.client.model.DataApiResponse;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.ExecutionInfos;
+import io.stargate.sdk.data.client.model.ApiResponse;
 import io.stargate.sdk.data.client.observer.DataApiCommandObserver;
 import io.stargate.sdk.http.domain.ApiResponseHttp;
 import io.stargate.sdk.utils.CompletableFutures;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * Execute the command and parse results throwing DataApiResponseException when needed.
  */
 @Slf4j
-public abstract class AbstractApiClient implements DataApiCommandRunner {
+public abstract class AbstractApiClient implements CommandRunner {
 
     /** Could be usefult to capture the interactions at client side. */
     protected Map<String, DataApiCommandObserver> observers = new ConcurrentHashMap<>();
@@ -42,20 +42,20 @@ public abstract class AbstractApiClient implements DataApiCommandRunner {
 
     /** {@inheritDoc} */
     @Override
-    public DataApiResponse runCommand(DataApiCommand<?> dataApiCommand) {
+    public ApiResponse runCommand(Command command) {
 
         // Initializing the Execution infos (could be pushed to 3rd parties)
-        DataApiCommandExecutionInfos.DataApiExecutionInfoBuilder executionInfo =
-                DataApiCommandExecutionInfos.builder().withCommand(dataApiCommand);
+        ExecutionInfos.DataApiExecutionInfoBuilder executionInfo =
+                ExecutionInfos.builder().withCommand(command);
 
         try {
             // (Custom) Serialization
-            String jsonCommand = JsonUtils.marshallForDataApi(dataApiCommand);
+            String jsonCommand = JsonUtils.marshallForDataApi(command);
 
             ApiResponseHttp httpRes = getHttpClient().POST(lookup(), jsonCommand);
             executionInfo.withHttpResponse(httpRes);
 
-            DataApiResponse jsonRes = JsonUtils.unmarshallBeanForDataApi(httpRes.getBody(), DataApiResponse.class);
+            ApiResponse jsonRes = JsonUtils.unmarshallBeanForDataApi(httpRes.getBody(), ApiResponse.class);
             executionInfo.withApiResponse(jsonRes);
 
             // Encapsulate Errors
@@ -86,8 +86,8 @@ public abstract class AbstractApiClient implements DataApiCommandRunner {
 
     /** {@inheritDoc} */
     @Override
-    public <DOC> DOC runCommand(DataApiCommand<?> dataApiCommand, Class<DOC> documentClass) {
-        return mapAsDocument(runCommand(dataApiCommand), documentClass);
+    public <DOC> DOC runCommand(Command command, Class<DOC> documentClass) {
+        return mapAsDocument(runCommand(command), documentClass);
     }
 
     /**
@@ -102,7 +102,7 @@ public abstract class AbstractApiClient implements DataApiCommandRunner {
      * @param <DOC>
      *     document type
      */
-    protected <DOC> DOC mapAsDocument(DataApiResponse api, Class<DOC> documentClass) {
+    protected <DOC> DOC mapAsDocument(ApiResponse api, Class<DOC> documentClass) {
         String payload;
         if (api.getData() != null) {
             if (api.getData().getDocument() != null) {

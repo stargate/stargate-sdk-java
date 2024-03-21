@@ -74,7 +74,7 @@ mvn -version
 
 ### 2.2 Start Stargate
 
-- ✅ Use the script `start.sh` at root of the repository or start stargate with the following docker-compose dataApiCommand:
+- ✅ Use the script `start.sh` at root of the repository or start stargate with the following docker-compose command:
 
 ```bash
 docker-compose -f ./stargate-sdk-test/src/test/resources/docker-compose.yml up -d
@@ -299,7 +299,7 @@ ApiDataClient client5_Stargate = new ApiDataClient("http://api_endpoint",
   new TokenProviderDefault("username", "password", "http://auth_endpoint");
 ```
 
-From now, in another samples, we will use the variable name `apiClient` as our working instance of `ApiDataClient`
+From now, in another samples, we will use the variable name `apiDataApiClient` as our working instance of `ApiDataClient`
 
 #### Working with keyspaces
 
@@ -308,24 +308,24 @@ From now, in another samples, we will use the variable name `apiClient` as our w
 - ✅. Lists available Keyspace Names
 
 ```java
-Stream<String> keyspaceNames = apiClient.keyspaceNames();
+Stream<String> keyspaceNames = apiDataApiClient.keyspaceNames();
 ```
 - ✅. Lists available Keyspaces
 
 ```java
-Stream<Keyspace> keyspaces = apiClient.keyspaces();
+Stream<Keyspace> keyspaces = apiDataApiClient.keyspaces();
 ```
 - 
 - ✅. Find a keyspace by its id
 
 ```java
-Optional<Keyspace> ns1 = apiClient.keyspace("ks1").find();
+Optional<Keyspace> ns1 = apiDataApiClient.keyspace("ks1").find();
 ```
 
 - ✅. Test if a keyspace exists
 
 ```java
-apiClient.keyspace("ks1").exist();
+apiDataApiClient.keyspace("ks1").exist();
 ```
 
 - ✅. Create a new keyspace
@@ -335,10 +335,10 @@ apiClient.keyspace("ks1").exist();
 ```java
 // Create a keyspace with a single DC dc-1
 DataCenter dc1 = new DataCenter("dc-1", 1);
-apiClient.keyspace("ns1").create(dc1);
+apiDataApiClient.keyspace("ns1").create(dc1);
 
 // Create a keyspace providing only the replication factor
-apiClient.keyspace("ns1").createSimple(3);
+apiDataApiClient.keyspace("ns1").createSimple(3);
 ```
 
 - ✅. Delete a keyspace
@@ -346,12 +346,12 @@ apiClient.keyspace("ns1").createSimple(3);
 > 🚨 *As of today namespaces and keyspaces creations are not available in ASTRA but work as expected with standalone stargate.*
 
 ```java
-apiClient.keyspace("ns1").delete();
+apiDataApiClient.keyspace("ns1").delete();
 ```
 
 **ℹ️ Tips**
 
-You can simplify the code by assigning `apiClient.keyspace("ks1")` to a `KeyspaceClient` variable as shown below:
+You can simplify the code by assigning `apiDataApiClient.keyspace("ks1")` to a `KeyspaceClient` variable as shown below:
 
 ```java
 KeyspaceClient ks1Client = astraClient.apiStargateData().keyspace("ns1");
@@ -377,7 +377,7 @@ ks1Client.delete();
 ```java
 
 // We can create a local variable to shorten the code.
-KeyspaceClient ks1Client = apiClient.keyspace("ks1");
+KeyspaceClient ks1Client = apiDataApiClient.keyspace("ks1");
 
 // List names of the tables
 Stream<String> tableNames = ks1Client.tableNames();
@@ -389,14 +389,14 @@ Stream<TableDefinition> tableDefinitions = ks1Client.tables();
 - ✅. Check if a table exists
 
 ```java
-TableClient tableXClient = apiClient.keyspace("ks1").table("table_x");
+TableClient tableXClient = apiDataApiClient.keyspace("ks1").table("table_x");
 boolean colExist = tableXClient.exist();
 ```
 
 - ✅. Retrieve a table definition from its name
 
 ```java
-Optional<TableDefinition> = apiClient.keyspace("ks1").table("table_x").find();
+Optional<TableDefinition> = apiDataApiClient.keyspace("ks1").table("table_x").find();
 ```
 
 -  ✅. Create a table
@@ -405,7 +405,7 @@ A TableDefinition is expected to create a table. It will detailed all columns an
 
 ```java
 // Using a builder to define the table structure
-apiClient.keyspace("ks1").table("table_x").create(
+apiDataApiClient.keyspace("ks1").table("table_x").create(
   CreateTable.builder()
     .ifNotExist(true)
     .addPartitionKey("genre", "text")
@@ -424,14 +424,14 @@ apiClient.keyspace("ks1").table("table_x").create(
 
 ```java
 // You can change the TTL and some clustering columns informations
-apiClient.keyspace("ks1").table("table_x")
+apiDataApiClient.keyspace("ks1").table("table_x")
          .updateOptions(new TableOptions(25, null));
 ```
 
 -  ✅. Delete a table
 
 ```java
-apiClient.keyspace("ks1").table("table_x").delete();
+apiDataApiClient.keyspace("ks1").table("table_x").delete();
 ```
 
 #### Working with Columns
@@ -440,22 +440,22 @@ apiClient.keyspace("ks1").table("table_x").delete();
 
 ```java
 // Get column Names
-Stream<String> columnNames = apiClient.keyspace("ks1").table("table_x").columnNames();
+Stream<String> columnNames = apiDataApiClient.keyspace("ks1").table("table_x").columnNames();
 
 // Get Column Definition
-Stream<ColumnDefinition> columns = apiClient.keyspace("ks1").table("table_x").columns();
+Stream<ColumnDefinition> columns = apiDataApiClient.keyspace("ks1").table("table_x").columns();
 ```
 
 - ✅. Check if columns exists
 
 ```java
-boolean colExist = apiClient.keyspace("ks1").table("table_x").column("col1").exist();
+boolean colExist = apiDataApiClient.keyspace("ks1").table("table_x").column("col1").exist();
 ```
 
 - ✅. Retrieve a columns from its name
 
 ```java
-Optional<ColumnDefinition> col = apiClient
+Optional<ColumnDefinition> col = apiDataApiClient
    .keyspace("ks1")
    .table("table_x")
    .column("col1")
@@ -465,7 +465,7 @@ Optional<ColumnDefinition> col = apiClient
 - ✅. Create an new Column
 
 ```java
-apiClient.keyspace("ks1")
+apiDataApiClient.keyspace("ks1")
          .table("table_x")
          .column("col1")
          .create(new ColumnDefinition("col", "text"));
@@ -474,7 +474,7 @@ apiClient.keyspace("ks1")
 - ✅. Rename a column
 
 ```java
-apiClient.keyspace("ks1")
+apiDataApiClient.keyspace("ks1")
          .table("table_x")
          .column("col1")
          .rename("col2");
@@ -483,7 +483,7 @@ apiClient.keyspace("ks1")
 -  ✅. Delete a column
 
 ```java
-apiClient.keyspace("ks1")
+apiDataApiClient.keyspace("ks1")
          .table("table_x")
          .column("col1").delete();
 ```
@@ -494,22 +494,22 @@ apiClient.keyspace("ks1")
 
 ```java
 // Get column Names
-Stream<String> indexesNames = apiClient.keyspace("ks1").table("table_x").indexesNames();
+Stream<String> indexesNames = apiDataApiClient.keyspace("ks1").table("table_x").indexesNames();
 
 // Get Column Definition
-Stream<IndexDefinition> indexes = apiClient.keyspace("ks1").table("table_x").indexes();
+Stream<IndexDefinition> indexes = apiDataApiClient.keyspace("ks1").table("table_x").indexes();
 ```
 
 - ✅. Check if index exists
 
 ```java
-boolean colExist = apiClient.keyspace("ks1").table("table_x").index("idx1").exist();
+boolean colExist = apiDataApiClient.keyspace("ks1").table("table_x").index("idx1").exist();
 ```
 
 - ✅. Retrieve a index from its name
 
 ```java
-Optional<IndexDefinition> idxDef = apiClient
+Optional<IndexDefinition> idxDef = apiDataApiClient
    .keyspace("ks1")
    .table("table_x")
    .index("idx1")
@@ -524,7 +524,7 @@ CreateIndex cIdx = CreateIndex.builder()
   .name("idx1").column("title")
   .sasi()
   .build();
-apiClient.keyspace("ks1")
+apiDataApiClient.keyspace("ks1")
          .table("table_x")
          .index("idx1")
          .create(cIdx);
@@ -533,7 +533,7 @@ apiClient.keyspace("ks1")
 - ✅. Delete an Index
 
 ```java
-apiClient.keyspace("ks1")
+apiDataApiClient.keyspace("ks1")
          .table("table_x")
          .index("idx1")
          .delete();
@@ -546,7 +546,7 @@ apiClient.keyspace("ks1")
 ```java
 
 // We can create a local variable to shorten the code.
-KeyspaceClient ks1Client = apiClient.keyspace("ks1");
+KeyspaceClient ks1Client = apiDataApiClient.keyspace("ks1");
 
 // List names of the types
 Stream<String> typeNames = ks1Client.typeNames();
@@ -558,14 +558,14 @@ Stream<TypeDefinition> typeDefinitions = ks1Client.types();
 - ✅. Check if a type exists
 
 ```java
-TypeClient typeVideo = apiClient.keyspace("ks1").type("videos");
+TypeClient typeVideo = apiDataApiClient.keyspace("ks1").type("videos");
 boolean colExist = typeVideo.exist();
 ```
 
 - ✅. Retrieve a type definition from its name
 
 ```java
-Optional<TypeDefinition> = apiClient.keyspace("ks1").type("videos").find();
+Optional<TypeDefinition> = apiDataApiClient.keyspace("ks1").type("videos").find();
 ```
 
 - ✅. Create a type
@@ -577,7 +577,7 @@ ct.getFields().add(new TypeFieldDefinition("city", "text"));
 ct.getFields().add(new TypeFieldDefinition("zipcode", "int"));
 ct.getFields().add(new TypeFieldDefinition("street", "text"));
 ct.getFields().add(new TypeFieldDefinition("phone", "list<text>"));
-apiClient.keyspace("ks1").type("videos").create(ct);
+apiDataApiClient.keyspace("ks1").type("videos").create(ct);
 ```
 
 - ✅. Update a type
@@ -594,7 +594,7 @@ address.update(ut);
 - ✅. Delete a type
 
 ```java
-apiClient.keyspace("ks1").type("videos").delete();
+apiDataApiClient.keyspace("ks1").type("videos").delete();
 ```
 
 ## 2.5. Working with Document API

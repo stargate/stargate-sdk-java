@@ -1,6 +1,6 @@
 package io.stargate.sdk.data.client.exception;
 
-import io.stargate.sdk.data.client.DataApiLimits;
+import io.stargate.sdk.data.client.DataApiClient;
 
 /**
  * Error when too many documents in the collection
@@ -11,7 +11,7 @@ public class TooManyDocumentsToCountException extends Exception {
      * Default constructor.
      */
     public TooManyDocumentsToCountException() {
-        super("Document count exceeds '" + DataApiLimits.MAX_DOCUMENTS_COUNT + ", the maximum allowed by the server");
+        super("Document count exceeds '" + DataApiClient.MAX_DOCUMENTS_COUNT + ", the maximum allowed by the server");
     }
 
     /**

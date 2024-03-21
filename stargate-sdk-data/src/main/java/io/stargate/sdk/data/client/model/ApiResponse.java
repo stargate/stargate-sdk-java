@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  * Represents the Api response.
  */
 @Data
-public class DataApiResponse {
+public class ApiResponse {
 
     /**
      * Return by all operations except find*()
@@ -25,17 +25,17 @@ public class DataApiResponse {
      * List of errors, could be one per inserted items with reason.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<DataApiError> errors;
+    private List<ApiError> errors;
 
     /**
      * Data retrieve with operations find
      */
-    private DataApiData data;
+    private ApiData data;
 
     /**
      * Default constructor.
      */
-    public DataApiResponse() {
+    public ApiResponse() {
     }
 
     /**

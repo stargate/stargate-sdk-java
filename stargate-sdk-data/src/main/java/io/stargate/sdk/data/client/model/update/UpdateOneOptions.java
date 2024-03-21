@@ -1,26 +1,25 @@
-package io.stargate.sdk.data.client.model.delete;
+package io.stargate.sdk.data.client.model.update;
 
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.SortOrder;
 import io.stargate.sdk.utils.Assert;
-import lombok.Getter;
+import lombok.Data;
 
-/**
- * Options to delete One document.
- */
-@Getter
-public class DeleteOneOptions {
+@Data
+public class UpdateOneOptions {
 
-    /**
-     * Default constructor.
-     */
-    public DeleteOneOptions() {
-    }
+    private Boolean upsert;
 
     /**
      * Order by.
      */
     private Document sort;
+
+    public UpdateOneOptions upsert(Boolean upsert) {
+        Assert.notNull(upsert, "upsert");
+        this.upsert = upsert;
+        return this;
+    }
 
     /**
      * Fluent api.
@@ -30,7 +29,7 @@ public class DeleteOneOptions {
      * @return
      *      current command.
      */
-    public DeleteOneOptions sortingBy(Document pSort) {
+    public UpdateOneOptions sortingBy(Document pSort) {
         Assert.notNull(pSort, "sort");
         if (this.sort == null) {
             sort = new Document();
@@ -49,7 +48,7 @@ public class DeleteOneOptions {
      * @return
      *      current reference  find
      */
-    public DeleteOneOptions sortingBy(String fieldName, SortOrder ordering) {
+    public UpdateOneOptions sortingBy(String fieldName, SortOrder ordering) {
         return sortingBy(new Document().append(fieldName, ordering.getOrder()));
     }
 }

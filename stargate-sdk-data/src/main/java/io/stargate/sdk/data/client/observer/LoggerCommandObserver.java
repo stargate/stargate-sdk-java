@@ -1,8 +1,8 @@
 package io.stargate.sdk.data.client.observer;
 
-import io.stargate.sdk.data.client.model.DataApiCommandExecutionInfos;
-import io.stargate.sdk.data.client.model.DataApiData;
-import io.stargate.sdk.data.client.model.DataApiError;
+import io.stargate.sdk.data.client.model.ExecutionInfos;
+import io.stargate.sdk.data.client.model.ApiData;
+import io.stargate.sdk.data.client.model.ApiError;
 import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -75,7 +75,7 @@ public class LoggerCommandObserver implements DataApiCommandObserver {
 
     /** {@inheritDoc} */
     @Override
-    public void onCommand(DataApiCommandExecutionInfos executionInfo) {
+    public void onCommand(ExecutionInfos executionInfo) {
         if (executionInfo != null) {
             String req = UUID.randomUUID().toString().substring(30);
             // Log Command
@@ -87,7 +87,7 @@ public class LoggerCommandObserver implements DataApiCommandObserver {
             log(magenta("[" + req + "][responseTime]") + "=" + yellow("{}") + " millis.",
                     executionInfo.getExecutionTime());
             // Log Data
-            DataApiData data = executionInfo.getResponse().getData();
+            ApiData data = executionInfo.getResponse().getData();
             if (data != null && data.getDocument() != null) {
                 log(magenta("[" + req + "][apiData/document]") + "=" + yellow("1 document retrieved, id='{}'"), data.getDocument().get(Document.ID));
             }
@@ -96,10 +96,10 @@ public class LoggerCommandObserver implements DataApiCommandObserver {
             }
 
             // Log Errors
-            List<DataApiError> errors = executionInfo.getResponse().getErrors();
+            List<ApiError> errors = executionInfo.getResponse().getErrors();
             if (errors != null) {
                 log(magenta("[" + req + "][errors]") + "="+ yellow("{}") +" errors detected.", errors.size());
-                for (DataApiError error : errors) {
+                for (ApiError error : errors) {
                     log(magenta("[" + req + "][errors]")+ "="+ yellow("{} [code={}]"), error.getErrorMessage(), error.getErrorCode());
                 }
             }

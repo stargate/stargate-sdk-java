@@ -15,15 +15,14 @@ import java.util.Map;
  * Filter Builder.
  */
 @Getter
-public class Filter {
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    Map<String, Object> filter = new LinkedHashMap<>();
+public class Filter extends Document {
 
     /**
      * Default constructor.
      */
-    public Filter() {}
+    public Filter() {
+        super();
+    }
 
     /**
      * Default constructor.
@@ -33,7 +32,9 @@ public class Filter {
      */
     @SuppressWarnings("unchecked")
     public Filter(String json) {
-        this.filter = JsonUtils.unmarshallBean(json, Map.class);
+        super();
+        //this.filter = JsonUtils.unmarshallBean(json, Map.class);
+        this.documentMap.putAll(JsonUtils.unmarshallBean(json, Map.class));
     }
 
     /**
@@ -43,7 +44,8 @@ public class Filter {
      *      filter expression as JSON
      */
     public Filter(Map<String, Object> obj) {
-        this.filter = obj;
+        super();
+        this.documentMap.putAll(obj);
     }
 
     /**
@@ -57,7 +59,8 @@ public class Filter {
      *      object value
      */
     public Filter(@NonNull String fieldName, @NonNull FilterOperator cond, @NonNull Object value) {
-        this.filter.put(fieldName, Map.of(cond.getOperator(), value));
+        super();
+        documentMap.put(fieldName, Map.of(cond.getOperator(), value));
     }
 
     /**
@@ -70,7 +73,6 @@ public class Filter {
      */
     public FilterBuilder where(String fieldName) {
         Assert.hasLength(fieldName, "fieldName");
-        filter = new HashMap<>();
         return new FilterBuilder(this, fieldName);
     }
 
@@ -87,7 +89,7 @@ public class Filter {
      *      current
      */
     public Filter where(String fieldName, FilterOperator cond, Object value) {
-        filter.put(fieldName, Map.of(cond.getOperator(), value));
+        documentMap.put(fieldName, Map.of(cond.getOperator(), value));
         return this;
     }
 

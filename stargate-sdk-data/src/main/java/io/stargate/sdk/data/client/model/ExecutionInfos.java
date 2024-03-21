@@ -10,13 +10,13 @@ import java.util.Map;
  * Wrapper for the Command execution.
  */
 @Getter
-public class DataApiCommandExecutionInfos {
+public class ExecutionInfos {
 
     /** Original request. */
-    private final DataApiCommand<?> command;
+    private final Command command;
 
     /** Raw Response. */
-    private final DataApiResponse response;
+    private final ApiResponse response;
 
     private final int responseHttpCode;
 
@@ -34,7 +34,7 @@ public class DataApiCommandExecutionInfos {
      * @param builder
      *      current builder.
      */
-    private DataApiCommandExecutionInfos(DataApiExecutionInfoBuilder builder) {
+    private ExecutionInfos(DataApiExecutionInfoBuilder builder) {
         this.command             = builder.command;
         this.response            = builder.response;
         this.responseHttpHeaders = builder.responseHttpHeaders;
@@ -57,8 +57,8 @@ public class DataApiCommandExecutionInfos {
      * Builder class for execution informations
      */
     public static class DataApiExecutionInfoBuilder {
-        private DataApiCommand<?> command;
-        private DataApiResponse response;
+        private Command command;
+        private ApiResponse response;
         private long executionTime;
         private int responseHttpCode;
         private Map<String, String> responseHttpHeaders;
@@ -79,7 +79,7 @@ public class DataApiCommandExecutionInfos {
          * @return
          *      current reference
          */
-        public DataApiExecutionInfoBuilder withCommand(DataApiCommand<?> command) {
+        public DataApiExecutionInfoBuilder withCommand(Command command) {
             this.command = command;
             return this;
         }
@@ -92,7 +92,7 @@ public class DataApiCommandExecutionInfos {
          * @return
          *      current reference
          */
-        public DataApiExecutionInfoBuilder withApiResponse(DataApiResponse response) {
+        public DataApiExecutionInfoBuilder withApiResponse(ApiResponse response) {
             this.response = response;
             return this;
         }
@@ -120,8 +120,8 @@ public class DataApiCommandExecutionInfos {
          * @return
          *      immutable instance of execution infos.
          */
-        public DataApiCommandExecutionInfos build() {
-            return new DataApiCommandExecutionInfos(this);
+        public ExecutionInfos build() {
+            return new ExecutionInfos(this);
         }
 
 

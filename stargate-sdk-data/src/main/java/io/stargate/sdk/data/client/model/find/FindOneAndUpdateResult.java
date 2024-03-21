@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class FindOneAndReplaceResult<DOC> {
+public class FindOneAndUpdateResult<DOC> {
 
     /**
      * Replacement if provided
@@ -21,6 +21,11 @@ public class FindOneAndReplaceResult<DOC> {
      * Number of modified documents
      */
     private Integer modifiedCount;
+
+    /**
+     * Upsert Id if document present
+     */
+    private Integer upsertedId;
 
 
 }

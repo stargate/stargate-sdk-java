@@ -1,8 +1,8 @@
 package io.stargate.sdk.data.client.exception;
 
-import io.stargate.sdk.data.client.model.DataApiCommandExecutionInfos;
-import io.stargate.sdk.data.client.model.DataApiError;
-import io.stargate.sdk.data.client.model.DataApiResponse;
+import io.stargate.sdk.data.client.model.ExecutionInfos;
+import io.stargate.sdk.data.client.model.ApiError;
+import io.stargate.sdk.data.client.model.ApiResponse;
 import io.stargate.sdk.utils.Assert;
 import lombok.Getter;
 
@@ -21,7 +21,7 @@ public class DataApiResponseException extends DataApiException {
     /**
      * Trace the execution results information.
      */
-    List<DataApiCommandExecutionInfos> commandsList;
+    List<ExecutionInfos> commandsList;
 
     /**
      * Constructor with list of constructors.
@@ -29,7 +29,7 @@ public class DataApiResponseException extends DataApiException {
      * @param cmdList
      *      command execution list
      */
-    public DataApiResponseException(List<DataApiCommandExecutionInfos> cmdList) {
+    public DataApiResponseException(List<ExecutionInfos> cmdList) {
         super(getErrorCode(cmdList), getErrorMessage(cmdList));
         this.commandsList = cmdList;
     }
@@ -40,12 +40,12 @@ public class DataApiResponseException extends DataApiException {
      * @return
      *      list of errors
      */
-    public List<DataApiError> getApiErrors() {
+    public List<ApiError> getApiErrors() {
         if (commandsList != null) {
             return commandsList.stream()
-                    .map(DataApiCommandExecutionInfos::getResponse)
+                    .map(ExecutionInfos::getResponse)
                     .filter(Objects::nonNull)
-                    .map(DataApiResponse::getErrors)
+                    .map(ApiResponse::getErrors)
                     .filter(Objects::nonNull)
                     .flatMap(List::stream)
                     .collect(Collectors.toList());
@@ -61,9 +61,9 @@ public class DataApiResponseException extends DataApiException {
      * @return
      *      error message from the API
      */
-    public static String getErrorMessage(List<DataApiCommandExecutionInfos> commands) {
+    public static String getErrorMessage(List<ExecutionInfos> commands) {
         Assert.notNull(commands, "commandList");
-        return findFirstError(commands).map(DataApiError::getErrorMessage).orElse(DEFAULT_ERROR_MESSAGE);
+        return findFirstError(commands).map(ApiError::getErrorMessage).orElse(DEFAULT_ERROR_MESSAGE);
     }
 
     /**
@@ -74,9 +74,9 @@ public class DataApiResponseException extends DataApiException {
      * @return
      *      error code from the API
      */
-    public static String getErrorCode(List<DataApiCommandExecutionInfos> commands) {
+    public static String getErrorCode(List<ExecutionInfos> commands) {
         Assert.notNull(commands, "commandList");
-        return findFirstError(commands).map(DataApiError::getErrorCode).orElse(DEFAULT_ERROR_CODE);
+        return findFirstError(commands).map(ApiError::getErrorCode).orElse(DEFAULT_ERROR_CODE);
     }
 
     /**
@@ -87,8 +87,8 @@ public class DataApiResponseException extends DataApiException {
      * @return
      *      first error if exists
      */
-    private static Optional<DataApiError> findFirstError(List<DataApiCommandExecutionInfos> commands) {
-        for (DataApiCommandExecutionInfos command :commands) {
+    private static Optional<ApiError> findFirstError(List<ExecutionInfos> commands) {
+        for (ExecutionInfos command :commands) {
             if (command.getResponse() != null
                     && command.getResponse().getErrors()!= null
                     && !command.getResponse().getErrors().isEmpty()) {

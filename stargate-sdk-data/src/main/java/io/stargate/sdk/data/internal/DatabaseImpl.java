@@ -1,15 +1,15 @@
 package io.stargate.sdk.data.internal;
 
 import io.stargate.sdk.data.client.DataApiClient;
-import io.stargate.sdk.data.client.DataApiCollection;
-import io.stargate.sdk.data.client.DataApiNamespace;
-import io.stargate.sdk.data.client.model.collections.CommandCreateCollection;
-import io.stargate.sdk.data.client.model.collections.CommandDropCollection;
-import io.stargate.sdk.data.client.model.collections.CommandFindCollections;
-import io.stargate.sdk.data.client.model.collections.CollectionOptions;
+import io.stargate.sdk.data.client.Collection;
+import io.stargate.sdk.data.client.Database;
+import io.stargate.sdk.data.client.model.Command;
+import io.stargate.sdk.data.client.model.Document;
 import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
+import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.http.LoadBalancedHttpClient;
 import io.stargate.sdk.http.ServiceHttp;
+import io.stargate.sdk.utils.JsonUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +22,13 @@ import static io.stargate.sdk.utils.Assert.hasLength;
 import static io.stargate.sdk.utils.Assert.notNull;
 
 /**
- * Default implementation of the {@link DataApiNamespace}.
+ * Default implementation of the {@link Database}.
  */
 @Slf4j @Getter
-public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNamespace {
+public class DatabaseImpl extends AbstractApiClient implements Database {
 
     /** Reference to the Data APi client. */
-    private final DataApiClient apiClient;
+    private final DataApiClient apiDataApiClient;
 
     /** Current Namespace information. */
     private final String namespaceName;
@@ -39,17 +39,17 @@ public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNa
     /**
      * Constructor with api and namespace.
      *
-     * @param apiClient
+     * @param apiDataApiClient
      *      reference to api client
      * @param namespace
      *      current namespace
      */
-    public DataApiNamespaceImpl(DataApiClient apiClient, String namespace) {
-        notNull(apiClient, "apiClient");
+    public DatabaseImpl(DataApiClient apiDataApiClient, String namespace) {
+        notNull(apiDataApiClient, "apiClient");
         hasLength(namespace, "namespace");
-        this.apiClient     = apiClient;
+        this.apiDataApiClient = apiDataApiClient;
         this.namespaceName = namespace;
-        this.namespaceResource = (node) -> apiClient.lookup().apply(node) + "/" + namespace;
+        this.namespaceResource = (node) -> apiDataApiClient.lookup().apply(node) + "/" + namespace;
     }
 
     // ------------------------------------------
@@ -58,20 +58,20 @@ public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNa
 
     /** {@inheritDoc} */
     @Override
-    public String getName() {
+    public String getNamespaceName() {
         return namespaceName;
     }
 
     /** {@inheritDoc} */
     @Override
     public DataApiClient getClient() {
-        return apiClient;
+        return apiDataApiClient;
     }
 
     /** {@inheritDoc} */
     @Override
     public void drop() {
-        apiClient.dropNamespace(getName());
+        apiDataApiClient.dropNamespace(this.getNamespaceName());
     }
 
     // ------------------------------------------
@@ -81,33 +81,45 @@ public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNa
     /** {@inheritDoc} */
     @Override
     public Stream<String> listCollectionNames() {
-        return runCommand(new CommandFindCollections())
+
+        Command findCollections = Command
+                .create("findCollections");
+
+        return runCommand(findCollections)
                 .getStatusKeyAsList("collections", String.class)
                 .stream();
     }
 
     /** {@inheritDoc} */
     @Override
-    public <DOC> DataApiCollection<DOC> getCollection(String collectionName, @NonNull Class<DOC> documentClass) {
+    public <DOC> Collection<DOC> getCollection(String collectionName, @NonNull Class<DOC> documentClass) {
         hasLength(collectionName, "collectionName");
         notNull(documentClass, "documentClass");
-        return new DataApiCollectionImpl<>(this, collectionName, documentClass);
+        return new CollectionImpl<>(this, collectionName, documentClass);
     }
 
     /** {@inheritDoc} */
     @Override
     public Stream<CollectionDefinition> listCollections() {
-        return runCommand(new CommandFindCollections().withExplain(true))
+        Command findCollections = Command
+                .create("findCollections")
+                .withOptions(new Document().append("explain", true));
+
+        return runCommand(findCollections)
                 .getStatusKeyAsList("collections", CollectionDefinition.class)
                 .stream();
     }
 
     /** {@inheritDoc} */
     @Override
-    public <DOC> DataApiCollection<DOC> createCollection(String collectionName, CollectionOptions collectionOptions, Class<DOC> documentClass) {
+    public <DOC> Collection<DOC> createCollection(String collectionName, CollectionOptions collectionOptions, Class<DOC> documentClass) {
         hasLength(collectionName, "collectionName");
         notNull(documentClass, "documentClass");
-        runCommand(new CommandCreateCollection().withName(collectionName).withOptions(collectionOptions));
+        Command createCollection = Command
+                .create("createCollection")
+                .append("name", collectionName)
+                .withOptions(JsonUtils.convertValueForDataApi(collectionOptions, Document.class));
+        runCommand(createCollection);
         log.info("Collection  '" + green("{}") + "' has been created", collectionName);
         return getCollection(collectionName, documentClass);
     }
@@ -115,7 +127,9 @@ public class DataApiNamespaceImpl extends AbstractApiClient implements DataApiNa
     /** {@inheritDoc} */
     @Override
     public void dropCollection(String collectionName) {
-        runCommand(new CommandDropCollection(collectionName));
+        runCommand(Command
+                .create("deleteCollection")
+                .append("name", collectionName));
         log.info("Collection  '" + green("{}") + "' has been deleted", collectionName);
     }
 

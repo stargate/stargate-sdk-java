@@ -23,6 +23,13 @@
             <artifactId>retry4j</artifactId>
         </dependency>
 
+        <!-- Support Different UUIDS -->
+        <dependency>
+            <groupId>com.fasterxml.uuid</groupId>
+            <artifactId>java-uuid-generator</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+
         <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

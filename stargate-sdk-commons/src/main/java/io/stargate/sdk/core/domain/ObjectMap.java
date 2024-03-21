@@ -31,6 +31,17 @@ import io.stargate.sdk.serialization.CustomEJsonDateDeserializer;
 import io.stargate.sdk.serialization.CustomEJsonDateSerializer;
 import io.stargate.sdk.serialization.CustomEJsonInstantDeserializer;
 import io.stargate.sdk.serialization.CustomEJsonInstantSerializer;
+import io.stargate.sdk.serialization.CustomObjectIdDeserializer;
+import io.stargate.sdk.serialization.CustomObjectIdSerializer;
+import io.stargate.sdk.serialization.CustomUuidDeserializer;
+import io.stargate.sdk.serialization.CustomUuidSerializer;
+import io.stargate.sdk.serialization.CustomUuidv6Deserializer;
+import io.stargate.sdk.serialization.CustomUuidv6Serializer;
+import io.stargate.sdk.serialization.CustomUuidv7Deserializer;
+import io.stargate.sdk.serialization.CustomUuidv7Serializer;
+import io.stargate.sdk.types.ObjectId;
+import io.stargate.sdk.types.UUIDv6;
+import io.stargate.sdk.types.UUIDv7;
 import lombok.NonNull;
 
 import java.text.SimpleDateFormat;
@@ -42,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Wrapper to parse Rows as an HashMap.
@@ -74,12 +86,27 @@ public class ObjectMap extends HashMap<String, Object> {
                     .setAnnotationIntrospector(new JacksonAnnotationIntrospector());
 
             SimpleModule module = new SimpleModule();
+            // Date
             module.addSerializer(Date.class, new CustomEJsonDateSerializer());
-            module.addSerializer(Calendar.class, new CustomEJsonCalendarSerializer());
-            module.addSerializer(Instant.class, new CustomEJsonInstantSerializer());
             module.addDeserializer(Date.class, new CustomEJsonDateDeserializer());
+            // Calendar
+            module.addSerializer(Calendar.class, new CustomEJsonCalendarSerializer());
             module.addDeserializer(Calendar.class, new CustomEJsonCalendarDeserializer());
+            // Instant
+            module.addSerializer(Instant.class, new CustomEJsonInstantSerializer());
             module.addDeserializer(Instant.class, new CustomEJsonInstantDeserializer());
+            // UUID
+            module.addSerializer(UUID.class, new CustomUuidSerializer());
+            module.addDeserializer(UUID.class, new CustomUuidDeserializer());
+            // UUIDv6
+            module.addSerializer(UUIDv6.class, new CustomUuidv6Serializer());
+            module.addDeserializer(UUIDv6.class, new CustomUuidv6Deserializer());
+            // UUIDv7
+            module.addSerializer(UUIDv7.class, new CustomUuidv7Serializer());
+            module.addDeserializer(UUIDv7.class, new CustomUuidv7Deserializer());
+            // ObjectId
+            module.addSerializer(ObjectId.class, new CustomObjectIdSerializer());
+            module.addDeserializer(ObjectId.class, new CustomObjectIdDeserializer());
             objectMapper.registerModule(module);
         }
         return objectMapper;

@@ -13,7 +13,7 @@ public class FindOneAndReplaceOptions {
     /**
      * Order by.
      */
-    private Map<String, Object> sort;
+    private Document sort;
 
     /**
      * Select.
@@ -68,7 +68,7 @@ public class FindOneAndReplaceOptions {
     public FindOneAndReplaceOptions sort(Document pSort) {
         Assert.notNull(pSort, "projection");
         if (this.sort == null) {
-            sort = new LinkedHashMap<>();
+            sort = new Document();
         }
         this.sort.putAll(pSort);
         return this;

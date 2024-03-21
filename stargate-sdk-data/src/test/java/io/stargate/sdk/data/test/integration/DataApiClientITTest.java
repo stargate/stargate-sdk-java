@@ -3,7 +3,7 @@ package io.stargate.sdk.data.test.integration;
 import io.stargate.sdk.auth.StargateAuthenticationService;
 import io.stargate.sdk.data.client.DataApiClient;
 import io.stargate.sdk.data.client.DataApiClients;
-import io.stargate.sdk.data.client.DataApiNamespace;
+import io.stargate.sdk.data.client.Database;
 import io.stargate.sdk.data.client.exception.DataApiException;
 import io.stargate.sdk.data.client.model.namespaces.CreateNamespaceOptions;
 import io.stargate.sdk.data.client.model.namespaces.NamespaceInformation;
@@ -37,12 +37,12 @@ class DataApiClientITTest implements TestConstants {
     @Test
     void shouldConnectWithDefault() {
         // When
-        DataApiClient apiClient = DataApiClients.create();
-        apiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
+        DataApiClient apiDataApiClient = DataApiClients.create();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
         // Then
-        assertThat(apiClient).isNotNull();
-        assertThat(apiClient.listNamespaceNames().count()).isGreaterThan(0);
-        apiClient
+        assertThat(apiDataApiClient).isNotNull();
+        assertThat(apiDataApiClient.listNamespaceNames().count()).isGreaterThan(0);
+        apiDataApiClient
                 .listNamespaceNamesAsync()
                 .thenApply(Stream::count)
                 .thenAccept(count -> assertThat(count).isEqualTo(0));
@@ -51,7 +51,7 @@ class DataApiClientITTest implements TestConstants {
     @Test
     void shouldConnectWithEndpointAndToken() {
         // When
-        DataApiClient apiClient = DataApiClients.create(
+        DataApiClient apiDataApiClient = DataApiClients.create(
                 DataApiClients.DEFAULT_ENDPOINT,
                 new StargateAuthenticationService().getToken(),
                 HttpClientOptions.builder()
@@ -59,11 +59,11 @@ class DataApiClientITTest implements TestConstants {
                         .userAgentCallerVersion("2.0")
                         .build());
         // Then
-        assertThat(apiClient).isNotNull();
-        apiClient.registerListener("logger", new LoggerCommandObserver("listNameSpaces"));
-        assertThat(apiClient.listNamespaceNames().count()).isGreaterThan(0);
+        assertThat(apiDataApiClient).isNotNull();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver("listNameSpaces"));
+        assertThat(apiDataApiClient.listNamespaceNames().count()).isGreaterThan(0);
 
-        apiClient.listNamespacesAsync()
+        apiDataApiClient.listNamespacesAsync()
                 .thenApply(s -> s.map(NamespaceInformation::getName))
                 .thenApply(Stream::count)
                 .thenAccept(count -> assertThat(count).isGreaterThan(0));
@@ -76,24 +76,24 @@ class DataApiClientITTest implements TestConstants {
     @Test
     void shouldCreateNamespaceDefault() {
         // Given
-        DataApiClient apiClient = DataApiClients.create();
-        apiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
+        DataApiClient apiDataApiClient = DataApiClients.create();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
         // When
-        DataApiNamespace ns1 = apiClient.createNamespace(NAMESPACE_NS1);
+        Database ns1 = apiDataApiClient.createNamespace(NAMESPACE_NS1);
         // Then
         assertThat(ns1).isNotNull();
-        assertThat(apiClient.isNamespaceExists(NAMESPACE_NS1)).isTrue();
-        assertThat(ns1.getName()).isEqualTo(NAMESPACE_NS1);
+        assertThat(apiDataApiClient.isNamespaceExists(NAMESPACE_NS1)).isTrue();
+        assertThat(ns1.getNamespaceName()).isEqualTo(NAMESPACE_NS1);
 
         // When
-        apiClient.createNamespaceAsync("ns2").thenAccept(dan -> assertThat(dan).isNotNull());
+        apiDataApiClient.createNamespaceAsync("ns2").thenAccept(dan -> assertThat(dan).isNotNull());
 
         // Surface
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> apiClient.createNamespace(null))
+                .isThrownBy(() -> apiDataApiClient.createNamespace(null))
                 .withMessage("Parameter 'namespace' should be null nor empty");
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> apiClient.createNamespace(""))
+                .isThrownBy(() -> apiDataApiClient.createNamespace(""))
                 .withMessage("Parameter 'namespace' should be null nor empty");
 
     }
@@ -101,77 +101,77 @@ class DataApiClientITTest implements TestConstants {
     @Test
     void shouldCreateNamespaceSimpleStrategy() {
         // Given
-        DataApiClient apiClient = DataApiClients.create();
-        apiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
-        DataApiNamespace ns2 = apiClient.createNamespace("ns2",
+        DataApiClient apiDataApiClient = DataApiClients.create();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
+        Database ns2 = apiDataApiClient.createNamespace("ns2",
                 CreateNamespaceOptions.simpleStrategy(1));
         assertThat(ns2).isNotNull();
-        assertThat(apiClient.isNamespaceExists("ns2")).isTrue();
+        assertThat(apiDataApiClient.isNamespaceExists("ns2")).isTrue();
     }
 
     @Test
     void shouldCreateNamespaceNetworkStrategy() {
         // Given
-        DataApiClient apiClient = DataApiClients.create();
-        apiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
+        DataApiClient apiDataApiClient = DataApiClients.create();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
         // When
-        DataApiNamespace ns3 = apiClient.createNamespace("ns3",
+        Database ns3 = apiDataApiClient.createNamespace("ns3",
                 CreateNamespaceOptions.networkTopologyStrategy(Map.of("datacenter1", 1)));
         assertThat(ns3).isNotNull();
-        assertThat(apiClient.isNamespaceExists("ns3")).isTrue();
+        assertThat(apiDataApiClient.isNamespaceExists("ns3")).isTrue();
 
         // non-passing case
         assertThatExceptionOfType(DataApiException.class).isThrownBy(() ->
-            apiClient.createNamespace("ns4",
+            apiDataApiClient.createNamespace("ns4",
                         CreateNamespaceOptions.networkTopologyStrategy(Map.of("invalid", 1)))
         );
 
         // DROP NAMESPACES
-        apiClient.dropNamespace("ns3");
-        assertThat(apiClient.isNamespaceExists("ns3")).isFalse();
-        apiClient.dropNamespaceAsync("ns3");
+        apiDataApiClient.dropNamespace("ns3");
+        assertThat(apiDataApiClient.isNamespaceExists("ns3")).isFalse();
+        apiDataApiClient.dropNamespaceAsync("ns3");
 
         // non-passing case
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> apiClient.dropNamespace(null))
+                .isThrownBy(() -> apiDataApiClient.dropNamespace(null))
                 .withMessage("Parameter 'namespace' should be null nor empty");
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> apiClient.dropNamespace(""))
+                .isThrownBy(() -> apiDataApiClient.dropNamespace(""))
                 .withMessage("Parameter 'namespace' should be null nor empty");
     }
 
     @Test
     void shouldAccessNamespace() {
         // Given
-        DataApiClient apiClient = DataApiClients.create();
-        apiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
+        DataApiClient apiDataApiClient = DataApiClients.create();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
 
-        apiClient.createNamespace("ns2");
-        assertThat(apiClient.listNamespaceNames())
+        apiDataApiClient.createNamespace("ns2");
+        assertThat(apiDataApiClient.listNamespaceNames())
                 .as("Check if 'ns2' is present in the namespace names")
                 .anyMatch("ns2"::equals);
-        assertThat(apiClient.isNamespaceExists("ns2")).isTrue();
+        assertThat(apiDataApiClient.isNamespaceExists("ns2")).isTrue();
 
-        DataApiNamespace ns2 = apiClient.getNamespace("ns2");
+        Database ns2 = apiDataApiClient.getNamespace("ns2");
         assertThat(ns2).isNotNull();
 
         ns2.drop();
-        assertThat(apiClient.isNamespaceExists("ns2")).isFalse();
+        assertThat(apiDataApiClient.isNamespaceExists("ns2")).isFalse();
     }
 
     @Test
     void shouldDropNamespace() {
         // Given
-        DataApiClient apiClient = DataApiClients.create();
-        apiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
+        DataApiClient apiDataApiClient = DataApiClients.create();
+        apiDataApiClient.registerListener("logger", new LoggerCommandObserver(DataApiClient.class));
 
-        assertThat(apiClient).isNotNull();
-        DataApiNamespace tmp = apiClient.createNamespace("tmp", CreateNamespaceOptions.simpleStrategy(1));
+        assertThat(apiDataApiClient).isNotNull();
+        Database tmp = apiDataApiClient.createNamespace("tmp", CreateNamespaceOptions.simpleStrategy(1));
         assertThat(tmp).isNotNull();
-        assertThat(apiClient.isNamespaceExists("tmp")).isTrue();
+        assertThat(apiDataApiClient.isNamespaceExists("tmp")).isTrue();
         // When
-        apiClient.dropNamespace("tmp");
-        assertThat(apiClient.isNamespaceExists("tmp")).isFalse();
+        apiDataApiClient.dropNamespace("tmp");
+        assertThat(apiDataApiClient.isNamespaceExists("tmp")).isFalse();
     }
 
 }

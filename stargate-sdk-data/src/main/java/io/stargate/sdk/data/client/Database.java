@@ -1,5 +1,6 @@
 package io.stargate.sdk.data.client;
 
+import io.stargate.sdk.data.client.model.SimilarityMetric;
 import io.stargate.sdk.data.client.model.collections.CollectionOptions;
 import io.stargate.sdk.data.client.model.collections.CollectionDefinition;
 import io.stargate.sdk.data.client.model.Document;
@@ -9,7 +10,7 @@ import java.util.stream.Stream;
 /**
  * Class to interact with a Namespace.
  */
-public interface DataApiNamespace extends DataApiCommandRunner {
+public interface Database extends CommandRunner {
 
     // ------------------------------------------
     // ----   General Informations           ----
@@ -20,7 +21,7 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      *
      * @return the database name
      */
-    String getName();
+    String getNamespaceName();
 
     /**
      * Gets the name of the database.
@@ -57,7 +58,7 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @return
      *      if namespace exists
      */
-    default boolean existCollection(String collection) {
+    default boolean collectionExists(String collection) {
         return listCollectionNames().anyMatch(collection::equals);
     }
 
@@ -71,7 +72,7 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @throws IllegalArgumentException
      *      if collectionName is invalid
      */
-    default DataApiCollection<Document> getCollection(String collectionName) {
+    default Collection<Document> getCollection(String collectionName) {
         return getCollection(collectionName, Document.class);
     }
 
@@ -87,7 +88,7 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @return
      *      the collection
      */
-    <DOC> DataApiCollection<DOC> getCollection(String collectionName, Class<DOC> documentClass);
+    <DOC> Collection<DOC> getCollection(String collectionName, Class<DOC> documentClass);
 
     /**
      * Drops this namespace
@@ -100,8 +101,43 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @param collectionName
      *      the name for the new collection to create
      */
-    default DataApiCollection<Document> createCollection(String collectionName) {
+    default Collection<Document> createCollection(String collectionName) {
         return createCollection(collectionName, null, Document.class);
+    }
+
+    /**
+     * Create a default new collection for vector.
+     * @param collectionName
+     *      collection name
+     * @param dimension
+     *      vector dimension
+     * @param metric
+     *      vector metric
+     * @return
+     *      the instance of collection
+     */
+    default Collection<Document> createCollection(String collectionName, int dimension, SimilarityMetric metric) {
+        return createCollection(collectionName, dimension, metric, Document.class);
+    }
+
+    /**
+     * Create a default new collection for vector.
+     * @param collectionName
+     *      collection name
+     * @param dimension
+     *      vector dimension
+     * @param metric
+     *      vector metric
+     * @param documentClass
+     *      class of document to return
+     * @return
+     *      the instance of collection
+     */
+    default <DOC> Collection<DOC> createCollection(String collectionName, int dimension, SimilarityMetric metric, Class<DOC> documentClass) {
+            return createCollection(collectionName, CollectionOptions.builder()
+                    .withVectorDimension(dimension)
+                    .withVectorSimilarityMetric(metric)
+                    .build(), documentClass);
     }
 
     /**
@@ -110,8 +146,8 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @param collectionName
      *      the name for the new collection to create
      */
-    default <DOC> DataApiCollection<DOC> createCollection(String collectionName, Class<DOC> dpcumentClass) {
-        return createCollection(collectionName, null, dpcumentClass);
+    default <DOC> Collection<DOC> createCollection(String collectionName, Class<DOC> documentClass) {
+        return createCollection(collectionName, null, documentClass);
     }
 
     /**
@@ -122,7 +158,7 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @param collectionOptions
      *      various options for creating the collection
      */
-    default DataApiCollection<Document> createCollection(String collectionName, CollectionOptions collectionOptions) {
+    default Collection<Document> createCollection(String collectionName, CollectionOptions collectionOptions) {
         return createCollection(collectionName, collectionOptions, Document.class);
     }
 
@@ -134,7 +170,7 @@ public interface DataApiNamespace extends DataApiCommandRunner {
      * @param collectionOptions
      *      various options for creating the collection
      */
-    <DOC> DataApiCollection<DOC> createCollection(String collectionName, CollectionOptions collectionOptions, Class<DOC> documentClass);
+    <DOC> Collection<DOC> createCollection(String collectionName, CollectionOptions collectionOptions, Class<DOC> documentClass);
 
     /**
      * Delete a collection.
